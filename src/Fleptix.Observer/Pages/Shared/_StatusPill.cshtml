@@ -1,0 +1,16 @@
+@model string
+@{
+    var state = (Model ?? "unknown").ToLowerInvariant();
+    var pillClass = state switch
+    {
+        "running" => "running",
+        "paused" or "restarting" => "restarting",
+        "exited" or "stopped" or "created" => "stopped",
+        _ => "stopped"
+    };
+}
+
+<span class="status-pill @pillClass">
+    <span class="pill-dot"></span>
+    <span class="pill-text">@state</span>
+</span>

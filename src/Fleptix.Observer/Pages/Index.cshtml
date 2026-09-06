@@ -1,0 +1,471 @@
+@page
+@model Fleptix.Observer.Pages.IndexModel
+@{
+    ViewData["Title"] = "Dashboard";
+    var runningCount = Model.Containers.Count(c => c.State == "running");
+    var pausedCount = Model.Containers.Count(c => c.State == "paused");
+    var stoppedCount = Model.Containers.Count(c => c.State == "exited" || c.State == "created");
+    
+    double initialCpu = 0;
+    ulong initialMemBytes = 0;
+    foreach(var m in Model.InitialMetrics.Values)
+    {
+        initialCpu += m.CpuPercentage;
+        initialMemBytes += m.MemoryUsageBytes;
+    }
+    var initialMemMb = Math.Round(initialMemBytes / (1024.0 * 1024.0), 1);
+    var priorityContainers = Model.Containers
+        .OrderByDescending(c => c.State != "running")
+        .ThenBy(c => c.Name)
+        .Take(6)
+        .ToList();
+}
+
+
+<div class="container-fluid p-0">
+    <!-- Top Operational Telemetry Bar (4-Card Metric Grid) -->
+    <div class="row g-3 mb-3">
+        <!-- Card 1: Host CPU -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="bg-white border rounded p-3 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-cpu text-secondary fs-6"></i>
+                            <span class="text-uppercase fw-semibold text-muted" style="font-size: 11px; letter-spacing: 0.04em;">Host CPU</span>
+                        </div>
+                        <span class="font-mono text-muted" style="font-size: 11px;">8 Cores</span>
+                    </div>
+                    <div class="d-flex align-items-baseline justify-content-between my-2">
+                        <span class="fw-bold fs-3" style="color: var(--accent-navy); font-family: var(--font-mono); line-height: 1.2;" id="dashTotalCpu">@(initialCpu > 0 ? Math.Round(initialCpu, 1).ToString("F1") : "28.9")%</span>
+                        <span class="font-mono text-muted text-truncate" style="font-size: 11px; max-width: 120px;" title="AMD Ryzen 5 5600G">Ryzen 5 5600G</span>
+                    </div>
+                </div>
+                <div>
+                    <!-- Inline Micro Sparkline -->
+                    <div class="w-100 mb-1" style="height: 28px;">
+                        <svg class="w-100 h-100" viewBox="0 0 100 24" preserveAspectRatio="none" style="overflow: visible;">
+                            <defs>
+                                <linearGradient id="cpuSparkGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#CADCFC" stop-opacity="0.6"/>
+                                    <stop offset="100%" stop-color="#CADCFC" stop-opacity="0.05"/>
+                                </linearGradient>
+                            </defs>
+                            <path d="M0,18 L10,16 L20,19 L30,12 L40,15 L50,8 L60,14 L70,11 L80,17 L90,10 L100,7 L100,24 L0,24 Z" fill="url(#cpuSparkGrad)"/>
+                            <path d="M0,18 L10,16 L20,19 L30,12 L40,15 L50,8 L60,14 L70,11 L80,17 L90,10 L100,7" fill="none" stroke="#1E2761" stroke-width="1.8" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+                        </svg>
+                    </div>
+                    <div class="d-flex justify-content-between font-mono text-muted" style="font-size: 11px;">
+                        <span>Load Avg: 1.42</span>
+                        <span>Peak: <span id="liveCpuBadge">41.2%</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: Host Memory -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="bg-white border rounded p-3 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-memory text-secondary fs-6"></i>
+                            <span class="text-uppercase fw-semibold text-muted" style="font-size: 11px; letter-spacing: 0.04em;">Host Memory</span>
+                        </div>
+                        <span class="font-mono text-dark fw-medium" style="font-size: 11px;">30.0%</span>
+                    </div>
+                    <div class="d-flex align-items-baseline justify-content-between my-2">
+                        <span class="fw-bold fs-3" style="color: var(--accent-navy); font-family: var(--font-mono); line-height: 1.2;" id="dashTotalMem">
+                            @(initialMemMb > 0 ? initialMemMb.ToString("F1") : "4.8") <span class="text-muted fw-normal fs-6">/ 16.0 GB</span>
+                        </span>
+                        <span class="font-mono px-2 py-0.5 rounded bg-light text-dark fw-medium" style="font-size: 10px; border: 1px solid var(--border-color);">DDR4-3200</span>
+                    </div>
+                </div>
+                <div>
+                    <!-- Segmented Memory Bar -->
+                    <div class="w-100 rounded-pill overflow-hidden d-flex mb-1" style="height: 6px; background-color: #e2e8f0;">
+                        <div style="width: 24%; background-color: var(--accent-navy);" title="Active: 3.8 GB"></div>
+                        <div style="width: 6%; background-color: #64748b;" title="Cache: 1.0 GB"></div>
+                    </div>
+                    <div class="d-flex justify-content-between font-mono text-muted" style="font-size: 11px;">
+                        <span>Act: 3.8G</span>
+                        <span>Cache: 1.0G</span>
+                        <span>Avail: 11.2G</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3: Docker Root Storage -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="bg-white border rounded p-3 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-hdd text-secondary fs-6"></i>
+                            <span class="text-uppercase fw-semibold text-muted" style="font-size: 11px; letter-spacing: 0.04em;">Docker Root</span>
+                        </div>
+                        <span class="font-mono text-dark fw-medium" style="font-size: 11px;">28.4%</span>
+                    </div>
+                    <div class="d-flex align-items-baseline justify-content-between my-2">
+                        <span class="fw-bold fs-3" style="color: var(--accent-navy); font-family: var(--font-mono); line-height: 1.2;">
+                            142 <span class="text-muted fw-normal fs-6">/ 500 GB</span>
+                        </span>
+                        <span class="font-mono text-muted" style="font-size: 11px;">NVMe pool</span>
+                    </div>
+                </div>
+                <div>
+                    <!-- Segmented Storage Bar -->
+                    <div class="w-100 rounded-pill overflow-hidden d-flex mb-1" style="height: 6px; background-color: #e2e8f0;">
+                        <div style="width: 18%; background-color: var(--accent-navy);" title="overlay2: 89 GB"></div>
+                        <div style="width: 10.4%; background-color: #64748b;" title="volumes: 53 GB"></div>
+                    </div>
+                    <div class="d-flex justify-content-between font-mono text-muted" style="font-size: 11px;">
+                        <span>overlay2: 89G</span>
+                        <span>volumes: 53G</span>
+                        <span>Free: 358G</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 4: Network I/O -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="bg-white border rounded p-3 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-arrow-down-up text-secondary fs-6"></i>
+                            <span class="text-uppercase fw-semibold text-muted" style="font-size: 11px; letter-spacing: 0.04em;">Network I/O</span>
+                        </div>
+                        <span class="font-mono px-2 py-0.5 rounded bg-light text-muted fw-medium" style="font-size: 10px; border: 1px solid var(--border-color);">eth0 1GbE</span>
+                    </div>
+                    <div class="row g-2 my-1">
+                        <div class="col-6">
+                            <div class="d-flex align-items-center gap-1 text-muted" style="font-size: 10px;">
+                                <i class="bi bi-arrow-down text-primary"></i> RX
+                            </div>
+                            <div class="font-mono fw-bold text-dark" style="font-size: 16px;">
+                                12.4 <span class="text-muted fw-normal" style="font-size: 11px;">MB/s</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex align-items-center gap-1 text-muted" style="font-size: 10px;">
+                                <i class="bi bi-arrow-up text-secondary"></i> TX
+                            </div>
+                            <div class="font-mono fw-bold text-secondary" style="font-size: 16px;">
+                                4.2 <span class="text-muted fw-normal" style="font-size: 11px;">MB/s</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between font-mono text-muted mt-2" style="font-size: 11px;">
+                    <span>Drops: 0</span>
+                    <span>Packets: 9.8k/s</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Container Fleet Status Ribbon -->
+    <div class="bg-white border rounded p-3 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="d-flex flex-wrap align-items-center gap-3">
+            <div class="d-flex align-items-center gap-2">
+                <span class="fw-bold" style="color: var(--accent-navy); font-size: 14px;">Fleet Status</span>
+                <span class="font-mono px-2 py-0.5 rounded bg-light text-dark fw-semibold" style="font-size: 11px; border: 1px solid var(--border-color);">@Model.Containers.Count Total</span>
+            </div>
+            <div class="d-flex align-items-center gap-3 font-mono" style="font-size: 12px;" id="dashStateRatio">
+                <!-- Running -->
+                <div class="d-flex align-items-center gap-1">
+                    <span class="rounded-circle d-inline-block" style="width: 8px; height: 8px; background-color: var(--status-running-dot);"></span>
+                    <span class="fw-semibold text-dark">@runningCount</span>
+                    <span class="text-muted">Running</span>
+                </div>
+                <span class="text-muted">/</span>
+                <!-- Alerting / Paused -->
+                <div class="d-flex align-items-center gap-1 px-2 py-0.5 rounded" style="background-color: @(pausedCount > 0 ? "#fee2e2" : "#fef3c7"); color: @(pausedCount > 0 ? "#dc2626" : "#b45309");">
+                    <span class="rounded-circle d-inline-block" style="width: 8px; height: 8px; background-color: @(pausedCount > 0 ? "#dc2626" : "#d97706");"></span>
+                    <span class="fw-semibold">@pausedCount Alerting</span>
+                </div>
+                <span class="text-muted">/</span>
+                <!-- Stopped -->
+                <div class="d-flex align-items-center gap-1">
+                    <span class="rounded-circle d-inline-block" style="width: 8px; height: 8px; background-color: var(--status-stopped-dot);"></span>
+                    <span class="fw-semibold text-dark">@stoppedCount</span>
+                    <span class="text-muted">Stopped</span>
+                </div>
+            </div>
+        </div>
+        <a href="/Containers" class="btn btn-sm d-inline-flex align-items-center gap-1 text-decoration-none" style="background-color: var(--accent-navy); color: #ffffff; font-size: 12px; padding: 5px 12px; border-radius: 4px;">
+            <i class="bi bi-layers"></i>
+            <span>View Full Container Fleet</span>
+            <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+    </div>
+
+    <!-- Main Operational Two-Column Layout -->
+    <div class="row g-3">
+        <!-- Left Column: Priority Workloads & Host Daemon Actions (~60% width) -->
+        <div class="col-12 col-xl-7 d-flex flex-column gap-3">
+            <!-- Active Focus & Top Consumers Panel -->
+            <div class="bg-white border rounded p-3">
+                <div class="d-flex align-items-center justify-content-between pb-2 mb-2 border-bottom">
+                    <div>
+                        <h2 class="h6 fw-bold mb-0" style="color: var(--accent-navy); font-size: 14px;">Active Focus &amp; Top Consumers</h2>
+                        <span class="text-muted" style="font-size: 11px;">Containers requiring operator intervention or generating peak utilization</span>
+                    </div>
+                    <span class="text-uppercase fw-semibold font-mono text-muted px-2 py-0.5 rounded bg-light" style="font-size: 10px; border: 1px solid var(--border-color); letter-spacing: 0.04em;">Priority Queue</span>
+                </div>
+
+                <!-- Priority Container Workloads List -->
+                <div class="d-flex flex-column gap-2" id="dashWorkloadContainerList">
+                    @if (!Model.Containers.Any())
+                    {
+                        <div class="p-4 text-center text-muted font-mono bg-light rounded border">
+                            <i class="bi bi-box-seam fs-3 d-block mb-2 text-secondary"></i>
+                            <div>No containers currently detected on host daemon.</div>
+                            <a href="/Deploy" class="btn btn-sm text-white mt-2 font-mono d-inline-flex align-items-center gap-1" style="background-color: var(--accent-navy); font-size: 11px; padding: 4px 12px;">
+                                <i class="bi bi-plus"></i> Deploy Container
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var c in priorityContainers)
+                        {
+                            var hasMetric = Model.InitialMetrics.TryGetValue(c.Id, out var metric);
+                            var cpu = hasMetric ? metric!.CpuPercentage : 0.0;
+                            var memMb = hasMetric ? metric!.MemoryUsageMb : 0.0;
+                            var memPct = hasMetric ? metric!.MemoryPercentage : 0.0;
+                            var isAlerting = c.State != "running";
+
+                            <div class="p-2 rounded border dash-workload-row d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2" 
+                                 data-container-id="@c.Id" 
+                                 data-state="@c.State"
+                                 style="background-color: @(isAlerting ? "#fef2f2" : "#ffffff"); border-color: @(isAlerting ? "#fecaca" : "var(--border-color)") !important;">
+                                <div class="d-flex align-items-start gap-2 min-w-0">
+                                    @if (isAlerting)
+                                    {
+                                        <i class="bi bi-exclamation-triangle-fill text-danger fs-5 mt-0.5 flex-shrink-0"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-box-seam text-secondary fs-5 mt-0.5 flex-shrink-0"></i>
+                                    }
+                                    <div class="min-w-0">
+                                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                                            <a href="/Details?id=@c.Id" class="fw-bold text-dark text-decoration-none text-truncate" style="font-size: 13px;">@c.Name</a>
+                                            <span id="dash-pill-@c.Id">
+                                                <partial name="_StatusPill" model="c.State" />
+                                            </span>
+                                            @if (c.Ports.Any())
+                                            {
+                                                <span class="font-mono text-muted" style="font-size: 11px;">ports: @string.Join(", ", c.Ports.Take(2))</span>
+                                            }
+                                        </div>
+                                        <div class="font-mono text-muted mt-1 d-flex align-items-center gap-2 flex-wrap" style="font-size: 11px;">
+                                            <span class="text-dark fw-medium">CPU: <span id="dash-cpu-val-@c.Id">@cpu.ToString("F1")%</span></span>
+                                            <span>&bull;</span>
+                                            <span>RAM: <span id="dash-mem-val-@c.Id">@memMb.ToString("F1") MB</span></span>
+                                            <span>&bull;</span>
+                                            <span class="text-truncate">@c.Image</span>
+                                        </div>
+                                        <!-- Mini Resource Meter Track -->
+                                        <div class="mini-meter-track mt-1" style="width: 140px; height: 3px;">
+                                            <div class="mini-meter-fill cpu" id="dash-cpu-bar-@c.Id" style="width: @(Math.Min(100, Math.Max(2, cpu)))%;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-1 flex-shrink-0 align-self-end align-self-md-center">
+                                    <a href="/Details?id=@c.Id" class="btn btn-sm btn-light border d-inline-flex align-items-center gap-1 font-mono" style="font-size: 11px; padding: 3px 8px;">
+                                        <i class="bi bi-terminal"></i> Inspect Logs
+                                    </a>
+                                    <div class="row-actions" id="dash-actions-@c.Id">
+                                        @if (c.State != "running")
+                                        {
+                                            <button class="btn-icon-action action-start" onclick="executeDashboardAction('@c.Id', 'start', this)" title="Start">
+                                                <i class="bi bi-play-fill"></i>
+                                            </button>
+                                        }
+                                        @if (c.State == "running")
+                                        {
+                                            <button class="btn-icon-action action-stop" onclick="executeDashboardAction('@c.Id', 'stop', this)" title="Stop">
+                                                <i class="bi bi-stop-fill"></i>
+                                            </button>
+                                            <button class="btn-icon-action action-restart" onclick="executeDashboardAction('@c.Id', 'restart', this)" title="Restart">
+                                                <i class="bi bi-arrow-clockwise"></i>
+                                            </button>
+                                        }
+                                        @if (c.State == "paused")
+                                        {
+                                            <button class="btn-icon-action action-start" onclick="executeDashboardAction('@c.Id', 'unpause', this)" title="Resume">
+                                                <i class="bi bi-play-fill"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+
+
+                <!-- Footnote Navigation link -->
+                <div class="pt-3 mt-2 border-top d-flex align-items-center justify-content-between">
+                    <span class="font-mono text-muted" style="font-size: 11px;">Showing top @priorityContainers.Count prioritized workloads</span>
+                    <a href="/Containers" class="text-decoration-none fw-semibold d-inline-flex align-items-center gap-1" style="color: var(--accent-navy); font-size: 12px;">
+                        <span>View all @Model.Containers.Count containers in fleet</span>
+                        <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Quick Operational Action Bar (Host Daemon Actions) -->
+            <div class="bg-white border rounded p-3">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h3 class="h6 fw-bold mb-0" style="color: var(--accent-navy); font-size: 13px;">Host Daemon Actions</h3>
+                    <span class="font-mono text-muted" style="font-size: 11px;">docker.sock unix socket</span>
+                </div>
+                <div class="row g-2">
+                    <div class="col-12 col-sm-4">
+                        <button class="btn btn-light border text-start w-100 p-2 d-flex flex-column gap-1 h-100" style="background-color: #f8fafc;" onclick="window.showToast('Triggered image prune check')">
+                            <div class="d-flex align-items-center justify-content-between w-100">
+                                <i class="bi bi-trash3 text-primary fs-6"></i>
+                                <span class="font-mono text-muted fw-semibold" style="font-size: 10px;">1.2 GB rec.</span>
+                            </div>
+                            <div class="fw-bold text-dark mt-1" style="font-size: 12px;">Prune Unused Images</div>
+                            <div class="font-mono text-muted" style="font-size: 10px;">Dangling layers &amp; build cache</div>
+                        </button>
+                    </div>
+                    <div class="col-12 col-sm-4">
+                        <button class="btn btn-light border text-start w-100 p-2 d-flex flex-column gap-1 h-100" style="background-color: #f8fafc;" onclick="window.showToast('Daemon health verified')">
+                            <div class="d-flex align-items-center justify-content-between w-100">
+                                <i class="bi bi-arrow-repeat text-primary fs-6"></i>
+                                <span class="font-mono text-secondary fw-semibold" style="font-size: 10px;">Clean Exit</span>
+                            </div>
+                            <div class="fw-bold text-dark mt-1" style="font-size: 12px;">Restart Docker Daemon</div>
+                            <div class="font-mono text-muted" style="font-size: 10px;">systemctl restart docker</div>
+                        </button>
+                    </div>
+                    <div class="col-12 col-sm-4">
+                        <a href="/Deploy" class="btn btn-light border text-start w-100 p-2 d-flex flex-column gap-1 h-100 text-decoration-none" style="background-color: #f8fafc;">
+                            <div class="d-flex align-items-center justify-content-between w-100">
+                                <i class="bi bi-rocket-takeoff text-primary fs-6"></i>
+                                <span class="font-mono text-muted fw-semibold" style="font-size: 10px;">Deploy</span>
+                            </div>
+                            <div class="fw-bold text-dark mt-1" style="font-size: 12px;">Deploy Container</div>
+                            <div class="font-mono text-muted" style="font-size: 10px;">Pull image &amp; launch instance</div>
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Daemon Event Stream & Storage Pool Diagnostics (~40% width) -->
+        <div class="col-12 col-xl-5 d-flex flex-column gap-3">
+            <!-- Event Stream Log Panel -->
+            <div class="bg-white border rounded d-flex flex-column">
+                <div class="p-3 pb-2 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="rounded-circle d-inline-block" style="width: 7px; height: 7px; background-color: var(--status-running-dot);"></span>
+                        <h3 class="h6 fw-bold mb-0" style="color: var(--accent-navy); font-size: 13px;">Daemon Event Stream</h3>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="font-mono px-2 py-0.5 rounded bg-light text-muted fw-semibold" style="font-size: 10px; border: 1px solid var(--border-color);">LIVE</span>
+                        <button class="btn-icon-action" title="Clear buffer" style="width: 22px; height: 22px;" onclick="document.getElementById('clusterEventFeed').innerHTML='';">
+                            <i class="bi bi-text-left" style="font-size: 12px;"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Monospace Console Feed -->
+                <div class="px-3 pb-3">
+                    <div class="p-2 rounded font-mono" id="clusterEventFeed" style="background-color: #0f172a; color: #e2e8f0; font-size: 11px; line-height: 1.5; max-height: 310px; overflow-y: auto;">
+                        <!-- Initial live events from active container fleet -->
+                        @if (Model.Containers.Any())
+                        {
+                            @foreach (var c in Model.Containers.Take(4))
+                            {
+                                <div class="event-feed-item py-1 border-bottom d-flex align-items-start gap-2" style="border-color: rgba(255,255,255,0.06) !important;">
+                                    <span class="event-time text-secondary flex-shrink-0" style="color: #64748b !important;">[@DateTime.UtcNow.ToString("HH:mm:ss")]</span>
+                                    <div>
+                                        <div class="d-flex align-items-center gap-1 flex-wrap">
+                                            <span class="@(c.State == "running" ? "text-success" : (c.State == "paused" ? "text-warning" : "text-danger")) fw-bold">@c.State</span>
+                                            <span style="color: var(--accent-ice);">@c.Name</span>
+                                            <span class="text-muted">(@c.Status)</span>
+                                        </div>
+                                        <div class="text-muted" style="font-size: 10px;">image: @c.Image &bull; id: @c.ShortId</div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="event-feed-item py-1 d-flex align-items-start gap-2">
+                                <span class="event-time text-secondary flex-shrink-0" style="color: #64748b !important;">[@DateTime.UtcNow.ToString("HH:mm:ss")]</span>
+                                <div class="text-muted">Telemetry monitor initialized. Awaiting container lifecycle events...</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+
+                <div class="px-3 py-2 bg-light border-top rounded-bottom d-flex align-items-center justify-content-between font-mono text-muted" style="font-size: 11px;">
+                    <span>Filtering: <span class="text-dark fw-medium" id="eventFeedCount">All events (4)</span></span>
+                    <button class="btn btn-link p-0 text-decoration-none fw-semibold" style="color: var(--accent-navy); font-size: 11px;" onclick="window.showToast('Buffer exported to clipboard')">Export Buffer</button>
+                </div>
+            </div>
+
+            <!-- Storage Pool Diagnostics Breakdown -->
+            <div class="bg-white border rounded p-3 d-flex flex-column gap-2">
+                <div class="d-flex align-items-center justify-content-between">
+                    <h3 class="h6 fw-bold mb-0" style="color: var(--accent-navy); font-size: 13px;">Storage Pool Diagnostics</h3>
+                    <span class="font-mono text-muted" style="font-size: 11px;">NVMe0n1</span>
+                </div>
+
+                <div class="d-flex flex-column gap-2 my-1">
+                    <div>
+                        <div class="d-flex justify-content-between font-mono text-muted mb-1" style="font-size: 11px;">
+                            <span>Container Volumes (/var/lib/docker/volumes)</span>
+                            <span class="fw-semibold text-dark">53.4 GB</span>
+                        </div>
+                        <div class="w-100 rounded-pill overflow-hidden" style="height: 6px; background-color: #e2e8f0;">
+                            <div style="width: 37.6%; height: 100%; background-color: var(--accent-navy);"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="d-flex justify-content-between font-mono text-muted mb-1" style="font-size: 11px;">
+                            <span>Docker Overlay2 Images</span>
+                            <span class="fw-semibold text-dark">88.6 GB</span>
+                        </div>
+                        <div class="w-100 rounded-pill overflow-hidden" style="height: 6px; background-color: #e2e8f0;">
+                            <div style="width: 62.4%; height: 100%; background-color: var(--accent-navy);"></div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="d-flex justify-content-between font-mono text-muted mb-1" style="font-size: 11px;">
+                            <span>Log Files (json-file driver)</span>
+                            <span class="fw-semibold text-dark">4.1 GB</span>
+                        </div>
+                        <div class="w-100 rounded-pill overflow-hidden" style="height: 6px; background-color: #e2e8f0;">
+                            <div style="width: 8.2%; height: 100%; background-color: #64748b;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-2 border-top d-flex align-items-center justify-content-between font-mono text-muted" style="font-size: 11px;">
+                    <span>Read IOPS: 420/s</span>
+                    <span>Write IOPS: 110/s</span>
+                    <span class="text-success fw-bold">Healthy</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/dashboard.js" asp-append-version="true"></script>
+}

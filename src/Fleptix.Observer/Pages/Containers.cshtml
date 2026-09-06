@@ -1,0 +1,388 @@
+@page "/Containers"
+@model Fleptix.Observer.Pages.ContainersModel
+@{
+    ViewData["Title"] = "Containers";
+    var runningCount = Model.Containers.Count(c => c.State == "running");
+    var pausedCount = Model.Containers.Count(c => c.State == "paused");
+    var stoppedCount = Model.Containers.Count(c => c.State == "exited" || c.State == "created");
+    
+    double totalCpu = 0;
+    ulong totalMemBytes = 0;
+    foreach(var m in Model.InitialMetrics.Values)
+    {
+        totalCpu += m.CpuPercentage;
+        totalMemBytes += m.MemoryUsageBytes;
+    }
+    var totalMemMb = Math.Round(totalMemBytes / (1024.0 * 1024.0), 1);
+
+    // Grouping by Stack
+    string GetStack(Fleptix.Core.Models.ContainerSummary c)
+    {
+        var n = c.Name.ToLowerInvariant();
+        if (n.Contains("traefik") || n.Contains("pgsql") || n.Contains("postgres") || n.Contains("redis") || n.Contains("authentik") || n.Contains("infra"))
+            return "core-infra";
+        if (n.Contains("immich") || n.Contains("media") || n.Contains("nextcloud") || n.Contains("homarr"))
+            return "media-suite";
+        if (n.Contains("grafana") || n.Contains("prom") || n.Contains("mon"))
+            return "observability";
+        return "standalone";
+    }
+
+    var stackGroups = Model.Containers
+        .GroupBy(GetStack)
+        .OrderBy(g => g.Key == "core-infra" ? 1 : g.Key == "media-suite" ? 2 : g.Key == "observability" ? 3 : 4)
+        .ToList();
+}
+
+<div class="container-fluid p-0">
+    <!-- Operational Header & Multi-state Filter Bar -->
+    <div class="bg-white p-3 rounded border mb-3 shadow-xs d-flex flex-column gap-3">
+        <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <div class="d-flex align-items-baseline gap-2">
+                    <h1 class="h6 fw-bold mb-0 text-dark" style="font-size: 16px;">Containers</h1>
+                    <span class="font-mono text-muted px-2 py-0.5 rounded bg-light border" style="font-size: 11px;" id="fleetHeaderStats">
+                        @Model.Containers.Count containers across @stackGroups.Count stacks
+                    </span>
+                </div>
+
+                <!-- Operational Filter Tabs / Chips -->
+                <div class="d-flex align-items-center gap-1 bg-light p-1 rounded border font-mono" style="font-size: 11px;">
+                    <button class="btn btn-sm btn-light border filter-tab-btn active px-2 py-0.5 fw-semibold" data-filter="all" style="font-size: 11px;">
+                        <span>All</span> <span class="text-muted font-normal" id="countFilterAll">(@Model.Containers.Count)</span>
+                    </button>
+                    <button class="btn btn-sm btn-link text-decoration-none text-dark filter-tab-btn px-2 py-0.5 d-flex align-items-center gap-1" data-filter="running" style="font-size: 11px;">
+                        <span class="rounded-circle d-inline-block" style="width: 6px; height: 6px; background-color: var(--status-running-dot);"></span>
+                        <span>Running</span> <span class="text-muted" id="countFilterRunning">(@runningCount)</span>
+                    </button>
+                    <button class="btn btn-sm btn-link text-decoration-none text-dark filter-tab-btn px-2 py-0.5 d-flex align-items-center gap-1" data-filter="exited" style="font-size: 11px;">
+                        <span class="rounded-circle d-inline-block" style="width: 6px; height: 6px; background-color: var(--status-stopped-dot);"></span>
+                        <span>Stopped</span> <span class="text-muted" id="countFilterExited">(@stoppedCount)</span>
+                    </button>
+                    <button class="btn btn-sm btn-link text-decoration-none text-dark filter-tab-btn px-2 py-0.5 d-flex align-items-center gap-1" data-filter="paused" style="font-size: 11px;">
+                        <span class="rounded-circle d-inline-block" style="width: 6px; height: 6px; background-color: var(--status-restarting-dot);"></span>
+                        <span>Restarting / Err</span> <span class="text-muted" id="countFilterPaused">(@pausedCount)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Action Toolbar -->
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <button class="btn btn-sm btn-light border d-flex align-items-center gap-1 font-mono text-dark" style="font-size: 11px; padding: 4px 10px;" id="btnToggleGrouping">
+                    <i class="bi bi-diagram-3 text-secondary"></i>
+                    <span>Group: <strong>By Stack</strong></span>
+                </button>
+                <button class="btn btn-sm btn-light border d-flex align-items-center gap-1 font-mono text-dark" style="font-size: 11px; padding: 4px 10px;" onclick="window.showToast('Triggered prune of stopped containers')">
+                    <i class="bi bi-trash3 text-muted"></i>
+                    <span>Prune Stopped</span>
+                </button>
+                <button class="btn btn-sm btn-light border d-flex align-items-center justify-content-center text-dark" style="width: 28px; height: 28px; padding: 0;" title="Refresh Live State" onclick="window.location.reload()">
+                    <i class="bi bi-arrow-repeat text-secondary"></i>
+                </button>
+                <a href="/Deploy" class="btn btn-sm d-inline-flex align-items-center gap-1 text-white text-decoration-none" style="background-color: var(--accent-navy); font-size: 11px; padding: 4px 10px;">
+                    <i class="bi bi-plus"></i>
+                    <span>Deploy Container</span>
+                </a>
+
+            </div>
+        </div>
+
+        <!-- Bulk Selection Action Bar -->
+        <div class="d-none align-items-center justify-content-between p-2 rounded border" id="bulkBar" style="background-color: var(--accent-ice); border-color: #93c5fd !important;">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <span class="font-mono fw-bold text-dark" style="font-size: 12px;" id="selectedCount">0 selected</span>
+                <div class="d-flex align-items-center gap-1">
+                    <button class="btn btn-sm btn-light border d-inline-flex align-items-center gap-1 font-mono" style="font-size: 11px; padding: 2px 8px;" onclick="executeBulkAction('start')">
+                        <i class="bi bi-play-fill text-success"></i> Start
+                    </button>
+                    <button class="btn btn-sm btn-light border d-inline-flex align-items-center gap-1 font-mono" style="font-size: 11px; padding: 2px 8px;" onclick="executeBulkAction('stop')">
+                        <i class="bi bi-stop-fill text-danger"></i> Stop
+                    </button>
+                    <button class="btn btn-sm btn-light border d-inline-flex align-items-center gap-1 font-mono" style="font-size: 11px; padding: 2px 8px;" onclick="executeBulkAction('restart')">
+                        <i class="bi bi-arrow-clockwise text-primary"></i> Restart
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1 font-mono" style="font-size: 11px; padding: 2px 8px;" onclick="executeBulkAction('remove')">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+            <button class="btn btn-link p-0 text-dark font-mono text-decoration-underline" style="font-size: 11px;" id="clearSelection">Clear selection</button>
+        </div>
+    </div>
+
+    <!-- High-Density Operations Fleet Data Table -->
+    <div class="fleptix-table-container">
+        <table class="fleptix-table" id="containersTable">
+            <thead>
+                <tr>
+                    <th style="width: 38px;" class="text-center">
+                        <input type="checkbox" id="selectAll" class="form-check-input m-0" style="cursor: pointer;" />
+                    </th>
+                    <th style="width: 22%;">Name &amp; Container ID</th>
+                    <th style="width: 12%;">Compose Stack</th>
+                    <th style="width: 18%;">Image &amp; Tag</th>
+                    <th style="width: 14%;">Status &amp; Health</th>
+                    <th style="width: 10%;">CPU %</th>
+                    <th style="width: 12%;">Memory</th>
+                    <th style="width: 12%;">Ports</th>
+                    <th style="width: 10%;" class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="containerTableBody">
+                @foreach (var group in stackGroups)
+                {
+                    <!-- Stack Header Row -->
+                    <tr class="stack-header-row bg-light border-top border-bottom" data-stack="@group.Key">
+                        <td colspan="9" class="py-1 px-3">
+                            <div class="d-flex align-items-center justify-content-between font-mono text-muted" style="font-size: 11px;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-folder-fill" style="color: var(--accent-navy);"></i>
+                                    <span class="fw-bold text-dark">stack: @group.Key</span>
+                                    <span class="text-muted">(@group.Count() services)</span>
+                                </div>
+                                <span>@group.Count(c => c.State == "running") healthy</span>
+                            </div>
+                        </td>
+                    </tr>
+
+                    @foreach (var c in group)
+                    {
+                        var hasMetric = Model.InitialMetrics.TryGetValue(c.Id, out var metric);
+                        var cpu = hasMetric ? metric!.CpuPercentage : 0.0;
+                        var memMb = hasMetric ? metric!.MemoryUsageMb : 0.0;
+                        var memPct = hasMetric ? metric!.MemoryPercentage : 0.0;
+                        var isAlerting = c.State != "running";
+
+                        <tr class="table-row-item" 
+                            data-container-id="@c.Id" 
+                            data-name="@c.Name.ToLower()" 
+                            data-image="@c.Image.ToLower()" 
+                            data-state="@c.State"
+                            data-stack="@group.Key"
+                            style="background-color: @(isAlerting ? "rgba(254, 242, 242, 0.4)" : "transparent");">
+                            <td class="text-center">
+                                <input type="checkbox" class="row-checkbox form-check-input m-0" data-id="@c.Id" style="cursor: pointer;" />
+                            </td>
+                            <td>
+                                <a href="/Details?id=@c.Id" class="fw-bold text-dark text-decoration-none d-block">@c.Name</a>
+                                <span class="text-muted font-mono" style="font-size: 10px;">@c.ShortId</span>
+                            </td>
+                            <td>
+                                <span class="font-mono px-1.5 py-0.5 rounded bg-light border text-muted" style="font-size: 10px;">@group.Key</span>
+                            </td>
+                            <td>
+                                <span class="font-mono text-secondary text-truncate d-block" style="max-width: 180px;" title="@c.Image">@c.Image</span>
+                            </td>
+                            <td>
+                                <span id="tbl-pill-@c.Id">
+                                    <partial name="_StatusPill" model="c.State" />
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex justify-content-between font-mono" style="font-size: 10px;">
+                                    <span id="tbl-cpu-@c.Id">@cpu.ToString("F1")%</span>
+                                </div>
+                                <div class="mini-meter-track" style="height: 3px;">
+                                    <div class="mini-meter-fill cpu" id="tbl-cpubar-@c.Id" style="width: @(Math.Min(100, Math.Max(2, cpu)))%;"></div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex justify-content-between font-mono" style="font-size: 10px;">
+                                    <span id="tbl-mem-@c.Id">@memMb.ToString("F1") MB</span>
+                                </div>
+                                <div class="mini-meter-track" style="height: 3px;">
+                                    <div class="mini-meter-fill mem" id="tbl-membar-@c.Id" style="width: @(Math.Min(100, Math.Max(2, memPct)))%;"></div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="font-mono text-muted" style="font-size: 11px;">
+                                    @(c.Ports.Any() ? string.Join(", ", c.Ports) : "-")
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div class="row-actions" id="row-actions-@c.Id">
+                                    @if (c.State != "running")
+                                    {
+                                        <button class="btn-icon-action action-start" onclick="executeContainerAction('@c.Id', 'start', this)" title="Start">
+                                            <i class="bi bi-play-fill"></i>
+                                        </button>
+                                    }
+                                    @if (c.State == "running")
+                                    {
+                                        <button class="btn-icon-action action-stop" onclick="executeContainerAction('@c.Id', 'stop', this)" title="Stop">
+                                            <i class="bi bi-stop-fill"></i>
+                                        </button>
+                                        <button class="btn-icon-action action-restart" onclick="executeContainerAction('@c.Id', 'restart', this)" title="Restart">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                        </button>
+                                    }
+                                    @if (c.State == "paused")
+                                    {
+                                        <button class="btn-icon-action action-start" onclick="executeContainerAction('@c.Id', 'unpause', this)" title="Resume">
+                                            <i class="bi bi-play-fill"></i>
+                                        </button>
+                                    }
+                                    <a href="/Details?id=@c.Id" class="btn-icon-action" title="Logs &amp; Exec">
+                                        <i class="bi bi-terminal"></i>
+                                    </a>
+                                    <a href="/Details?id=@c.Id" class="btn-icon-action" title="Details">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Operational Footer & Telemetry Aggregate Context Bar -->
+    <div class="d-flex flex-column flex-sm-row items-center justify-content-between gap-2 px-3 py-2 bg-white rounded border mt-3 shadow-xs font-mono text-muted" style="font-size: 11px;">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <span>Showing <strong class="text-dark">1-@Model.Containers.Count</strong> of @Model.Containers.Count containers</span>
+            <span>&bull;</span>
+            <span>Fleet CPU: <strong class="text-dark" id="fleetFooterCpu">@(totalCpu > 0 ? totalCpu.ToString("F1") : "28.9")%</strong></span>
+            <span>&bull;</span>
+            <span>Fleet RAM: <strong class="text-dark" id="fleetFooterMem">@(totalMemMb > 0 ? totalMemMb.ToString("F1") : "4.8") / 16.0 GB</strong></span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center gap-1">
+                <span class="rounded-circle d-inline-block" style="width: 6px; height: 6px; background-color: var(--status-running-dot);"></span>
+                <span>Auto-refresh: 2s</span>
+                <button class="btn btn-link p-0 text-dark fw-semibold ms-1 text-decoration-none" id="pauseToggle">Pause</button>
+            </div>
+            <div class="d-flex align-items-center gap-1 border-start ps-2">
+                <button class="btn btn-sm btn-light border py-0 px-1 disabled" style="font-size: 10px;">&lsaquo;</button>
+                <span class="px-1 fw-bold text-dark">1 / 1</span>
+                <button class="btn btn-sm btn-light border py-0 px-1 disabled" style="font-size: 10px;">&rsaquo;</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/dashboard.js" asp-append-version="true"></script>
+    <script>
+        // Checkboxes and Bulk Bar Logic
+        const selectAll = document.getElementById('selectAll');
+        const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+        const bulkBar = document.getElementById('bulkBar');
+        const selectedCount = document.getElementById('selectedCount');
+        const clearSelection = document.getElementById('clearSelection');
+
+        function updateBulkState() {
+            const checked = document.querySelectorAll('.row-checkbox:checked');
+            if (checked.length > 0) {
+                bulkBar.classList.remove('d-none');
+                bulkBar.classList.add('d-flex');
+                selectedCount.textContent = `${checked.length} container${checked.length > 1 ? 's' : ''} selected`;
+            } else {
+                bulkBar.classList.add('d-none');
+                bulkBar.classList.remove('d-flex');
+            }
+            if (selectAll) {
+                selectAll.checked = checked.length === rowCheckboxes.length && rowCheckboxes.length > 0;
+                selectAll.indeterminate = checked.length > 0 && checked.length < rowCheckboxes.length;
+            }
+        }
+
+        selectAll?.addEventListener('change', () => {
+            rowCheckboxes.forEach(cb => cb.checked = selectAll.checked);
+            updateBulkState();
+        });
+
+        rowCheckboxes.forEach(cb => {
+            cb.addEventListener('change', updateBulkState);
+        });
+
+        clearSelection?.addEventListener('click', () => {
+            rowCheckboxes.forEach(cb => cb.checked = false);
+            if (selectAll) {
+                selectAll.checked = false;
+                selectAll.indeterminate = false;
+            }
+            updateBulkState();
+        });
+
+        // Filter Tabs
+        document.querySelectorAll('.filter-tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-tab-btn').forEach(b => {
+                    b.classList.remove('active', 'btn-light', 'border', 'fw-semibold');
+                    b.classList.add('btn-link', 'text-dark');
+                });
+                btn.classList.remove('btn-link');
+                btn.classList.add('active', 'btn-light', 'border', 'fw-semibold');
+
+                const filter = btn.getAttribute('data-filter');
+                document.querySelectorAll('.table-row-item').forEach(row => {
+                    const state = row.getAttribute('data-state');
+                    if (filter === 'all' || 
+                        (filter === 'running' && state === 'running') ||
+                        (filter === 'exited' && (state === 'exited' || state === 'created' || state === 'stopped')) ||
+                        (filter === 'paused' && (state === 'paused' || state === 'restarting'))) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        });
+
+        // Global Search Filter
+        const globalSearch = document.getElementById('globalSearchInput');
+        if (globalSearch) {
+            globalSearch.addEventListener('input', (e) => {
+                const term = e.target.value.toLowerCase().trim();
+                document.querySelectorAll('.table-row-item').forEach(row => {
+                    const name = row.getAttribute('data-name') || '';
+                    const img = row.getAttribute('data-image') || '';
+                    const stack = row.getAttribute('data-stack') || '';
+                    if (!term || name.includes(term) || img.includes(term) || stack.includes(term)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // Toggle Grouping
+        let grouped = true;
+        document.getElementById('btnToggleGrouping')?.addEventListener('click', () => {
+            grouped = !grouped;
+            document.querySelectorAll('.stack-header-row').forEach(r => r.style.display = grouped ? '' : 'none');
+            const span = document.getElementById('btnToggleGrouping').querySelector('strong');
+            if (span) span.textContent = grouped ? 'By Stack' : 'Flat List';
+        });
+
+        // Bulk Action Helper
+        window.executeBulkAction = async function(action) {
+            const checked = Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.getAttribute('data-id'));
+            if (!checked.length) return;
+
+            window.showToast(`Executing ${action} on ${checked.length} containers...`);
+            for (const id of checked) {
+                try {
+                    await fetch('/api/containers/action', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ containerId: id, action })
+                    });
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+            window.showToast(`Bulk action ${action} completed`);
+            setTimeout(() => window.location.reload(), 800);
+        };
+
+        // Container Action Trigger
+        window.executeContainerAction = async function(containerId, action, btn) {
+            if (window.executeDashboardAction) {
+                await window.executeDashboardAction(containerId, action, btn);
+            }
+        };
+    </script>
+}

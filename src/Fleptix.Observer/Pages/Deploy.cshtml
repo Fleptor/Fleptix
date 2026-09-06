@@ -1,0 +1,668 @@
+@page "/Deploy"
+@model Fleptix.Observer.Pages.DeployModel
+@{
+    ViewData["Title"] = "Deploy Container";
+}
+
+<div class="container-fluid p-0">
+    <!-- Operational Header & Preset Bar -->
+    <div class="bg-white p-3 rounded border mb-3 shadow-xs">
+        <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <div class="d-flex align-items-baseline gap-2">
+                    <h1 class="h6 fw-bold mb-0 text-dark" style="font-size: 16px;">Deploy Container</h1>
+                    <span class="font-mono text-muted px-2 py-0.5 rounded bg-light border" style="font-size: 11px;">
+                        @(Model.IsConnectedToDocker ? "Docker Engine (Native)" : "Simulated Demo Engine")
+                    </span>
+                </div>
+            </div>
+
+            <!-- Quick Template Presets -->
+            <div class="d-flex align-items-center gap-1 flex-wrap">
+                <span class="text-muted font-mono" style="font-size: 11px; margin-right: 4px;">Quick Presets:</span>
+                <button type="button" class="btn btn-sm btn-light border font-mono preset-btn" data-image="nginx:alpine" data-name="web-nginx" data-ports="80:80" data-env="" style="font-size: 11px; padding: 2px 8px;">
+                    nginx:alpine
+                </button>
+                <button type="button" class="btn btn-sm btn-light border font-mono preset-btn" data-image="redis:7.2-alpine" data-name="cache-redis" data-ports="6379:6379" data-env="" style="font-size: 11px; padding: 2px 8px;">
+                    redis:7.2
+                </button>
+                <button type="button" class="btn btn-sm btn-light border font-mono preset-btn" data-image="postgres:16-alpine" data-name="db-postgres" data-ports="5432:5432" data-env="POSTGRES_PASSWORD=postgres,POSTGRES_DB=fleptix" style="font-size: 11px; padding: 2px 8px;">
+                    postgres:16
+                </button>
+                <button type="button" class="btn btn-sm btn-light border font-mono preset-btn" data-image="node:20-alpine" data-name="node-app" data-ports="3000:3000" data-env="NODE_ENV=production" style="font-size: 11px; padding: 2px 8px;">
+                    node:20
+                </button>
+                <button type="button" class="btn btn-sm btn-light border font-mono preset-btn" data-image="rabbitmq:3-management" data-name="mq-rabbitmq" data-ports="5672:5672,15672:15672" data-env="" style="font-size: 11px; padding: 2px 8px;">
+                    rabbitmq:3
+                </button>
+                <button type="button" class="btn btn-sm btn-light border font-mono preset-btn" data-image="prom/prometheus:latest" data-name="prom-metrics" data-ports="9090:9090" data-env="" style="font-size: 11px; padding: 2px 8px;">
+                    prometheus
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Deployment Grid -->
+    <div class="row g-3">
+        <!-- Left: Configuration Form -->
+        <div class="col-12 col-xl-7">
+            <form id="deployForm" onsubmit="handleDeploy(event)">
+                <!-- Section 1: Image & Identity -->
+                <div class="bg-white p-3 rounded border mb-3 shadow-xs">
+                    <div class="d-flex align-items-center justify-content-between mb-2 border-bottom pb-2">
+                        <span class="fw-bold text-dark font-mono text-uppercase" style="font-size: 12px; letter-spacing: 0.5px;">
+                            <i class="bi bi-box me-1 text-primary"></i> Image &amp; Container Identity
+                        </span>
+                        <span class="text-muted font-mono" style="font-size: 11px;">Required *</span>
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-12 col-md-7">
+                            <label class="form-label font-mono text-muted mb-1" style="font-size: 11px;">
+                                Image Repository &amp; Tag <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" id="inputImage" name="Image" required class="form-control form-control-sm font-mono" placeholder="e.g. nginx:alpine, redis:7.2-alpine, ghcr.io/org/app:v1" style="font-size: 12px;" />
+                            <div class="form-text font-mono text-muted" style="font-size: 10px;">
+                                Pulled automatically from registry if not already present in local daemon cache.
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-5">
+                            <label class="form-label font-mono text-muted mb-1" style="font-size: 11px;">
+                                Container Name <span class="text-muted">(Optional)</span>
+                            </label>
+                            <input type="text" id="inputName" name="Name" class="form-control form-control-sm font-mono" placeholder="e.g. my-app-service" style="font-size: 12px;" />
+                            <div class="form-text font-mono text-muted" style="font-size: 10px;">
+                                Leave blank to generate automated engine name.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Port Bindings -->
+                <div class="bg-white p-3 rounded border mb-3 shadow-xs">
+                    <div class="d-flex align-items-center justify-content-between mb-2 border-bottom pb-2">
+                        <span class="fw-bold text-dark font-mono text-uppercase" style="font-size: 12px; letter-spacing: 0.5px;">
+                            <i class="bi bi-plug me-1 text-primary"></i> Port Mappings
+                        </span>
+                        <button type="button" class="btn btn-sm btn-light border font-mono" style="font-size: 11px; padding: 2px 8px;" onclick="addPortRow()">
+                            <i class="bi bi-plus-lg"></i> Add Port
+                        </button>
+                    </div>
+
+                    <div id="portsContainer" class="d-flex flex-column gap-2">
+                        <!-- Dynamic Port Row -->
+                        <div class="row g-2 align-items-center port-row">
+                            <div class="col-5">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text font-mono bg-light text-muted" style="font-size: 11px;">Host</span>
+                                    <input type="number" class="form-control form-control-sm font-mono port-host" placeholder="8080" style="font-size: 12px;" />
+                                </div>
+                            </div>
+                            <div class="col-1 text-center font-mono text-muted">&rarr;</div>
+                            <div class="col-4">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text font-mono bg-light text-muted" style="font-size: 11px;">Container</span>
+                                    <input type="number" class="form-control form-control-sm font-mono port-container" placeholder="80" style="font-size: 12px;" />
+                                </div>
+                            </div>
+                            <div class="col-2 d-flex align-items-center gap-1">
+                                <select class="form-select form-select-sm font-mono port-proto" style="font-size: 11px; padding: 3px 6px;">
+                                    <option value="tcp">TCP</option>
+                                    <option value="udp">UDP</option>
+                                </select>
+                                <button type="button" class="btn btn-sm btn-link text-danger p-0 ms-1" onclick="removeRow(this)" title="Remove port mapping">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Environment Variables -->
+                <div class="bg-white p-3 rounded border mb-3 shadow-xs">
+                    <div class="d-flex align-items-center justify-content-between mb-2 border-bottom pb-2">
+                        <span class="fw-bold text-dark font-mono text-uppercase" style="font-size: 12px; letter-spacing: 0.5px;">
+                            <i class="bi bi-key me-1 text-primary"></i> Environment Variables
+                        </span>
+                        <button type="button" class="btn btn-sm btn-light border font-mono" style="font-size: 11px; padding: 2px 8px;" onclick="addEnvRow()">
+                            <i class="bi bi-plus-lg"></i> Add Variable
+                        </button>
+                    </div>
+
+                    <div id="envContainer" class="d-flex flex-column gap-2">
+                        <!-- Dynamic Env Row -->
+                        <div class="row g-2 align-items-center env-row">
+                            <div class="col-5">
+                                <input type="text" class="form-control form-control-sm font-mono env-key" placeholder="KEY (e.g. NODE_ENV)" style="font-size: 12px;" />
+                            </div>
+                            <div class="col-1 text-center font-mono text-muted">=</div>
+                            <div class="col-5">
+                                <input type="text" class="form-control form-control-sm font-mono env-val" placeholder="VALUE (e.g. production)" style="font-size: 12px;" />
+                            </div>
+                            <div class="col-1 text-end">
+                                <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="removeRow(this)" title="Remove variable">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 4: Volumes & Storage Binds -->
+                <div class="bg-white p-3 rounded border mb-3 shadow-xs">
+                    <div class="d-flex align-items-center justify-content-between mb-2 border-bottom pb-2">
+                        <span class="fw-bold text-dark font-mono text-uppercase" style="font-size: 12px; letter-spacing: 0.5px;">
+                            <i class="bi bi-hdd me-1 text-primary"></i> Volume Mounts &amp; Bindings
+                        </span>
+                        <button type="button" class="btn btn-sm btn-light border font-mono" style="font-size: 11px; padding: 2px 8px;" onclick="addVolumeRow()">
+                            <i class="bi bi-plus-lg"></i> Add Volume
+                        </button>
+                    </div>
+
+                    <div id="volumeContainer" class="d-flex flex-column gap-2">
+                        <!-- Dynamic Volume Row -->
+                        <div class="row g-2 align-items-center volume-row">
+                            <div class="col-5">
+                                <input type="text" class="form-control form-control-sm font-mono vol-source" placeholder="Host Path / Named Volume" style="font-size: 12px;" />
+                            </div>
+                            <div class="col-1 text-center font-mono text-muted">&rarr;</div>
+                            <div class="col-4">
+                                <input type="text" class="form-control form-control-sm font-mono vol-target" placeholder="Container Path (e.g. /data)" style="font-size: 12px;" />
+                            </div>
+                            <div class="col-2 d-flex align-items-center gap-1">
+                                <select class="form-select form-select-sm font-mono vol-mode" style="font-size: 11px; padding: 3px 6px;">
+                                    <option value="rw">RW</option>
+                                    <option value="ro">RO</option>
+                                </select>
+                                <button type="button" class="btn btn-sm btn-link text-danger p-0 ms-1" onclick="removeRow(this)" title="Remove volume mount">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 5: Advanced Execution, Policies & Limits -->
+                <div class="bg-white p-3 rounded border mb-3 shadow-xs">
+                    <div class="d-flex align-items-center justify-content-between mb-2 border-bottom pb-2">
+                        <span class="fw-bold text-dark font-mono text-uppercase" style="font-size: 12px; letter-spacing: 0.5px;">
+                            <i class="bi bi-sliders me-1 text-primary"></i> Runtime Configuration &amp; Policies
+                        </span>
+                    </div>
+
+                    <div class="row g-2 mb-2">
+                        <div class="col-12 col-md-4">
+                            <label class="form-label font-mono text-muted mb-1" style="font-size: 11px;">Restart Policy</label>
+                            <select id="inputRestartPolicy" class="form-select form-select-sm font-mono" style="font-size: 12px;">
+                                <option value="unless-stopped" selected>unless-stopped (Default)</option>
+                                <option value="always">always</option>
+                                <option value="on-failure">on-failure (5 retries)</option>
+                                <option value="no">no (do not restart)</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label font-mono text-muted mb-1" style="font-size: 11px;">Network Mode</label>
+                            <input type="text" id="inputNetworkMode" class="form-control form-control-sm font-mono" placeholder="bridge" value="bridge" style="font-size: 12px;" />
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label font-mono text-muted mb-1" style="font-size: 11px;">Memory Limit (MB)</label>
+                            <input type="number" id="inputMemoryLimit" class="form-control form-control-sm font-mono" placeholder="0 (unlimited)" style="font-size: 12px;" />
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-2">
+                        <div class="col-12 col-md-8">
+                            <label class="form-label font-mono text-muted mb-1" style="font-size: 11px;">Command / Entrypoint Override</label>
+                            <input type="text" id="inputCommand" class="form-control form-control-sm font-mono" placeholder="e.g. /entrypoint.sh --daemon" style="font-size: 12px;" />
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label font-mono text-muted mb-1" style="font-size: 11px;">Working Directory</label>
+                            <input type="text" id="inputWorkingDir" class="form-control form-control-sm font-mono" placeholder="/app" style="font-size: 12px;" />
+                        </div>
+                    </div>
+
+                    <div class="form-check form-switch mt-2">
+                        <input class="form-check-input" type="checkbox" id="checkAutoStart" checked />
+                        <label class="form-check-label font-mono text-dark" for="checkAutoStart" style="font-size: 12px;">
+                            Start container immediately after deployment
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Submit Button Bar -->
+                <div class="d-flex align-items-center justify-content-between gap-3">
+                    <a href="/Containers" class="btn btn-sm btn-light border font-mono text-dark" style="font-size: 12px; padding: 6px 14px;">
+                        <i class="bi bi-arrow-left"></i> Back to Fleet
+                    </a>
+                    <button type="submit" id="btnDeploySubmit" class="btn btn-sm d-inline-flex align-items-center gap-2 text-white font-mono fw-semibold" style="background-color: var(--accent-navy); font-size: 12px; padding: 6px 18px;">
+                        <i class="bi bi-rocket-takeoff"></i>
+                        <span id="deployBtnText">Deploy Container</span>
+                        <span id="deploySpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Right: Deployment Progress & Terminal Output -->
+        <div class="col-12 col-xl-5">
+            <!-- Stage Status Card -->
+            <div class="bg-white p-3 rounded border mb-3 shadow-xs">
+                <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                    <span class="fw-bold text-dark font-mono text-uppercase" style="font-size: 12px; letter-spacing: 0.5px;">
+                        <i class="bi bi-cpu me-1 text-primary"></i> Deployment Pipeline
+                    </span>
+                    <span id="pipelineStatusBadge" class="status-pill stopped">
+                        <span class="pill-dot"></span> Ready
+                    </span>
+                </div>
+
+                <!-- Stage Checklist -->
+                <div class="d-flex flex-column gap-2 font-mono" style="font-size: 11px;">
+                    <div class="d-flex align-items-center justify-content-between p-2 rounded bg-light border stage-item" id="stage1">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-circle text-muted stage-icon" id="stage1Icon"></i>
+                            <span class="text-dark">1. Pull Image Layers</span>
+                        </div>
+                        <span class="text-muted stage-status" id="stage1Status">Pending</span>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between p-2 rounded bg-light border stage-item" id="stage2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-circle text-muted stage-icon" id="stage2Icon"></i>
+                            <span class="text-dark">2. Create Container Configuration</span>
+                        </div>
+                        <span class="text-muted stage-status" id="stage2Status">Pending</span>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between p-2 rounded bg-light border stage-item" id="stage3">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-circle text-muted stage-icon" id="stage3Icon"></i>
+                            <span class="text-dark">3. Bind Network &amp; Storage</span>
+                        </div>
+                        <span class="text-muted stage-status" id="stage3Status">Pending</span>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-between p-2 rounded bg-light border stage-item" id="stage4">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-circle text-muted stage-icon" id="stage4Icon"></i>
+                            <span class="text-dark">4. Start &amp; Health Verify</span>
+                        </div>
+                        <span class="text-muted stage-status" id="stage4Status">Pending</span>
+                    </div>
+                </div>
+
+                <!-- Deployment Success Actions (Initially hidden) -->
+                <div id="deploySuccessActions" class="mt-3 pt-3 border-top d-none">
+                    <div class="alert alert-success d-flex align-items-center gap-2 p-2 mb-2 font-mono" style="font-size: 11px;">
+                        <i class="bi bi-check-circle-fill text-success"></i>
+                        <span id="successMessageText">Deployment completed successfully.</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <a id="btnViewDetails" href="/Containers" class="btn btn-sm text-white font-mono d-inline-flex align-items-center gap-1" style="background-color: var(--accent-navy); font-size: 11px; padding: 4px 10px;">
+                            <i class="bi bi-box-arrow-up-right"></i> View Details
+                        </a>
+                        <a href="/Containers" class="btn btn-sm btn-light border font-mono text-dark d-inline-flex align-items-center gap-1" style="font-size: 11px; padding: 4px 10px;">
+                            <i class="bi bi-layers"></i> Containers Fleet
+                        </a>
+                        <button type="button" class="btn btn-sm btn-outline-secondary font-mono" style="font-size: 11px; padding: 4px 10px;" onclick="resetDeployForm()">
+                            <i class="bi bi-arrow-repeat"></i> Deploy Another
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Terminal Console -->
+            <div class="bg-white p-3 rounded border shadow-xs">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="fw-bold text-dark font-mono text-uppercase" style="font-size: 12px; letter-spacing: 0.5px;">
+                        <i class="bi bi-terminal me-1 text-primary"></i> Deployment Stream Log
+                    </span>
+                    <button type="button" class="btn btn-sm btn-link text-muted font-mono p-0" style="font-size: 11px;" onclick="clearDeployLogs()">
+                        Clear
+                    </button>
+                </div>
+                <div class="dense-terminal" id="deployLogTerminal" style="height: 320px;">
+                    <div class="log-line info">[00:00:00] Deployment terminal initialized. Awaiting image specification...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Presets handler
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const image = btn.dataset.image;
+            const name = btn.dataset.name;
+            const ports = btn.dataset.ports;
+            const env = btn.dataset.env;
+
+            document.getElementById('inputImage').value = image;
+            document.getElementById('inputName').value = name;
+
+            // Clear and set ports
+            const portsContainer = document.getElementById('portsContainer');
+            portsContainer.innerHTML = '';
+            if (ports) {
+                ports.split(',').forEach(p => {
+                    const parts = p.split(':');
+                    if (parts.length === 2) {
+                        addPortRow(parts[0], parts[1]);
+                    }
+                });
+            } else {
+                addPortRow();
+            }
+
+            // Clear and set env
+            const envContainer = document.getElementById('envContainer');
+            envContainer.innerHTML = '';
+            if (env) {
+                env.split(',').forEach(e => {
+                    const kv = e.split('=');
+                    if (kv.length === 2) {
+                        addEnvRow(kv[0], kv[1]);
+                    }
+                });
+            } else {
+                addEnvRow();
+            }
+
+            appendLog(`[info] Applied preset template for '${image}'.`);
+        });
+    });
+
+    function addPortRow(host = '', container = '', proto = 'tcp') {
+        const containerEl = document.getElementById('portsContainer');
+        const div = document.createElement('div');
+        div.className = 'row g-2 align-items-center port-row';
+        div.innerHTML = `
+            <div class="col-5">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text font-mono bg-light text-muted" style="font-size: 11px;">Host</span>
+                    <input type="number" class="form-control form-control-sm font-mono port-host" value="${host}" placeholder="8080" style="font-size: 12px;" />
+                </div>
+            </div>
+            <div class="col-1 text-center font-mono text-muted">&rarr;</div>
+            <div class="col-4">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text font-mono bg-light text-muted" style="font-size: 11px;">Container</span>
+                    <input type="number" class="form-control form-control-sm font-mono port-container" value="${container}" placeholder="80" style="font-size: 12px;" />
+                </div>
+            </div>
+            <div class="col-2 d-flex align-items-center gap-1">
+                <select class="form-select form-select-sm font-mono port-proto" style="font-size: 11px; padding: 3px 6px;">
+                    <option value="tcp" ${proto === 'tcp' ? 'selected' : ''}>TCP</option>
+                    <option value="udp" ${proto === 'udp' ? 'selected' : ''}>UDP</option>
+                </select>
+                <button type="button" class="btn btn-sm btn-link text-danger p-0 ms-1" onclick="removeRow(this)" title="Remove port mapping">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        `;
+        containerEl.appendChild(div);
+    }
+
+    function addEnvRow(key = '', val = '') {
+        const containerEl = document.getElementById('envContainer');
+        const div = document.createElement('div');
+        div.className = 'row g-2 align-items-center env-row';
+        div.innerHTML = `
+            <div class="col-5">
+                <input type="text" class="form-control form-control-sm font-mono env-key" value="${key}" placeholder="KEY" style="font-size: 12px;" />
+            </div>
+            <div class="col-1 text-center font-mono text-muted">=</div>
+            <div class="col-5">
+                <input type="text" class="form-control form-control-sm font-mono env-val" value="${val}" placeholder="VALUE" style="font-size: 12px;" />
+            </div>
+            <div class="col-1 text-end">
+                <button type="button" class="btn btn-sm btn-link text-danger p-0" onclick="removeRow(this)" title="Remove variable">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        `;
+        containerEl.appendChild(div);
+    }
+
+    function addVolumeRow(source = '', target = '', mode = 'rw') {
+        const containerEl = document.getElementById('volumeContainer');
+        const div = document.createElement('div');
+        div.className = 'row g-2 align-items-center volume-row';
+        div.innerHTML = `
+            <div class="col-5">
+                <input type="text" class="form-control form-control-sm font-mono vol-source" value="${source}" placeholder="Host Path / Named Volume" style="font-size: 12px;" />
+            </div>
+            <div class="col-1 text-center font-mono text-muted">&rarr;</div>
+            <div class="col-4">
+                <input type="text" class="form-control form-control-sm font-mono vol-target" value="${target}" placeholder="Container Path (e.g. /data)" style="font-size: 12px;" />
+            </div>
+            <div class="col-2 d-flex align-items-center gap-1">
+                <select class="form-select form-select-sm font-mono vol-mode" style="font-size: 11px; padding: 3px 6px;">
+                    <option value="rw" ${mode === 'rw' ? 'selected' : ''}>RW</option>
+                    <option value="ro" ${mode === 'ro' ? 'selected' : ''}>RO</option>
+                </select>
+                <button type="button" class="btn btn-sm btn-link text-danger p-0 ms-1" onclick="removeRow(this)" title="Remove volume mount">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        `;
+        containerEl.appendChild(div);
+    }
+
+    function removeRow(btn) {
+        btn.closest('.row').remove();
+    }
+
+    function appendLog(line, type = 'info') {
+        const terminal = document.getElementById('deployLogTerminal');
+        const div = document.createElement('div');
+        div.className = `log-line ${type}`;
+        div.textContent = line;
+        terminal.appendChild(div);
+        terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    function clearDeployLogs() {
+        document.getElementById('deployLogTerminal').innerHTML = '';
+    }
+
+    function updateStage(num, status, isError = false) {
+        const stageEl = document.getElementById(`stage${num}`);
+        const iconEl = document.getElementById(`stage${num}Icon`);
+        const statusEl = document.getElementById(`stage${num}Status`);
+        if (!stageEl || !iconEl || !statusEl) return;
+
+        statusEl.textContent = status;
+        if (status === 'In Progress') {
+            iconEl.className = 'spinner-border spinner-border-sm text-primary stage-icon';
+            statusEl.className = 'text-primary fw-semibold stage-status';
+        } else if (status === 'Done') {
+            iconEl.className = 'bi bi-check-circle-fill text-success stage-icon';
+            statusEl.className = 'text-success fw-semibold stage-status';
+        } else if (isError || status === 'Failed') {
+            iconEl.className = 'bi bi-x-circle-fill text-danger stage-icon';
+            statusEl.className = 'text-danger fw-semibold stage-status';
+        } else {
+            iconEl.className = 'bi bi-circle text-muted stage-icon';
+            statusEl.className = 'text-muted stage-status';
+        }
+    }
+
+    async function handleDeploy(event) {
+        event.preventDefault();
+
+        const image = document.getElementById('inputImage').value.trim();
+        if (!image) {
+            window.showToast('Please specify an image repository and tag.', true);
+            return;
+        }
+
+        const name = document.getElementById('inputName').value.trim();
+        const restartPolicy = document.getElementById('inputRestartPolicy').value;
+        const networkMode = document.getElementById('inputNetworkMode').value.trim();
+        const memoryLimit = parseInt(document.getElementById('inputMemoryLimit').value) || 0;
+        const command = document.getElementById('inputCommand').value.trim();
+        const workingDir = document.getElementById('inputWorkingDir').value.trim();
+        const autoStart = document.getElementById('checkAutoStart').checked;
+
+        // Collect Ports
+        const portMappings = [];
+        document.querySelectorAll('.port-row').forEach(row => {
+            const host = row.querySelector('.port-host').value.trim();
+            const container = row.querySelector('.port-container').value.trim();
+            const proto = row.querySelector('.port-proto').value;
+            if (container) {
+                portMappings.push(host ? `${host}:${container}/${proto}` : `${container}/${proto}`);
+            }
+        });
+
+        // Collect Env
+        const envVars = {};
+        document.querySelectorAll('.env-row').forEach(row => {
+            const key = row.querySelector('.env-key').value.trim();
+            const val = row.querySelector('.env-val').value.trim();
+            if (key) {
+                envVars[key] = val;
+            }
+        });
+
+        // Collect Volumes
+        const volumeMounts = [];
+        document.querySelectorAll('.volume-row').forEach(row => {
+            const src = row.querySelector('.vol-source').value.trim();
+            const tgt = row.querySelector('.vol-target').value.trim();
+            const mode = row.querySelector('.vol-mode').value;
+            if (src && tgt) {
+                volumeMounts.push(`${src}:${tgt}:${mode}`);
+            }
+        });
+
+        const payload = {
+            image,
+            name: name || null,
+            portMappings,
+            environmentVariables: envVars,
+            volumeMounts,
+            restartPolicy,
+            networkMode: networkMode || "bridge",
+            memoryLimitMb: memoryLimit,
+            command: command || null,
+            workingDir: workingDir || null,
+            autoStart
+        };
+
+        // UI State: Active Deploying
+        const btn = document.getElementById('btnDeploySubmit');
+        const btnText = document.getElementById('deployBtnText');
+        const spinner = document.getElementById('deploySpinner');
+        const badge = document.getElementById('pipelineStatusBadge');
+        const successActions = document.getElementById('deploySuccessActions');
+
+        btn.disabled = true;
+        btnText.textContent = 'Deploying...';
+        spinner.classList.remove('d-none');
+        badge.className = 'status-pill restarting';
+        badge.innerHTML = '<span class="pill-dot"></span> Deploying';
+        successActions.classList.add('d-none');
+
+        // Reset stages
+        updateStage(1, 'In Progress');
+        updateStage(2, 'Pending');
+        updateStage(3, 'Pending');
+        updateStage(4, 'Pending');
+
+        clearDeployLogs();
+        const now = new Date().toTimeString().split(' ')[0];
+        appendLog(`[${now}] Dispatching deployment request for image '${image}'...`);
+
+        try {
+            // Stage 1 animation
+            setTimeout(() => {
+                updateStage(1, 'Done');
+                updateStage(2, 'In Progress');
+            }, 600);
+
+            setTimeout(() => {
+                updateStage(2, 'Done');
+                updateStage(3, 'In Progress');
+            }, 1200);
+
+            const res = await fetch('/api/containers/deploy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await res.json();
+
+            if (res.ok && result.success) {
+                updateStage(3, 'Done');
+                updateStage(4, 'Done');
+
+                badge.className = 'status-pill running';
+                badge.innerHTML = '<span class="pill-dot"></span> Success';
+
+                if (result.logs && Array.isArray(result.logs)) {
+                    result.logs.forEach(l => appendLog(l, l.includes('ERR') ? 'error' : l.includes('STEP') ? 'info' : 'log-line'));
+                }
+
+                appendLog(`[${new Date().toTimeString().split(' ')[0]}] Deployment completed: Container ID ${result.containerId?.substring(0, 12) || 'active'}.`, 'info');
+                window.showToast(`Container '${result.containerName}' deployed successfully!`);
+
+                document.getElementById('successMessageText').textContent = `Container '${result.containerName}' is now active (ID: ${result.containerId?.substring(0, 12)}).`;
+                document.getElementById('btnViewDetails').href = `/Details?id=${encodeURIComponent(result.containerId)}`;
+                successActions.classList.remove('d-none');
+            } else {
+                updateStage(1, 'Failed', true);
+                updateStage(2, 'Failed', true);
+                updateStage(3, 'Failed', true);
+                updateStage(4, 'Failed', true);
+
+                badge.className = 'status-pill stopped';
+                badge.innerHTML = '<span class="pill-dot"></span> Failed';
+
+                if (result.logs && Array.isArray(result.logs)) {
+                    result.logs.forEach(l => appendLog(l, 'error'));
+                }
+                appendLog(`[ERROR] ${result.message || 'Deployment failed.'}`, 'error');
+                window.showToast(result.message || 'Deployment failed', true);
+            }
+        } catch (err) {
+            updateStage(1, 'Failed', true);
+            badge.className = 'status-pill stopped';
+            badge.innerHTML = '<span class="pill-dot"></span> Network Error';
+            appendLog(`[FATAL] Network error contacting Observer daemon: ${err.message}`, 'error');
+            window.showToast('Network error during deployment', true);
+        } finally {
+            btn.disabled = false;
+            btnText.textContent = 'Deploy Container';
+            spinner.classList.add('d-none');
+        }
+    }
+
+    function resetDeployForm() {
+        document.getElementById('deployForm').reset();
+        document.getElementById('portsContainer').innerHTML = '';
+        document.getElementById('envContainer').innerHTML = '';
+        document.getElementById('volumeContainer').innerHTML = '';
+        addPortRow();
+        addEnvRow();
+        addVolumeRow();
+
+        document.getElementById('deploySuccessActions').classList.add('d-none');
+        updateStage(1, 'Pending');
+        updateStage(2, 'Pending');
+        updateStage(3, 'Pending');
+        updateStage(4, 'Pending');
+
+        const badge = document.getElementById('pipelineStatusBadge');
+        badge.className = 'status-pill stopped';
+        badge.innerHTML = '<span class="pill-dot"></span> Ready';
+
+        clearDeployLogs();
+        appendLog('[00:00:00] Form reset. Ready for new container deployment.');
+    }
+</script>
+}

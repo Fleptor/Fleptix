@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fleptix — Container Telemetry & Time-Travel Debugging</title>
+  <meta name="description" content="Fleptix provides real-time container telemetry and deterministic state rewind for Docker fleets. Stop guessing why containers crash." />
+  
+  <!-- Favicon & Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Ambient Atmospheric Lighting -->
+  <div class="bg-glow-orb orb-1"></div>
+  <div class="bg-glow-orb orb-2"></div>
+  <div class="bg-glow-orb orb-3"></div>
+
+  <!-- Persistent Navigation Header -->
+  <header class="navbar">
+    <div class="container">
+      <a href="#" class="brand-group" id="navBrand">
+        <div class="brand-icon">
+          <i class="bi bi-layers-fill"></i>
+        </div>
+        <span class="brand-title">Fleptix</span>
+        <span class="brand-badge">v2.4</span>
+      </a>
+
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="#overview" class="nav-link">Overview</a></li>
+          <li><a href="#install" class="nav-link">Quick Install</a></li>
+          <li><a href="#comparison" class="nav-link">Observer vs. Time Machine</a></li>
+          <li><a href="https://docs.fleptix.dev" target="_blank" rel="noopener" class="nav-link" id="navDocsLink"><i class="bi bi-book me-1"></i>Docs</a></li>
+          <li><a href="https://github.com/fleptix/fleptix" target="_blank" rel="noopener" class="nav-link" id="navGithubLink"><i class="bi bi-github me-1"></i>GitHub</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="#install" class="btn btn-secondary btn-sm" id="btnNavInstall">Install Free</a>
+        <a href="#get-time-machine" class="btn btn-ice btn-sm" id="btnNavGetTimeMachine">
+          <span>Get Time Machine</span>
+          <i class="bi bi-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section (One-Line Problem / Solution) -->
+  <section class="hero" id="overview">
+    <div class="container">
+      <div class="hero-pill">
+        <span class="pulse-dot"></span>
+        <span>Operational Container Intelligence &amp; Time-Travel Debugging</span>
+      </div>
+
+      <!-- One-line problem/solution hero -->
+      <h1 class="hero-title">
+        Stop guessing why containers crash. <br />
+        <span class="highlight">Observe real-time telemetry and rewind daemon state instantly.</span>
+      </h1>
+
+      <p class="hero-subtitle">
+        Fleptix is a high-density, zero-overhead Docker observability tool and deterministic container state time-travel engine for DevOps engineers, sysadmins, and homelab builders.
+      </p>
+
+      <div class="hero-cta-group">
+        <a href="#install" class="btn btn-primary btn-lg" id="btnHeroInstall">
+          <i class="bi bi-terminal-fill"></i>
+          <span>Install Observer Free</span>
+        </a>
+        <a href="#get-time-machine" class="btn btn-ice btn-lg" id="btnHeroTimeMachine">
+          <i class="bi bi-clock-history"></i>
+          <span>Get Time Machine</span>
+        </a>
+        <a href="https://github.com/fleptix/fleptix" target="_blank" rel="noopener" class="btn btn-secondary btn-lg" id="btnHeroGitHub">
+          <i class="bi bi-github"></i>
+          <span>View on GitHub</span>
+        </a>
+      </div>
+
+      <!-- Live Mockup / UI Telemetry Preview -->
+      <div class="hero-preview">
+        <div class="preview-bar">
+          <div class="window-dots">
+            <span class="dot dot-red"></span>
+            <span class="dot dot-yellow"></span>
+            <span class="dot dot-green"></span>
+          </div>
+          <span class="preview-title">fleptix-observer &mdash; docker.sock [homelab-srv-01]</span>
+          <div class="preview-status">
+            <span class="pulse-dot"></span>
+            <span>SignalR Telemetry Live (1.2s tick)</span>
+          </div>
+        </div>
+
+        <div class="preview-body">
+          <!-- Top Telemetry Row -->
+          <div class="telemetry-row">
+            <div class="mini-stat-card">
+              <div class="stat-label">Host CPU (8 Cores)</div>
+              <div class="stat-val">28.9%</div>
+              <div class="stat-sub">Load Avg: 1.42</div>
+            </div>
+            <div class="mini-stat-card">
+              <div class="stat-label">Host Memory (RAM)</div>
+              <div class="stat-val">4.8 / 16.0 GB</div>
+              <div class="stat-sub">30.0% Allocation</div>
+            </div>
+            <div class="mini-stat-card">
+              <div class="stat-label">Docker Root (NVMe)</div>
+              <div class="stat-val">142 / 500 GB</div>
+              <div class="stat-sub">overlay2: 89G &bull; vol: 53G</div>
+            </div>
+            <div class="mini-stat-card">
+              <div class="stat-label">Network Throughput</div>
+              <div class="stat-val">12.4 MB/s</div>
+              <div class="stat-sub">RX: 12.4M &bull; TX: 4.2M</div>
+            </div>
+          </div>
+
+          <!-- Mini Workloads Table -->
+          <table class="preview-table">
+            <thead>
+              <tr>
+                <th>Container</th>
+                <th>Stack</th>
+                <th>Status</th>
+                <th>CPU %</th>
+                <th>Memory</th>
+                <th>Published Ports</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong style="color: #ffffff;">immich-machine-learning</strong><br><span style="color: #64748b; font-size: 10px;">54ef028da3bb</span></td>
+                <td><span style="color: #CADCFC;">media-suite</span></td>
+                <td><span class="pill pill-alert"><span class="pulse-dot" style="background-color: #ef4444;"></span>Restarting (Exit 137)</span></td>
+                <td><span style="color: #f87171;">18.2%</span></td>
+                <td>1.98 / 2.00 GB</td>
+                <td>3003:3003/tcp</td>
+              </tr>
+              <tr>
+                <td><strong style="color: #ffffff;">traefik-edge</strong><br><span style="color: #64748b; font-size: 10px;">9ef48a10c7d2</span></td>
+                <td><span style="color: #CADCFC;">core-infra</span></td>
+                <td><span class="pill pill-running"><span class="pulse-dot"></span>Running (Healthy)</span></td>
+                <td>0.4%</td>
+                <td>48 MB / 1.0 GB</td>
+                <td>0.0.0.0:80, 443</td>
+              </tr>
+              <tr>
+                <td><strong style="color: #ffffff;">pgsql-primary</strong><br><span style="color: #64748b; font-size: 10px;">1a0bc5e839f1</span></td>
+                <td><span style="color: #CADCFC;">core-infra</span></td>
+                <td><span class="pill pill-running"><span class="pulse-dot"></span>Healthy</span></td>
+                <td>2.1%</td>
+                <td>412 MB / 8.0 GB</td>
+                <td>0.0.0.0:5432</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Install Section (Copy-Paste Docker Command) -->
+  <section class="section" id="install">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Quickstart Deployment</span>
+        <h2 class="section-title">Up and Running in 5 Seconds</h2>
+        <p class="section-subtitle">
+          Fleptix Observer runs as a single, lightweight container connected to your local Docker socket with zero configuration required.
+        </p>
+      </div>
+
+      <div class="install-wrapper">
+        <div class="install-card">
+          <div class="install-tabs">
+            <div class="tab-buttons">
+              <button class="install-tab-btn active" data-tab="dockerrun" id="tabBtnDockerRun">
+                <i class="bi bi-terminal me-1"></i> docker run
+              </button>
+              <button class="install-tab-btn" data-tab="compose" id="tabBtnCompose">
+                <i class="bi bi-file-earmark-code me-1"></i> docker-compose.yml
+              </button>
+            </div>
+
+            <button class="copy-btn" id="copyInstallBtn" title="Copy command to clipboard">
+              <i class="bi bi-clipboard"></i>
+              <span>Copy Command</span>
+            </button>
+          </div>
+
+          <div class="code-block">
+            <pre><code id="installCodeBlock"></code></pre>
+          </div>
+
+          <div class="install-meta">
+            <div class="meta-items">
+              <div class="meta-item">
+                <i class="bi bi-shield-check text-success"></i>
+                <span>Read-only socket mount (:ro)</span>
+              </div>
+              <div class="meta-item">
+                <i class="bi bi-speedometer text-info"></i>
+                <span>&lt; 35MB RAM footprint</span>
+              </div>
+            </div>
+            <span>Access at: <strong style="color: var(--color-ice);">http://localhost:5000</strong></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Feature Comparison Table: Observer vs. Time Machine -->
+  <section class="section comparison-section" id="comparison">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Feature Matrix</span>
+        <h2 class="section-title">Fleptix Observer vs. Time Machine</h2>
+        <p class="section-subtitle">
+          Start with real-time operational telemetry for free, or unlock continuous state recording, deterministic snapshots, and instant incident rollback with Time Machine.
+        </p>
+      </div>
+
+      <div class="comparison-wrapper">
+        <div class="comparison-table-card">
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th class="col-feature">Capability / Feature</th>
+                <th class="col-observer">
+                  <div class="plan-header">
+                    <span class="plan-title">Fleptix Observer</span>
+                    <span class="plan-badge badge-observer">Free &amp; Open Source</span>
+                  </div>
+                </th>
+                <th class="col-timemachine">
+                  <div class="plan-header">
+                    <span class="plan-title">Fleptix Time Machine</span>
+                    <span class="plan-badge badge-timemachine">PRO &amp; ENTERPRISE</span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Row 1 -->
+              <tr>
+                <td>
+                  <span class="feature-title">Real-Time Container Fleet Telemetry</span>
+                  <span class="feature-desc">Live sub-second CPU, memory, network I/O, and disk telemetry metrics.</span>
+                </td>
+                <td class="col-observer">
+                  <span class="icon-check"><i class="bi bi-check-circle-fill"></i> Included</span>
+                </td>
+                <td class="col-timemachine">
+                  <span class="icon-check"><i class="bi bi-check-circle-fill"></i> Included</span>
+                </td>
+              </tr>
+
+              <!-- Row 2 -->
+              <tr>
+                <td>
+                  <span class="feature-title">Live Docker Socket Event Bus</span>
+                  <span class="feature-desc">Instant SignalR broadcast for container dies, healthchecks, execs, and status shifts.</span>
+                </td>
+                <td class="col-observer">
+                  <span class="icon-check"><i class="bi bi-check-circle-fill"></i> Included</span>
+                </td>
+                <td class="col-timemachine">
+                  <span class="icon-check"><i class="bi bi-check-circle-fill"></i> Included</span>
+                </td>
+              </tr>
+
+              <!-- Row 3 -->
+              <tr>
+                <td>
+                  <span class="feature-title">CrashLoop &amp; OOM Exit Code Diagnostics</span>
+                  <span class="feature-desc">Inline crash warnings (Exit 137, Exit 1), stack traces, and grep-capable tail buffer.</span>
+                </td>
+                <td class="col-observer">
+                  <span class="icon-check"><i class="bi bi-check-circle-fill"></i> Real-time Buffer</span>
+                </td>
+                <td class="col-timemachine">
+                  <span class="icon-check"><i class="bi bi-check-circle-fill"></i> Full Historical Buffer</span>
+                </td>
+              </tr>
+
+              <!-- Row 4 -->
+              <tr>
+                <td>
+                  <span class="feature-title">Compose Stacks &amp; Service Grouping</span>
+                  <span class="feature-desc">Automatic categorization of containers into compose stacks with aggregate health.</span>
+                </td>
+                <td class="col-observer">
+                  <span class="icon-check"><i class="bi bi-check-circle-fill"></i> Included</span>
+                </td>
+                <td class="col-timemachine">
+                  <span class="icon-check"><i class="bi bi-check-circle-fill"></i> Included</span>
+                </td>
+              </tr>
+
+              <!-- Row 5 -->
+              <tr>
+                <td>
+                  <span class="feature-title">Continuous Container State Snapshots</span>
+                  <span class="feature-desc">Background delta capture of container filesystem, mounts, configs, and environment diffs.</span>
+                </td>
+                <td class="col-observer">
+                  <span class="icon-cross"><i class="bi bi-dash-circle"></i> &mdash;</span>
+                </td>
+                <td class="col-timemachine">
+                  <span class="text-pro"><i class="bi bi-check-circle-fill text-success me-1"></i>Sub-second Delta Snapshots</span>
+                </td>
+              </tr>
+
+              <!-- Row 6 -->
+              <tr>
+                <td>
+                  <span class="feature-title">Historical Time-Travel &amp; State Rewind</span>
+                  <span class="feature-desc">Step backward minute-by-minute to any historical point in time before a crash occurred.</span>
+                </td>
+                <td class="col-observer">
+                  <span class="icon-cross"><i class="bi bi-dash-circle"></i> &mdash;</span>
+                </td>
+                <td class="col-timemachine">
+                  <span class="text-pro"><i class="bi bi-check-circle-fill text-success me-1"></i>Infinite Rewind Slider</span>
+                </td>
+              </tr>
+
+              <!-- Row 7 -->
+              <tr>
+                <td>
+                  <span class="feature-title">One-Click Crash Fork &amp; Sandbox Replay</span>
+                  <span class="feature-desc">Instantly fork a failed container into an isolated sandbox to reproduce bugs safely.</span>
+                </td>
+                <td class="col-observer">
+                  <span class="icon-cross"><i class="bi bi-dash-circle"></i> &mdash;</span>
+                </td>
+                <td class="col-timemachine">
+                  <span class="text-pro"><i class="bi bi-check-circle-fill text-success me-1"></i>Isolated Sandbox Fork</span>
+                </td>
+              </tr>
+
+              <!-- Row 8 -->
+              <tr>
+                <td>
+                  <span class="feature-title">Automated Root-Cause Forensics</span>
+                  <span class="feature-desc">Heuristic timeline correlation between memory spikes, network drops, and fatal errors.</span>
+                </td>
+                <td class="col-observer">
+                  <span class="icon-cross"><i class="bi bi-dash-circle"></i> &mdash;</span>
+                </td>
+                <td class="col-timemachine">
+                  <span class="text-pro"><i class="bi bi-check-circle-fill text-success me-1"></i>Automated Incident Reports</span>
+                </td>
+              </tr>
+
+              <!-- Row 9 -->
+              <tr>
+                <td>
+                  <span class="feature-title">Deployment &amp; Support Tier</span>
+                  <span class="feature-desc">License model, self-hosting options, and SLA technical support.</span>
+                </td>
+                <td class="col-observer">
+                  <span class="font-mono" style="color: var(--text-muted);">Open Source (MIT)</span>
+                </td>
+                <td class="col-timemachine">
+                  <span class="font-mono fw-bold" style="color: var(--color-ice);">Pro / Team / Enterprise</span>
+                </td>
+              </tr>
+
+              <!-- Footer CTA Row -->
+              <tr class="comparison-footer-row">
+                <td>
+                  <span class="font-mono text-muted" style="font-size: 12px;">Choose the edition that matches your reliability needs.</span>
+                </td>
+                <td class="col-observer">
+                  <a href="#install" class="btn btn-secondary btn-sm w-100">
+                    <i class="bi bi-download"></i>
+                    <span>Install Observer</span>
+                  </a>
+                </td>
+                <td class="col-timemachine">
+                  <a href="#get-time-machine" class="btn btn-ice btn-sm w-100" id="btnTableGetTimeMachine">
+                    <i class="bi bi-rocket-takeoff-fill"></i>
+                    <span>Get Time Machine</span>
+                  </a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Call to Action Banner Section -->
+  <section class="cta-section" id="get-time-machine">
+    <div class="container">
+      <div class="cta-card">
+        <h2 class="cta-title">Ready to Rewind Your Container State?</h2>
+        <p class="cta-subtitle">
+          Join high-reliability teams using Fleptix Time Machine to troubleshoot production crashes 10x faster with deterministic historical replays.
+        </p>
+
+        <div class="cta-button-group">
+          <!-- Primary Get Time Machine Button (linking to placeholder URL) -->
+          <a href="https://fleptix.dev/time-machine" target="_blank" rel="noopener" class="btn btn-ice btn-lg" id="btnCtaGetTimeMachine">
+            <i class="bi bi-clock-history"></i>
+            <span>Get Time Machine Pro</span>
+          </a>
+          <!-- GitHub Repository Link -->
+          <a href="https://github.com/fleptix/fleptix" target="_blank" rel="noopener" class="btn btn-secondary btn-lg" id="btnCtaGitHub">
+            <i class="bi bi-github"></i>
+            <span>Star on GitHub</span>
+          </a>
+          <!-- Docs Link -->
+          <a href="https://docs.fleptix.dev" target="_blank" rel="noopener" class="btn btn-ghost btn-lg" id="btnCtaDocs">
+            <i class="bi bi-book"></i>
+            <span>Read the Docs</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-brand">
+        <div class="brand-icon" style="width: 24px; height: 24px; font-size: 14px;">
+          <i class="bi bi-layers-fill"></i>
+        </div>
+        <span>Fleptix &mdash; Operational Container Intelligence</span>
+      </div>
+
+      <ul class="footer-links">
+        <li><a href="https://github.com/fleptix/fleptix" target="_blank" rel="noopener" class="footer-link"><i class="bi bi-github me-1"></i>GitHub</a></li>
+        <li><a href="https://docs.fleptix.dev" target="_blank" rel="noopener" class="footer-link"><i class="bi bi-book me-1"></i>Documentation</a></li>
+        <li><a href="#install" class="footer-link">Docker Install</a></li>
+        <li><a href="#comparison" class="footer-link">Observer vs. Time Machine</a></li>
+        <li><a href="https://fleptix.dev/time-machine" target="_blank" rel="noopener" class="footer-link">Time Machine Edition</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <!-- Toast Notification Container for Interactive Copy -->
+  <div class="toast-msg" id="toastMsg">
+    <i class="bi bi-check-circle-fill text-success"></i>
+    <span class="toast-text">Copied to clipboard!</span>
+  </div>
+
+  <!-- Interactive Script -->
+  <script src="script.js"></script>
+</body>
+</html>

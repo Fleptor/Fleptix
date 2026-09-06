@@ -1,0 +1,117 @@
+@page "/Settings"
+@model Fleptix.Observer.Pages.SettingsModel
+@{
+    ViewData["Title"] = "Settings";
+}
+
+<div class="container-fluid p-0">
+    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+        <div>
+            <h1 class="h6 fw-bold mb-0 text-dark">Runtime Configuration</h1>
+            <span class="text-muted" style="font-size: 11px;">Active environment parameters and operational telemetry settings</span>
+        </div>
+
+        <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" id="btnSettingsToggleMode" style="font-size: 11px;">
+            <i class="bi bi-arrow-repeat"></i> Switch Engine Mode
+        </button>
+    </div>
+
+    <!-- Engine & IPC Configuration -->
+    <div class="mb-4">
+        <h2 class="h6 text-muted text-uppercase fw-bold mb-2" style="font-size: 11px; letter-spacing: 0.5px;">Engine &amp; IPC Transport</h2>
+        <div class="fleptix-table-container">
+            <table class="fleptix-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">Parameter</th>
+                        <th style="width: 40%;">Value</th>
+                        <th>Status / Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="font-mono text-dark fw-bold">Runtime Engine</td>
+                        <td class="font-mono" id="settingsEngineDesc">@Model.EngineDescription</td>
+                        <td>
+                            @if (Model.IsConnectedToDocker)
+                            {
+                                <span class="status-pill running"><span class="pill-dot"></span><span class="pill-text">Connected</span></span>
+                            }
+                            else
+                            {
+                                <span class="status-pill restarting"><span class="pill-dot"></span><span class="pill-text">Simulated</span></span>
+                            }
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="font-mono text-dark fw-bold">Daemon Socket / Pipe</td>
+                        <td class="font-mono text-muted">@Model.DaemonEndpoint</td>
+                        <td class="text-muted" style="font-size: 11px;">Auto-probed on background loop</td>
+                    </tr>
+                    <tr>
+                        <td class="font-mono text-dark fw-bold">Telemetry Stream Tick</td>
+                        <td class="font-mono text-muted">@Model.TelemetryIntervalMs ms</td>
+                        <td class="text-muted" style="font-size: 11px;">SignalR WebSocket broadcast rate</td>
+                    </tr>
+                    <tr>
+                        <td class="font-mono text-dark fw-bold">SignalR Hub Route</td>
+                        <td class="font-mono text-muted">/hubs/containers</td>
+                        <td>
+                            <span class="status-pill running"><span class="pill-dot"></span><span class="pill-text">Live</span></span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Application & Environment Info -->
+    <div class="mb-4">
+        <h2 class="h6 text-muted text-uppercase fw-bold mb-2" style="font-size: 11px; letter-spacing: 0.5px;">Application Environment</h2>
+        <div class="fleptix-table-container">
+            <table class="fleptix-table">
+                <thead>
+                    <tr>
+                        <th style="width: 30%;">Setting</th>
+                        <th style="width: 40%;">Value</th>
+                        <th>Scope</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="font-mono text-dark fw-bold">Environment</td>
+                        <td class="font-mono text-muted">@Model.EnvironmentName</td>
+                        <td class="text-muted" style="font-size: 11px;">ASP.NET Core Host</td>
+                    </tr>
+                    <tr>
+                        <td class="font-mono text-dark fw-bold">Framework Target</td>
+                        <td class="font-mono text-muted">.NET 10.0 (net10.0)</td>
+                        <td class="text-muted" style="font-size: 11px;">C# 13</td>
+                    </tr>
+                    <tr>
+                        <td class="font-mono text-dark fw-bold">Tier / Edition</td>
+                        <td class="font-mono text-muted">@Model.LicenseTier</td>
+                        <td class="text-muted" style="font-size: 11px;">Single-operator tool</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('btnSettingsToggleMode')?.addEventListener('click', async () => {
+            try {
+                const res = await fetch('/api/system/toggle-mode', { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    window.showToast(`Switched engine mode to: ${data.engineType}`);
+                    setTimeout(() => window.location.reload(), 600);
+                }
+            } catch (err) {
+                window.showToast('Failed to switch engine mode', true);
+            }
+        });
+    </script>
+}

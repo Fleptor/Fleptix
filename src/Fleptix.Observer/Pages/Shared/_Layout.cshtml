@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Fleptix Observer</title>
+    <meta name="description" content="Fleptix Observer - Operational Container Telemetry & Management" />
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- Chart.js & SignalR Client -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+
+    <!-- Fleptix Design System -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="fleptix-app">
+    <div class="app-layout">
+        <!-- Persistent Left Sidebar -->
+        <aside class="app-sidebar">
+            <div class="sidebar-brand">
+                <a href="/" class="brand-link">
+                    <span class="brand-mark"><i class="bi bi-layers-fill"></i></span>
+                    <span class="brand-text">Fleptix</span>
+                </a>
+                <span class="brand-subtitle">Observer</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="/" class="nav-item @(ViewContext.RouteData.Values["page"]?.ToString() == "/Index" || ViewContext.RouteData.Values["page"] == null ? "active" : "")">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/Containers" class="nav-item @(ViewContext.RouteData.Values["page"]?.ToString() == "/Containers" ? "active" : "")">
+                    <i class="bi bi-box-seam"></i>
+                    <span>Containers</span>
+                </a>
+                <a href="/Deploy" class="nav-item @(ViewContext.RouteData.Values["page"]?.ToString() == "/Deploy" ? "active" : "")">
+                    <i class="bi bi-rocket-takeoff"></i>
+                    <span>Deploy</span>
+                </a>
+                <a href="/Settings" class="nav-item @(ViewContext.RouteData.Values["page"]?.ToString() == "/Settings" ? "active" : "")">
+                    <i class="bi bi-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+
+
+            <div class="sidebar-footer">
+                <div class="engine-indicator" id="engineStatusBadge" title="Engine Status">
+                    <span class="pulse-dot"></span>
+                    <span class="engine-text" id="engineStatusText">Docker Engine</span>
+                    <button class="btn-engine-toggle" id="btnToggleEngine" title="Toggle Demo / Docker Engine">
+                        <i class="bi bi-arrow-repeat"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="app-main">
+            <!-- Minimal Top Bar: Search Input Only -->
+            <header class="app-topbar">
+                <div class="topbar-search">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="search" id="globalSearchInput" class="topbar-search-input" placeholder="Search containers, images, ports... (Press '/' to focus)" />
+                </div>
+                <div class="topbar-actions">
+                    <span class="signalr-pill" id="signalrStatusPill">
+                        <i class="bi bi-broadcast"></i> Live
+                    </span>
+                </div>
+            </header>
+
+            <!-- Main Page Content -->
+            <main class="app-content">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
+        <div id="fleptixToast" class="toast align-items-center text-dark bg-white border shadow-sm" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center gap-2" id="toastMessage">
+                    <i class="bi bi-info-circle text-primary"></i> Action completed.
+                </div>
+                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global Keyboard Shortcut for Search ('/')
+        document.addEventListener('keydown', (e) => {
+            if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                document.getElementById('globalSearchInput')?.focus();
+            }
+        });
+
+        // Toast Helper
+        window.showToast = function(message, isError = false) {
+            const toastEl = document.getElementById('fleptixToast');
+            const toastBody = document.getElementById('toastMessage');
+            if (toastEl && toastBody) {
+                toastBody.innerHTML = isError 
+                    ? `<i class="bi bi-exclamation-triangle-fill text-danger"></i> <span>${message}</span>`
+                    : `<i class="bi bi-check-circle-fill text-success"></i> <span>${message}</span>`;
+                const toast = new bootstrap.Toast(toastEl, { delay: 3500 });
+                toast.show();
+            }
+        };
+
+        // Engine Status & Mode Toggle
+        async function checkEngineStatus() {
+            try {
+                const res = await fetch('/api/system/status');
+                if (res.ok) {
+                    const data = await res.json();
+                    const text = document.getElementById('engineStatusText');
+                    if (text) {
+                        text.textContent = data.isConnectedToDocker ? 'Docker Native' : 'Simulated (Demo)';
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to check engine status:", err);
+            }
+        }
+
+        document.getElementById('btnToggleEngine')?.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            try {
+                const res = await fetch('/api/system/toggle-mode', { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    window.showToast(`Switched engine mode to: ${data.engineType}`);
+                    await checkEngineStatus();
+                    if (window.refreshDashboard) window.refreshDashboard();
+                }
+            } catch (err) {
+                window.showToast('Failed to switch engine mode', true);
+            }
+        });
+
+        checkEngineStatus();
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
