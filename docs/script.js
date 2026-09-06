@@ -12,10 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     compose: `services:
   fleptix-observer:
-    image: ghcr.io/fleptix/observer:latest
+    image: ghcr.io/fleptor/fleptix:latest
     container_name: fleptix-observer
     ports:
-      - "5000:80"
+      - "7373:80"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     restart: unless-stopped`
