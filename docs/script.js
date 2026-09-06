@@ -3,12 +3,12 @@
 document.addEventListener('DOMContentLoaded', () => {
   // Command Snippets
   const snippets = {
-    dockerrun: `docker run -d \\
-  --name fleptix-observer \\
-  -p 5000:80 \\
-  -v /var/run/docker.sock:/var/run/docker.sock:ro \\
-  --restart unless-stopped \\
-  ghcr.io/fleptix/observer:latest`,
+    dockerrun: `docker run -d \
+  --name fleptix-observer \
+  -p 7373:80 \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  --restart unless-stopped \
+  ghcr.io/fleptor/fleptix:latest`,
 
     compose: `services:
   fleptix-observer:
