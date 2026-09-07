@@ -539,9 +539,12 @@ public class DockerContainerService : IContainerService
     {
         try
         {
-            var stream = await _client.Containers.GetContainerLogsAsync(
+            var inspect = await _client.Containers.InspectContainerAsync(containerId, cancellationToken);
+            var isTty = inspect?.Config?.Tty ?? false;
+
+            using var stream = await _client.Containers.GetContainerLogsAsync(
                 containerId,
-                tty: false,
+                tty: isTty,
                 new ContainerLogsParameters
                 {
                     ShowStdout = true,
@@ -551,12 +554,29 @@ public class DockerContainerService : IContainerService
                 },
                 cancellationToken);
 
-            var (stdout, stderr) = await stream.ReadOutputToEndAsync(cancellationToken);
-            var combined = (stdout + "\n" + stderr)
-                .Split('\n', StringSplitOptions.RemoveEmptyEntries)
-                .Select(l => l.Trim())
-                .Where(l => !string.IsNullOrEmpty(l))
-                .ToList();
+            List<string> combined;
+            if (isTty)
+            {
+                using var outputStream = new MemoryStream();
+                await stream.CopyOutputToAsync(Stream.Null, outputStream, Stream.Null, cancellationToken);
+                outputStream.Position = 0;
+                using var reader = new StreamReader(outputStream);
+                var raw = await reader.ReadToEndAsync(cancellationToken);
+                combined = raw
+                    .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(l => l.Trim())
+                    .Where(l => !string.IsNullOrEmpty(l))
+                    .ToList();
+            }
+            else
+            {
+                var (stdout, stderr) = await stream.ReadOutputToEndAsync(cancellationToken);
+                combined = (stdout + "\n" + stderr)
+                    .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(l => l.Trim())
+                    .Where(l => !string.IsNullOrEmpty(l))
+                    .ToList();
+            }
 
             return combined;
         }
