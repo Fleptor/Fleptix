@@ -68,5 +68,13 @@ public interface IContainerService
         string containerId, 
         int tailLines = 100, 
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Browses files and directories in a container's filesystem at the specified path.
+    /// </summary>
+    Task<IReadOnlyList<ContainerFileSystemItem>> GetContainerFilesAsync(
+        string containerId,
+        string path = "/",
+        CancellationToken cancellationToken = default);
 }
 

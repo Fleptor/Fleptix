@@ -98,6 +98,33 @@ public class ContainersApiController : ControllerBase
         return Ok(metrics);
     }
 
+    [HttpGet("{id}/files")]
+    public async Task<IActionResult> GetContainerFiles(
+        string id, 
+        [FromQuery] string path = "/", 
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return BadRequest(new { message = "ContainerId is required." });
+        }
+
+        try
+        {
+            var files = await _containerService.GetContainerFilesAsync(id, path, cancellationToken);
+            return Ok(new
+            {
+                containerId = id,
+                path = string.IsNullOrWhiteSpace(path) ? "/" : path,
+                items = files
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = ex.Message });
+        }
+    }
+
     [HttpGet("/api/system/status")]
     public IActionResult GetSystemStatus()
     {

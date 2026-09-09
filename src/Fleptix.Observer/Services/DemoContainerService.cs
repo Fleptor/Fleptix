@@ -592,5 +592,187 @@ public class DemoContainerService : IContainerService
 
         return Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
     }
+
+    /// <summary>
+    /// Returns simulated container directory and file contents for offline demo mode.
+    /// </summary>
+    public Task<IReadOnlyList<ContainerFileSystemItem>> GetContainerFilesAsync(
+        string containerId,
+        string path = "/",
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(path)) path = "/";
+        path = path.Trim();
+        if (!path.StartsWith('/')) path = "/" + path;
+        string norm = path.Trim('/');
+
+        var now = DateTimeOffset.UtcNow.AddHours(-3);
+        var items = new List<ContainerFileSystemItem>();
+
+        switch (norm)
+        {
+            case "": // Root "/"
+                items.AddRange(new[]
+                {
+                    new ContainerFileSystemItem { Name = "app", Path = "/app", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now },
+                    new ContainerFileSystemItem { Name = "bin", Path = "/bin", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-30) },
+                    new ContainerFileSystemItem { Name = "dev", Path = "/dev", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now },
+                    new ContainerFileSystemItem { Name = "etc", Path = "/etc", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-10) },
+                    new ContainerFileSystemItem { Name = "home", Path = "/home", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-30) },
+                    new ContainerFileSystemItem { Name = "lib", Path = "/lib", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-30) },
+                    new ContainerFileSystemItem { Name = "media", Path = "/media", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-30) },
+                    new ContainerFileSystemItem { Name = "mnt", Path = "/mnt", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-30) },
+                    new ContainerFileSystemItem { Name = "opt", Path = "/opt", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-15) },
+                    new ContainerFileSystemItem { Name = "proc", Path = "/proc", IsDirectory = true, Type = "directory", Mode = "dr-xr-xr-x", ModifiedTime = now },
+                    new ContainerFileSystemItem { Name = "root", Path = "/root", IsDirectory = true, Type = "directory", Mode = "drwx------", ModifiedTime = now.AddDays(-5) },
+                    new ContainerFileSystemItem { Name = "run", Path = "/run", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now },
+                    new ContainerFileSystemItem { Name = "sbin", Path = "/sbin", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-30) },
+                    new ContainerFileSystemItem { Name = "sys", Path = "/sys", IsDirectory = true, Type = "directory", Mode = "dr-xr-xr-x", ModifiedTime = now },
+                    new ContainerFileSystemItem { Name = "tmp", Path = "/tmp", IsDirectory = true, Type = "directory", Mode = "drwxrwxrwt", ModifiedTime = now },
+                    new ContainerFileSystemItem { Name = "usr", Path = "/usr", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-30) },
+                    new ContainerFileSystemItem { Name = "var", Path = "/var", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-2) }
+                });
+                break;
+
+            case "app":
+                items.AddRange(new[]
+                {
+                    new ContainerFileSystemItem { Name = "wwwroot", Path = "/app/wwwroot", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-1) },
+                    new ContainerFileSystemItem { Name = "Fleptix.Observer.dll", Path = "/app/Fleptix.Observer.dll", IsDirectory = false, Size = 2842000, Type = "file", Mode = "-rwxr-xr-x", ModifiedTime = now.AddDays(-1) },
+                    new ContainerFileSystemItem { Name = "Fleptix.Core.dll", Path = "/app/Fleptix.Core.dll", IsDirectory = false, Size = 145000, Type = "file", Mode = "-rwxr-xr-x", ModifiedTime = now.AddDays(-1) },
+                    new ContainerFileSystemItem { Name = "appsettings.json", Path = "/app/appsettings.json", IsDirectory = false, Size = 842, Type = "file", Mode = "-rw-r--r--", ModifiedTime = now.AddDays(-3) },
+                    new ContainerFileSystemItem { Name = "appsettings.Production.json", Path = "/app/appsettings.Production.json", IsDirectory = false, Size = 512, Type = "file", Mode = "-rw-r--r--", ModifiedTime = now.AddDays(-3) },
+                    new ContainerFileSystemItem { Name = "web.config", Path = "/app/web.config", IsDirectory = false, Size = 1140, Type = "file", Mode = "-rw-r--r--", ModifiedTime = now.AddDays(-10) }
+                });
+                break;
+
+            case "app/wwwroot":
+                items.AddRange(new[]
+                {
+                    new ContainerFileSystemItem { Name = "css", Path = "/app/wwwroot/css", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-2) },
+                    new ContainerFileSystemItem { Name = "js", Path = "/app/wwwroot/js", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-2) },
+                    new ContainerFileSystemItem { Name = "favicon.ico", Path = "/app/wwwroot/favicon.ico", IsDirectory = false, Size = 4286, Type = "file", Mode = "-rw-r--r--", ModifiedTime = now.AddDays(-10) },
+                    new ContainerFileSystemItem { Name = "index.html", Path = "/app/wwwroot/index.html", IsDirectory = false, Size = 2048, Type = "file", Mode = "-rw-r--r--", ModifiedTime = now.AddDays(-2) }
+                });
+                break;
+
+            case "etc":
+                items.AddRange(new[]
+                {
+                    new ContainerFileSystemItem { Name = "nginx", Path = "/etc/nginx", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-5) },
+                    new ContainerFileSystemItem { Name = "ssl", Path = "/etc/ssl", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-20) },
+                    new ContainerFileSystemItem { Name = "default", Path = "/etc/default", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-20) },
+                    new ContainerFileSystemItem { Name = "hosts", Path = "/etc/hosts", IsDirectory = false, Size = 174, Type = "file", Mode = "-rw-r--r--", ModifiedTime = now },
+                    new ContainerFileSystemItem { Name = "resolv.conf", Path = "/etc/resolv.conf", IsDirectory = false, Size = 96, Type = "file", Mode = "-rw-r--r--", ModifiedTime = now },
+                    new ContainerFileSystemItem { Name = "hostname", Path = "/etc/hostname", IsDirectory = false, Size = 14, Type = "file", Mode = "-rw-r--r--", ModifiedTime = now },
+                    new ContainerFileSystemItem { Name = "os-release", Path = "/etc/os-release", IsDirectory = false, Size = 385, Type = "file", Mode = "-rw-r--r--", ModifiedTime = now.AddDays(-40) },
+                    new ContainerFileSystemItem { Name = "passwd", Path = "/etc/passwd", IsDirectory = false, Size = 1248, Type = "file", Mode = "-rw-r--r--", ModifiedTime = now.AddDays(-30) },
+                    new ContainerFileSystemItem { Name = "group", Path = "/etc/group", IsDirectory = false, Size = 840, Type = "file", Mode = "-rw-r--r--", ModifiedTime = now.AddDays(-30) },
+                    new ContainerFileSystemItem { Name = "timezone", Path = "/etc/timezone", IsDirectory = false, Size = 16, Type = "file", Mode = "-rw-r--r--", ModifiedTime = now.AddDays(-30) }
+                });
+                break;
+
+            case "etc/nginx":
+                items.AddRange(new[]
+                {
+                    new ContainerFileSystemItem { Name = "conf.d", Path = "/etc/nginx/conf.d", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-4) },
+                    new ContainerFileSystemItem { Name = "nginx.conf", Path = "/etc/nginx/nginx.conf", IsDirectory = false, Size = 2450, Type = "file", Mode = "-rw-r--r--", ModifiedTime = now.AddDays(-4) },
+                    new ContainerFileSystemItem { Name = "mime.types", Path = "/etc/nginx/mime.types", IsDirectory = false, Size = 5231, Type = "file", Mode = "-rw-r--r--", ModifiedTime = now.AddDays(-30) },
+                    new ContainerFileSystemItem { Name = "fastcgi_params", Path = "/etc/nginx/fastcgi_params", IsDirectory = false, Size = 1077, Type = "file", Mode = "-rw-r--r--", ModifiedTime = now.AddDays(-30) }
+                });
+                break;
+
+            case "etc/nginx/conf.d":
+                items.AddRange(new[]
+                {
+                    new ContainerFileSystemItem { Name = "default.conf", Path = "/etc/nginx/conf.d/default.conf", IsDirectory = false, Size = 1420, Type = "file", Mode = "-rw-r--r--", ModifiedTime = now.AddDays(-4) }
+                });
+                break;
+
+            case "var":
+                items.AddRange(new[]
+                {
+                    new ContainerFileSystemItem { Name = "cache", Path = "/var/cache", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-2) },
+                    new ContainerFileSystemItem { Name = "lib", Path = "/var/lib", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-10) },
+                    new ContainerFileSystemItem { Name = "log", Path = "/var/log", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now },
+                    new ContainerFileSystemItem { Name = "run", Path = "/var/run", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now },
+                    new ContainerFileSystemItem { Name = "tmp", Path = "/var/tmp", IsDirectory = true, Type = "directory", Mode = "drwxrwxrwt", ModifiedTime = now }
+                });
+                break;
+
+            case "var/log":
+                items.AddRange(new[]
+                {
+                    new ContainerFileSystemItem { Name = "nginx", Path = "/var/log/nginx", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now },
+                    new ContainerFileSystemItem { Name = "syslog", Path = "/var/log/syslog", IsDirectory = false, Size = 14320, Type = "file", Mode = "-rw-r-----", ModifiedTime = now },
+                    new ContainerFileSystemItem { Name = "auth.log", Path = "/var/log/auth.log", IsDirectory = false, Size = 4120, Type = "file", Mode = "-rw-r-----", ModifiedTime = now.AddHours(-1) },
+                    new ContainerFileSystemItem { Name = "daemon.log", Path = "/var/log/daemon.log", IsDirectory = false, Size = 8910, Type = "file", Mode = "-rw-r-----", ModifiedTime = now.AddHours(-2) }
+                });
+                break;
+
+            case "var/log/nginx":
+                items.AddRange(new[]
+                {
+                    new ContainerFileSystemItem { Name = "access.log", Path = "/var/log/nginx/access.log", IsDirectory = false, Size = 54200, Type = "file", Mode = "-rw-r--r--", ModifiedTime = now },
+                    new ContainerFileSystemItem { Name = "error.log", Path = "/var/log/nginx/error.log", IsDirectory = false, Size = 3120, Type = "file", Mode = "-rw-r--r--", ModifiedTime = now }
+                });
+                break;
+
+            case "usr":
+                items.AddRange(new[]
+                {
+                    new ContainerFileSystemItem { Name = "bin", Path = "/usr/bin", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-30) },
+                    new ContainerFileSystemItem { Name = "lib", Path = "/usr/lib", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-30) },
+                    new ContainerFileSystemItem { Name = "local", Path = "/usr/local", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-30) },
+                    new ContainerFileSystemItem { Name = "share", Path = "/usr/share", IsDirectory = true, Type = "directory", Mode = "drwxr-xr-x", ModifiedTime = now.AddDays(-30) }
+                });
+                break;
+
+            case "bin" or "usr/bin":
+                items.AddRange(new[]
+                {
+                    new ContainerFileSystemItem { Name = "sh", Path = $"/{norm}/sh", IsDirectory = false, Size = 124000, Type = "file", Mode = "-rwxr-xr-x", ModifiedTime = now.AddDays(-60) },
+                    new ContainerFileSystemItem { Name = "bash", Path = $"/{norm}/bash", IsDirectory = false, Size = 1184000, Type = "file", Mode = "-rwxr-xr-x", ModifiedTime = now.AddDays(-60) },
+                    new ContainerFileSystemItem { Name = "cat", Path = $"/{norm}/cat", IsDirectory = false, Size = 35200, Type = "file", Mode = "-rwxr-xr-x", ModifiedTime = now.AddDays(-60) },
+                    new ContainerFileSystemItem { Name = "curl", Path = $"/{norm}/curl", IsDirectory = false, Size = 284000, Type = "file", Mode = "-rwxr-xr-x", ModifiedTime = now.AddDays(-60) },
+                    new ContainerFileSystemItem { Name = "grep", Path = $"/{norm}/grep", IsDirectory = false, Size = 168000, Type = "file", Mode = "-rwxr-xr-x", ModifiedTime = now.AddDays(-60) },
+                    new ContainerFileSystemItem { Name = "ls", Path = $"/{norm}/ls", IsDirectory = false, Size = 138000, Type = "file", Mode = "-rwxr-xr-x", ModifiedTime = now.AddDays(-60) },
+                    new ContainerFileSystemItem { Name = "ps", Path = $"/{norm}/ps", IsDirectory = false, Size = 98000, Type = "file", Mode = "-rwxr-xr-x", ModifiedTime = now.AddDays(-60) },
+                    new ContainerFileSystemItem { Name = "tar", Path = $"/{norm}/tar", IsDirectory = false, Size = 412000, Type = "file", Mode = "-rwxr-xr-x", ModifiedTime = now.AddDays(-60) }
+                });
+                break;
+
+            default:
+                var lastPart = norm.Split('/').Last();
+                items.Add(new ContainerFileSystemItem
+                {
+                    Name = $"{lastPart}.conf",
+                    Path = $"/{norm}/{lastPart}.conf",
+                    IsDirectory = false,
+                    Size = 1024,
+                    Type = "file",
+                    Mode = "-rw-r--r--",
+                    ModifiedTime = now.AddDays(-2)
+                });
+                items.Add(new ContainerFileSystemItem
+                {
+                    Name = $"{lastPart}.pid",
+                    Path = $"/{norm}/{lastPart}.pid",
+                    IsDirectory = false,
+                    Size = 6,
+                    Type = "file",
+                    Mode = "-rw-r--r--",
+                    ModifiedTime = now
+                });
+                break;
+        }
+
+        var sorted = items
+            .OrderByDescending(x => x.IsDirectory)
+            .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return Task.FromResult<IReadOnlyList<ContainerFileSystemItem>>(sorted);
+    }
 }
 

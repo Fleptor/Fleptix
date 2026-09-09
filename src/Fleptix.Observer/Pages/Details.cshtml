@@ -99,66 +99,26 @@
                         </button>
                     }
                 </div>
-                <form method="post" asp-page-handler="Snapshot" asp-route-id="@c.Id" class="d-inline" id="snapshotForm">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" id="btnSnapshot" class="btn btn-sm d-inline-flex align-items-center gap-1 font-mono text-white" style="background-color: var(--accent-navy); font-size: 11px; padding: 4px 10px;" onclick="handleSnapshotClick(event, '@c.Id')">
-                        <i class="bi bi-clock-history"></i>
+                @if (Model.IsTimeMachineEnabled)
+                {
+                    <form method="post" asp-page-handler="Snapshot" asp-route-id="@c.Id" class="d-inline" id="snapshotForm">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" id="btnSnapshot" class="btn btn-sm d-inline-flex align-items-center gap-1 font-mono text-white" style="background-color: var(--accent-navy); font-size: 11px; padding: 4px 10px;" onclick="handleSnapshotClick(event, '@c.Id')">
+                            <i class="bi bi-clock-history text-warning"></i>
+                            <span id="snapshotBtnText">Snapshot</span>
+                            <span class="badge font-mono ms-0.5" style="background-color: #fef3c7; color: #b45309; font-size: 8px; padding: 1px 3px; border: 1px solid #fde68a;">PRO</span>
+                            <span id="snapshotSpinner" class="spinner-border spinner-border-sm d-none" style="width: 10px; height: 10px;" role="status"></span>
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <button type="button" id="btnSnapshot" class="btn btn-sm btn-light border d-inline-flex align-items-center gap-1 font-mono text-muted" style="font-size: 11px; padding: 4px 10px; cursor: not-allowed; opacity: 0.85;" title="Time Machine snapshots require a Fleptix Pro license" onclick="window.showToast('Time Machine is locked. Enable a Fleptix Pro license to capture snapshots.', true)">
+                        <i class="bi bi-lock-fill" style="color: #d97706;"></i>
                         <span id="snapshotBtnText">Snapshot</span>
-                        <span id="snapshotSpinner" class="spinner-border spinner-border-sm d-none" style="width: 10px; height: 10px;" role="status"></span>
+                        <span class="badge font-mono ms-0.5" style="background-color: #fef3c7; color: #b45309; font-size: 8px; padding: 1px 3px; border: 1px solid #fde68a;">PRO</span>
                     </button>
-                </form>
-
-                <!-- Restore Action Dropdown / Button -->
-                <div class="dropdown d-inline" id="restoreDropdownContainer">
-                    <button class="btn btn-sm btn-light border dropdown-toggle d-inline-flex align-items-center gap-1 font-mono text-dark" 
-                            type="button" 
-                            id="btnRestoreDropdown" 
-                            data-bs-toggle="dropdown" 
-                            aria-expanded="false" 
-                            style="font-size: 11px; padding: 4px 10px;"
-                            @(Model.Snapshots.Any() ? "" : "disabled")
-                            title="@(Model.Snapshots.Any() ? "Restore container to a previous Time Machine snapshot" : "No snapshots available for this container")">
-                        <i class="bi bi-arrow-counterclockwise text-primary"></i>
-                        <span>Restore</span>
-                        @if (Model.Snapshots.Any())
-                        {
-                            <span class="badge bg-secondary font-mono" style="font-size: 9px;">@Model.Snapshots.Count</span>
-                        }
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm font-mono p-1" aria-labelledby="btnRestoreDropdown" style="font-size: 11px; min-width: 320px;">
-                        <li class="dropdown-header font-mono fw-bold text-dark px-2 py-1" style="font-size: 10px;">
-                            <i class="bi bi-clock-history me-1"></i> AVAILABLE SNAPSHOTS (@Model.Snapshots.Count)
-                        </li>
-                        <li><hr class="dropdown-divider my-1"></li>
-                        @if (Model.Snapshots.Any())
-                        {
-                            @foreach (var snap in Model.Snapshots)
-                            {
-                                <li class="p-1">
-                                    <div class="p-1.5 rounded bg-light border d-flex flex-column gap-1">
-                                        <div class="d-flex align-items-center justify-content-between">
-                                            <span class="fw-bold text-dark text-truncate" style="max-width: 170px;" title="@snap.SnapshotId">@snap.SnapshotId</span>
-                                            <span class="text-muted" style="font-size: 9px;">@snap.Timestamp.ToString("MM/dd HH:mm")</span>
-                                        </div>
-                                        <div class="d-flex align-items-center justify-content-between font-mono" style="font-size: 10px;">
-                                            <span class="text-muted">@(snap.ArchiveSizeBytes > 0 ? $"{(snap.ArchiveSizeBytes / 1024.0):F1} KB" : "Archive")</span>
-                                            <form method="post" asp-page-handler="Restore" asp-route-id="@c.Id" asp-route-snapshotId="@snap.SnapshotId" class="d-inline" id="restoreForm_@snap.SnapshotId">
-                                                @Html.AntiForgeryToken()
-                                                <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 font-mono" style="font-size: 10px; height: 22px;" onclick="handleRestoreClick(event, '@c.Id', '@snap.SnapshotId', this)">
-                                                    <i class="bi bi-arrow-counterclockwise"></i> Rollback
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </li>
-                            }
-                        }
-                        else
-                        {
-                            <li class="px-2 py-1 text-muted text-center" style="font-size: 10px;">No snapshots available.</li>
-                        }
-                    </ul>
-                </div>
+                }
 
                 <button class="btn btn-sm btn-light border d-inline-flex align-items-center gap-1 font-mono text-dark" style="font-size: 11px; padding: 4px 10px;" onclick="window.showToast('Triggered kill signal')">
                     <i class="bi bi-x-octagon text-danger"></i> Kill
@@ -199,8 +159,8 @@
     <!-- Primary Tabbed Inspection Navigation -->
     <div class="d-flex align-items-center justify-content-between bg-light p-1 rounded border mb-3">
         <div class="d-flex align-items-center gap-1 overflow-x-auto">
-            <button class="btn btn-sm btn-light border details-tab-link active font-mono fw-semibold" data-tab="tabOverview" style="font-size: 11px;">
-                <i class="bi bi-speedometer2 me-1"></i> Overview &amp; Telemetry
+            <button class="btn btn-sm btn-light border text-decoration-none details-tab-link active font-mono fw-semibold" data-tab="tabOverview" style="font-size: 11px;">
+                <i class="bi bi-speedometer2 me-1"></i> Stats
             </button>
             <button class="btn btn-sm btn-link text-decoration-none text-dark details-tab-link font-mono" data-tab="tabLogs" style="font-size: 11px;">
                 <i class="bi bi-terminal me-1"></i> Live Logs <span class="badge bg-danger ms-1">@Model.InitialLogs.Count</span>
@@ -214,8 +174,23 @@
             <button class="btn btn-sm btn-link text-decoration-none text-dark details-tab-link font-mono" data-tab="tabMounts" style="font-size: 11px;">
                 <i class="bi bi-hdd me-1"></i> Volumes &amp; Mounts (@d.Mounts.Count)
             </button>
-            <button class="btn btn-sm btn-link text-decoration-none text-dark details-tab-link font-mono" data-tab="tabSnapshots" style="font-size: 11px;">
-                <i class="bi bi-clock-history me-1"></i> Time Machine (<span id="snapshotCountBadge">@Model.Snapshots.Count</span>)
+            <button class="btn btn-sm btn-link text-decoration-none text-dark details-tab-link font-mono" data-tab="tabFiles" style="font-size: 11px;">
+                <i class="bi bi-folder2 me-1"></i> Files
+            </button>
+            <button class="btn btn-sm btn-link text-decoration-none text-dark details-tab-link font-mono d-inline-flex align-items-center gap-1" data-tab="tabSnapshots" style="font-size: 11px;">
+                @if (Model.IsTimeMachineEnabled)
+                {
+                    <i class="bi bi-clock-history text-warning"></i>
+                    <span>Time Machine</span>
+                    <span class="text-muted">(<span id="snapshotCountBadge">@Model.Snapshots.Count</span>)</span>
+                    <span class="badge font-mono ms-0.5" style="background-color: #fef3c7; color: #b45309; font-size: 8px; padding: 1px 3px; border: 1px solid #fde68a;">PRO</span>
+                }
+                else
+                {
+                    <i class="bi bi-lock-fill" style="color: #d97706;"></i>
+                    <span>Time Machine</span>
+                    <span class="badge font-mono ms-0.5" style="background-color: #fef3c7; color: #b45309; font-size: 8px; padding: 1px 3px; border: 1px solid #fde68a;">PRO</span>
+                }
             </button>
         </div>
         <div class="font-mono text-muted pe-2 d-none d-md-block" style="font-size: 10px;">
@@ -224,316 +199,133 @@
     </div>
 
 
-    <!-- TAB 1: OVERVIEW & TELEMETRY -->
+    <!-- TAB 1: STATS -->
     <div id="tabOverview" class="tab-pane-content">
-        <div class="row g-3">
-            <!-- Left Column: Metrics, Sparklines, and Logs Console (8 Cols on XL) -->
-            <div class="col-12 col-xl-8 d-flex flex-column gap-3">
-                @if (c.State != "running")
-                {
-                    <!-- Alert Notice Banner -->
-                    <div class="p-3 rounded border d-flex items-start gap-3 shadow-xs" style="background-color: #fee2e2; border-color: #fca5a5 !important;">
-                        <i class="bi bi-exclamation-triangle-fill text-danger fs-4 flex-shrink-0"></i>
-                        <div class="flex-grow-1">
-                            <div class="d-flex align-items-center justify-content-between mb-1">
-                                <span class="fw-bold text-danger" style="font-size: 13px;">Container Exit / Restart Alert</span>
-                                <span class="font-mono text-muted" style="font-size: 10px;">Status: @c.Status</span>
-                            </div>
-                            <p class="mb-2 text-dark font-mono" style="font-size: 11px; line-height: 1.4;">
-                                Workload status is currently reported as <code class="px-1 rounded bg-white border">@c.Status</code>. Check the console buffer below or restart the daemon to recover.
-                            </p>
-                            <div class="d-flex align-items-center gap-2">
-                                <button class="btn btn-sm btn-danger d-inline-flex align-items-center gap-1 font-mono" style="font-size: 10px; padding: 2px 8px;" onclick="executeDetailsAction('@c.Id', 'start', this)">
-                                    <i class="bi bi-arrow-clockwise"></i> Trigger Restart
-                                </button>
-                                <button class="btn btn-sm btn-light border d-inline-flex align-items-center gap-1 font-mono" style="font-size: 10px; padding: 2px 8px;" onclick="fetchLatestLogs()">
-                                    <i class="bi bi-terminal"></i> Refresh Logs
-                                </button>
-                            </div>
+        <div class="d-flex flex-column gap-3">
+            <!-- 4-Tile Telemetry Grid -->
+            <div class="row g-2">
+                <!-- Tile 1: CPU -->
+                <div class="col-12 col-sm-6 col-md-3">
+                    <div class="bg-white border rounded p-3 h-100 d-flex flex-column justify-content-between">
+                        <div class="d-flex align-items-center justify-content-between text-muted font-mono" style="font-size: 10px;">
+                            <span class="text-uppercase fw-semibold">CPU Usage</span>
+                            <i class="bi bi-speedometer2"></i>
                         </div>
-                    </div>
-                }
-
-                <!-- 4-Tile Telemetry Grid -->
-                <div class="row g-2">
-                    <!-- Tile 1: CPU -->
-                    <div class="col-12 col-sm-6 col-md-3">
-                        <div class="bg-white border rounded p-2.5 h-100 d-flex flex-column justify-content-between">
-                            <div class="d-flex align-items-center justify-content-between text-muted font-mono" style="font-size: 10px;">
-                                <span class="text-uppercase fw-semibold">CPU Usage</span>
-                                <i class="bi bi-speedometer2"></i>
-                            </div>
-                            <div class="d-flex align-items-baseline gap-1 my-1">
-                                <span class="font-mono fw-bold fs-4" style="color: var(--accent-navy);" id="detailsCpuVal">@cpu.ToString("F1")%</span>
-                                <span class="font-mono text-muted" style="font-size: 10px;">/ 4 Cores</span>
-                            </div>
-                            <div>
-                                <div class="w-100 mb-1" style="height: 20px;">
-                                    <svg class="w-100 h-100" viewBox="0 0 100 24" preserveAspectRatio="none">
-                                        <path d="M0,20 L10,18 L20,19 L30,12 L40,14 L50,8 L60,11 L70,6 L80,14 L90,12 L100,5" fill="none" stroke="#1E2761" stroke-width="1.8" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
-                                    </svg>
-                                </div>
-                                <div class="d-flex justify-content-between font-mono text-muted" style="font-size: 9px;">
-                                    <span>Throttled: 0.0s</span>
-                                    <span>Load: 0.72</span>
-                                </div>
-                            </div>
+                        <div class="d-flex align-items-baseline gap-1 my-1">
+                            <span class="font-mono fw-bold fs-4" style="color: var(--accent-navy);" id="detailsCpuVal">@cpu.ToString("F1")%</span>
+                            <span class="font-mono text-muted" style="font-size: 10px;">/ 4 Cores</span>
                         </div>
-                    </div>
-
-                    <!-- Tile 2: Memory -->
-                    <div class="col-12 col-sm-6 col-md-3">
-                        <div class="bg-white border rounded p-2.5 h-100 d-flex flex-column justify-content-between">
-                            <div class="d-flex align-items-center justify-content-between text-muted font-mono" style="font-size: 10px;">
-                                <span class="text-uppercase fw-semibold">Memory</span>
-                                <i class="bi bi-memory"></i>
+                        <div>
+                            <div class="w-100 mb-1" style="height: 20px;">
+                                <svg class="w-100 h-100" viewBox="0 0 100 24" preserveAspectRatio="none">
+                                    <path d="M0,20 L10,18 L20,19 L30,12 L40,14 L50,8 L60,11 L70,6 L80,14 L90,12 L100,5" fill="none" stroke="#1E2761" stroke-width="1.8" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+                                </svg>
                             </div>
-                            <div class="d-flex align-items-baseline gap-1 my-1">
-                                <span class="font-mono fw-bold fs-4 text-dark" id="detailsMemVal">@memMb.ToString("F0") MB</span>
-                                <span class="font-mono text-muted" style="font-size: 10px;">/ @memLimitMb.ToString("F0") MB</span>
-                            </div>
-                            <div>
-                                <div class="mini-meter-track mb-1" style="height: 4px;">
-                                    <div class="mini-meter-fill mem" id="detailsMemBar" style="width: @(Math.Min(100, Math.Max(5, memPct)))%;"></div>
-                                </div>
-                                <div class="d-flex justify-content-between font-mono text-muted" style="font-size: 9px;">
-                                    <span>Swap: 512 MB</span>
-                                    <span>@memPct.ToString("F1")% Limit</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tile 3: Network I/O -->
-                    <div class="col-12 col-sm-6 col-md-3">
-                        <div class="bg-white border rounded p-2.5 h-100 d-flex flex-column justify-content-between">
-                            <div class="d-flex align-items-center justify-content-between text-muted font-mono" style="font-size: 10px;">
-                                <span class="text-uppercase fw-semibold">Network I/O</span>
-                                <i class="bi bi-arrow-down-up"></i>
-                            </div>
-                            <div class="font-mono my-1" style="font-size: 11px;">
-                                <div class="d-flex justify-content-between">
-                                    <span class="text-muted">RX:</span> <span class="fw-bold text-dark">14.2 MB/s</span>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <span class="text-muted">TX:</span> <span class="fw-bold text-secondary">2.8 MB/s</span>
-                                </div>
-                            </div>
-                            <div class="border-top pt-1 font-mono text-muted d-flex justify-content-between" style="font-size: 9px;">
-                                <span>Total: 42.1 GB</span>
-                                <span>Drops: 0</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Tile 4: Block / Disk I/O -->
-                    <div class="col-12 col-sm-6 col-md-3">
-                        <div class="bg-white border rounded p-2.5 h-100 d-flex flex-column justify-content-between">
-                            <div class="d-flex align-items-center justify-content-between text-muted font-mono" style="font-size: 10px;">
-                                <span class="text-uppercase fw-semibold">Block / Disk I/O</span>
-                                <i class="bi bi-hdd"></i>
-                            </div>
-                            <div class="font-mono my-1" style="font-size: 11px;">
-                                <div class="d-flex justify-content-between">
-                                    <span class="text-muted">Read:</span> <span class="fw-bold text-dark">120.4 MB</span>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <span class="text-muted">Write:</span> <span class="fw-bold text-secondary">450.8 MB</span>
-                                </div>
-                            </div>
-                            <div class="border-top pt-1 font-mono text-muted d-flex justify-content-between" style="font-size: 9px;">
-                                <span>IOPS: 142 op/s</span>
-                                <span>NVMe Pool</span>
+                            <div class="d-flex justify-content-between font-mono text-muted" style="font-size: 9px;">
+                                <span>Throttled: 0.0s</span>
+                                <span>Load: 0.72</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Live Interactive Terminal & Log Stream Panel -->
-                <div class="rounded border overflow-hidden shadow-sm" style="background-color: #0f172a; color: #e2e8f0;">
-                    <!-- Log Viewer Toolbar -->
-                    <div class="p-2 d-flex align-items-center justify-content-between" style="background-color: #090d16; border-bottom: 1px solid rgba(255,255,255,0.08);">
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="bi bi-terminal text-info"></i>
-                            <span class="font-mono fw-semibold" style="font-size: 11px; letter-spacing: 0.5px;">Container Tail Logs (stdout/stderr)</span>
-                            <span class="rounded-circle d-inline-block" style="width: 6px; height: 6px; background-color: #22c55e;"></span>
+                <!-- Tile 2: Memory -->
+                <div class="col-12 col-sm-6 col-md-3">
+                    <div class="bg-white border rounded p-3 h-100 d-flex flex-column justify-content-between">
+                        <div class="d-flex align-items-center justify-content-between text-muted font-mono" style="font-size: 10px;">
+                            <span class="text-uppercase fw-semibold">Memory</span>
+                            <i class="bi bi-memory"></i>
                         </div>
-                        <div class="d-flex align-items-center gap-2">
-                            <input type="text" id="logGrepInput" class="form-control form-control-sm py-0 font-mono text-white" placeholder="Grep output..." style="font-size: 10px; width: 130px; height: 24px; background-color: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2);" />
-                            <button class="btn btn-sm btn-dark border py-0 px-2 font-mono" style="font-size: 10px; height: 24px;" id="btnRefreshLogs" title="Refresh Log Buffer">
-                                <i class="bi bi-arrow-repeat"></i>
-                            </button>
-                            <button class="btn btn-sm btn-dark border py-0 px-2 font-mono" style="font-size: 10px; height: 24px;" id="btnClearLogs" title="Clear Buffer">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                        <div class="d-flex align-items-baseline gap-1 my-1">
+                            <span class="font-mono fw-bold fs-4 text-dark" id="detailsMemVal">@memMb.ToString("F0") MB</span>
+                            <span class="font-mono text-muted" style="font-size: 10px;">/ @memLimitMb.ToString("F0") MB</span>
+                        </div>
+                        <div>
+                            <div class="mini-meter-track mb-1" style="height: 4px;">
+                                <div class="mini-meter-fill mem" id="detailsMemBar" style="width: @(Math.Min(100, Math.Max(5, memPct)))%;"></div>
+                            </div>
+                            <div class="d-flex justify-content-between font-mono text-muted" style="font-size: 9px;">
+                                <span>Swap: 512 MB</span>
+                                <span>@memPct.ToString("F1")% Limit</span>
+                            </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Virtualized Log Body -->
-                    <div class="dense-terminal" id="terminalLogBody" style="height: 320px; font-size: 11px; padding: 10px; overflow-y: auto;">
-                        @if (Model.InitialLogs.Any())
-                        {
-                            @foreach (var line in Model.InitialLogs)
-                            {
-                                var l = line.ToLowerInvariant();
-                                var lineClass = l.Contains("error") || l.Contains("fail") ? "log-line error" : (l.Contains("warn") ? "log-line warn" : "log-line info");
-                                <div class="@lineClass">@line</div>
-                            }
-                        }
-                        else
-                        {
-                            <div class="log-line info">[@DateTime.UtcNow.ToString("HH:mm:ss")] Listening for container stdio streams on docker socket...</div>
-                        }
-                    </div>
-
-                    <!-- Log Footer -->
-                    <div class="p-1.5 px-3 d-flex align-items-center justify-content-between font-mono text-muted" style="background-color: #090d16; font-size: 10px; border-top: 1px solid rgba(255,255,255,0.08);">
-                        <div class="d-flex align-items-center gap-3">
-                            <span>Buffer: @(Model.InitialLogs.Count) lines</span>
-                            <span>Encoding: UTF-8</span>
+                <!-- Tile 3: Network I/O -->
+                <div class="col-12 col-sm-6 col-md-3">
+                    <div class="bg-white border rounded p-3 h-100 d-flex flex-column justify-content-between">
+                        <div class="d-flex align-items-center justify-content-between text-muted font-mono" style="font-size: 10px;">
+                            <span class="text-uppercase fw-semibold">Network I/O</span>
+                            <i class="bi bi-arrow-down-up"></i>
                         </div>
-                        <div class="form-check form-switch m-0 d-flex align-items-center gap-1">
-                            <input class="form-check-input" type="checkbox" id="autoScrollSwitch" checked style="cursor: pointer;">
-                            <label class="form-check-label text-muted" for="autoScrollSwitch">Auto-Scroll</label>
+                        <div class="font-mono my-1" style="font-size: 11px;">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">RX:</span> <span class="fw-bold text-dark">14.2 MB/s</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">TX:</span> <span class="fw-bold text-secondary">2.8 MB/s</span>
+                            </div>
+                        </div>
+                        <div class="border-top pt-1 font-mono text-muted d-flex justify-content-between" style="font-size: 9px;">
+                            <span>Total: 42.1 GB</span>
+                            <span>Drops: 0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tile 4: Block / Disk I/O -->
+                <div class="col-12 col-sm-6 col-md-3">
+                    <div class="bg-white border rounded p-3 h-100 d-flex flex-column justify-content-between">
+                        <div class="d-flex align-items-center justify-content-between text-muted font-mono" style="font-size: 10px;">
+                            <span class="text-uppercase fw-semibold">Block / Disk I/O</span>
+                            <i class="bi bi-hdd"></i>
+                        </div>
+                        <div class="font-mono my-1" style="font-size: 11px;">
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Read:</span> <span class="fw-bold text-dark">120.4 MB</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">Write:</span> <span class="fw-bold text-secondary">450.8 MB</span>
+                            </div>
+                        </div>
+                        <div class="border-top pt-1 font-mono text-muted d-flex justify-content-between" style="font-size: 9px;">
+                            <span>IOPS: 142 op/s</span>
+                            <span>NVMe Pool</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Column: Operational Inspection Panels (4 Cols on XL) -->
-            <div class="col-12 col-xl-4 d-flex flex-column gap-3">
-                <!-- Panel 1: Ports & Networking -->
-                <div class="bg-white border rounded shadow-xs overflow-hidden">
-                    <div class="p-2.5 bg-light border-bottom d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-1.5 font-mono fw-semibold text-dark" style="font-size: 12px;">
-                            <i class="bi bi-diagram-3 text-secondary"></i>
-                            <span>Ports &amp; Networking</span>
-                        </div>
-                        <span class="font-mono text-muted px-1.5 py-0.5 rounded bg-white border" style="font-size: 10px;">@d.NetworkMode</span>
-                    </div>
-                    <div class="p-2.5 d-flex flex-column gap-2">
-                        @if (c.Ports.Any())
-                        {
-                            @foreach (var port in c.Ports)
-                            {
-                                <div class="p-2 rounded bg-light border d-flex align-items-center justify-content-between font-mono" style="font-size: 11px;">
-                                    <div>
-                                        <span class="fw-bold text-dark">@port</span>
-                                        <div class="text-muted" style="font-size: 9px;">Container Binding</div>
-                                    </div>
-                                    <i class="bi bi-arrow-right text-muted"></i>
-                                    <div class="text-end">
-                                        <span class="fw-bold" style="color: var(--accent-navy);">Published</span>
-                                        <div class="text-muted" style="font-size: 9px;">Public Port</div>
-                                    </div>
-                                </div>
-                            }
-                        }
-                        else
-                        {
-                            <div class="p-2 rounded bg-light border font-mono text-muted" style="font-size: 11px;">
-                                No published ports (Internal container network)
-                            </div>
-                        }
-
-                        <div class="font-mono text-muted pt-1 d-flex flex-column gap-1" style="font-size: 11px;">
-                            <div class="d-flex justify-content-between py-0.5 border-bottom">
-                                <span>IP Address:</span> <span class="text-dark">@(string.IsNullOrEmpty(d.IPAddress) ? "None" : d.IPAddress)</span>
-                            </div>
-                            <div class="d-flex justify-content-between py-0.5 border-bottom">
-                                <span>Network Mode:</span> <span class="text-dark">@d.NetworkMode</span>
-                            </div>
-                            <div class="d-flex justify-content-between py-0.5">
-                                <span>DNS Resolver:</span> <span class="text-dark">127.0.0.11 (Embedded)</span>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Security & Execution Profile -->
+            <div class="bg-white border rounded p-3 shadow-xs d-flex flex-column gap-2">
+                <div class="d-flex align-items-center gap-1.5 font-mono fw-semibold text-dark" style="font-size: 12px;">
+                    <i class="bi bi-shield-check text-success"></i>
+                    <span>Security &amp; Execution Profile</span>
                 </div>
-
-                <!-- Panel 2: Persistent Volumes & Mounts -->
-                <div class="bg-white border rounded shadow-xs overflow-hidden">
-                    <div class="p-2.5 bg-light border-bottom d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-1.5 font-mono fw-semibold text-dark" style="font-size: 12px;">
-                            <i class="bi bi-folder-fill" style="color: var(--accent-navy);"></i>
-                            <span>Volumes &amp; Mounts</span>
+                <div class="row g-2 font-mono text-muted" style="font-size: 10px;">
+                    <div class="col-6 col-md-3">
+                        <div class="p-2 rounded bg-light border">
+                            <span class="text-muted d-block">Privileged:</span>
+                            <span class="fw-bold text-dark">false</span>
                         </div>
-                        <span class="font-mono text-muted px-1.5 py-0.5 rounded bg-white border" style="font-size: 10px;">@d.Mounts.Count Attached</span>
                     </div>
-                    <div class="p-2.5 d-flex flex-column gap-2">
-                        @if (d.Mounts.Any())
-                        {
-                            @foreach (var mount in d.Mounts)
-                            {
-                                <div class="p-2 rounded bg-light border font-mono" style="font-size: 11px;">
-                                    <div class="d-flex justify-content-between align-items-center mb-0.5">
-                                        <span class="fw-bold text-dark text-truncate">@mount</span>
-                                        <span class="px-1.5 py-0.2 rounded bg-white border text-muted" style="font-size: 9px;">rw</span>
-                                    </div>
-                                    <div class="text-muted text-truncate" style="font-size: 10px;">Host path: @mount</div>
-                                </div>
-                            }
-                        }
-                        else
-                        {
-                            <div class="p-2 rounded bg-light border font-mono text-muted" style="font-size: 11px;">
-                                No volume mounts attached.
-                            </div>
-                        }
-                    </div>
-                </div>
-
-                <!-- Panel 3: Environment Variables Summary -->
-                <div class="bg-white border rounded shadow-xs overflow-hidden">
-                    <div class="p-2.5 bg-light border-bottom d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center gap-1.5 font-mono fw-semibold text-dark" style="font-size: 12px;">
-                            <i class="bi bi-key text-secondary"></i>
-                            <span>Environment (@d.EnvironmentVariables.Count)</span>
+                    <div class="col-6 col-md-3">
+                        <div class="p-2 rounded bg-light border">
+                            <span class="text-muted d-block">User (UID:GID):</span>
+                            <span class="fw-bold text-dark">1000:1000</span>
                         </div>
-                        <button class="btn btn-link p-0 font-mono text-decoration-none" style="color: var(--accent-navy); font-size: 11px;" onclick="document.querySelector('[data-tab=tabEnv]').click()">
-                            View All &rarr;
-                        </button>
                     </div>
-                    <div class="p-2.5 d-flex flex-column gap-1.5 font-mono" style="font-size: 11px;">
-                        @foreach (var env in d.EnvironmentVariables.Take(4))
-                        {
-                            <div class="p-1.5 rounded bg-light border d-flex align-items-center justify-content-between">
-                                <span class="fw-bold text-dark text-truncate" style="max-width: 120px;">@env.Key</span>
-                                <span class="text-muted text-truncate" style="max-width: 140px;">@env.Value</span>
-                            </div>
-                        }
+                    <div class="col-6 col-md-3">
+                        <div class="p-2 rounded bg-light border">
+                            <span class="text-muted d-block">Readonly Root:</span>
+                            <span class="fw-bold text-dark">false</span>
+                        </div>
                     </div>
-                </div>
-
-                <!-- Panel 4: Security & Execution Context -->
-                <div class="bg-white border rounded p-2.5 shadow-xs d-flex flex-column gap-2">
-                    <div class="d-flex align-items-center gap-1.5 font-mono fw-semibold text-dark" style="font-size: 12px;">
-                        <i class="bi bi-shield-check text-success"></i>
-                        <span>Security &amp; Execution Profile</span>
-                    </div>
-                    <div class="row g-1 font-mono text-muted" style="font-size: 10px;">
-                        <div class="col-6">
-                            <div class="p-1.5 rounded bg-light border">
-                                <span class="text-muted d-block">Privileged:</span>
-                                <span class="fw-bold text-dark">false</span>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="p-1.5 rounded bg-light border">
-                                <span class="text-muted d-block">User (UID:GID):</span>
-                                <span class="fw-bold text-dark">1000:1000</span>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="p-1.5 rounded bg-light border">
-                                <span class="text-muted d-block">Readonly Root:</span>
-                                <span class="fw-bold text-dark">false</span>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="p-1.5 rounded bg-light border">
-                                <span class="text-muted d-block">AppArmor:</span>
-                                <span class="fw-bold text-dark">docker-default</span>
-                            </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-2 rounded bg-light border">
+                            <span class="text-muted d-block">AppArmor:</span>
+                            <span class="fw-bold text-dark">docker-default</span>
                         </div>
                     </div>
                 </div>
@@ -651,89 +443,188 @@
         </div>
     </div>
 
-    <!-- TAB 6: TIME MACHINE SNAPSHOTS -->
-    <div id="tabSnapshots" class="tab-pane-content d-none">
-        <div class="bg-white p-3 rounded border mb-3 shadow-xs d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
-            <div>
-                <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-clock-history text-primary fs-5"></i>
-                    <span class="fw-bold text-dark font-mono" style="font-size: 13px;">Time Machine Snapshots</span>
+    <!-- TAB 6: FILES (Container Filesystem Browser) -->
+    <div id="tabFiles" class="tab-pane-content d-none">
+        <div class="bg-white border rounded overflow-hidden">
+            <!-- Top Toolbar & Breadcrumb Strip -->
+            <div class="d-flex flex-wrap align-items-center justify-content-between p-2 border-bottom bg-light gap-2">
+                <div class="d-flex align-items-center gap-1 font-mono overflow-x-auto" style="font-size: 11px;" id="filesBreadcrumbs">
+                    <button class="btn btn-sm btn-light border py-0 px-2 font-mono" style="font-size: 11px;" onclick="navigateFiles('/')" title="Root Directory">
+                        <i class="bi bi-hdd-network me-1"></i>/
+                    </button>
                 </div>
-                <div class="text-muted font-mono mt-1" style="font-size: 11px;">
-                    Captures atomic volume state tar-archives, image sha256 digests, and JSON runtime configuration manifests while freezing in-flight I/O.
+
+                <div class="d-flex align-items-center gap-2">
+                    <div class="position-relative" style="width: 220px;">
+                        <i class="bi bi-search position-absolute text-muted" style="left: 8px; top: 50%; transform: translateY(-50%); font-size: 11px;"></i>
+                        <input type="text" id="filesSearchInput" class="form-control form-control-sm ps-4 py-0 font-mono" placeholder="Filter in this folder..." style="font-size: 11px; height: 26px;" oninput="filterFileTable(this.value)">
+                    </div>
+                    <button class="btn btn-sm btn-light border py-0 px-2 font-mono text-dark d-inline-flex align-items-center gap-1" style="font-size: 11px; height: 26px;" onclick="refreshCurrentFolder()" title="Refresh directory">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
                 </div>
             </div>
-            <form method="post" asp-page-handler="Snapshot" asp-route-id="@c.Id" class="d-inline">
-                @Html.AntiForgeryToken()
-                <button type="submit" class="btn btn-sm text-white font-mono d-inline-flex align-items-center gap-1" style="background-color: var(--accent-navy); font-size: 11px; padding: 5px 14px;">
-                    <i class="bi bi-camera"></i> Capture New Snapshot
-                </button>
-            </form>
-        </div>
 
-        <div class="fleptix-table-container">
-            <table class="fleptix-table">
-                <thead>
-                    <tr>
-                        <th style="width: 25%;">Snapshot ID</th>
-                        <th style="width: 18%;">Captured Timestamp</th>
-                        <th style="width: 18%;">Volume Archive (.tar)</th>
-                        <th style="width: 18%;">Config Sidecar (.json)</th>
-                        <th style="width: 11%;">Image Digest</th>
-                        <th style="width: 10%;" class="text-end">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="snapshotsTableBody">
-                    @if (Model.Snapshots.Any())
-                    {
-                        @foreach (var snap in Model.Snapshots)
+            <!-- Main Dual-Pane Browser: Left Tree + Right Data Table -->
+            <div class="row g-0">
+                <!-- Left: Navigable Directory Tree -->
+                <div class="col-12 col-md-4 col-xl-3 border-end bg-light-subtle" style="max-height: 520px; overflow-y: auto;">
+                    <div class="p-2 border-bottom text-muted fw-semibold font-mono d-flex align-items-center justify-content-between" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;">
+                        <span>Directory Tree</span>
+                        <span id="filesTreeStatus" class="text-muted fw-normal font-mono" style="font-size: 10px;">/</span>
+                    </div>
+                    <div id="filesTreeRoot" class="p-1 font-mono" style="font-size: 11px;">
+                        <div class="p-2 text-muted font-mono text-center">
+                            <span class="spinner-border spinner-border-sm me-1" style="width: 12px; height: 12px;"></span> Loading root tree...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Selected Directory File Table -->
+                <div class="col-12 col-md-8 col-xl-9 bg-white" style="max-height: 520px; overflow-y: auto;">
+                    <div class="p-2 border-bottom d-flex align-items-center justify-content-between bg-light" style="font-size: 11px;">
+                        <div class="font-mono text-secondary">
+                            <span class="text-muted">Current Path:</span> <span id="filesCurrentPathDisplay" class="fw-bold text-dark font-mono">/</span>
+                        </div>
+                        <div class="font-mono text-muted" id="filesItemCountDisplay" style="font-size: 10px;">
+                            0 items
+                        </div>
+                    </div>
+
+                    <div class="fleptix-table-container border-0 rounded-0">
+                        <table class="fleptix-table" id="filesDataTable">
+                            <thead>
+                                <tr>
+                                    <th style="min-width: 220px;">Name</th>
+                                    <th style="width: 100px;">Type</th>
+                                    <th style="width: 90px; text-align: right;">Size</th>
+                                    <th style="width: 90px;">Mode</th>
+                                    <th style="width: 140px;">Modified</th>
+                                </tr>
+                            </thead>
+                            <tbody id="filesTableBody">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted font-mono py-4">
+                                        <span class="spinner-border spinner-border-sm me-1" style="width: 12px; height: 12px;"></span> Loading filesystem entries...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB 7: TIME MACHINE SNAPSHOTS -->
+    <div id="tabSnapshots" class="tab-pane-content d-none">
+        @if (!Model.IsTimeMachineEnabled)
+        {
+            <div class="bg-white p-3 rounded border mb-3 shadow-xs font-mono" style="border-left: 3px solid #d97706 !important;">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-lock-fill" style="color: #d97706; font-size: 14px;"></i>
+                        <span class="fw-bold text-dark" style="font-size: 13px;">Time Machine &bull; Fleptix Pro Feature</span>
+                        <span class="badge font-mono" style="background-color: #fef3c7; color: #b45309; font-size: 9px; padding: 2px 6px; border: 1px solid #fde68a;">LOCKED</span>
+                    </div>
+                    <span class="text-muted" style="font-size: 10px;">Tier: Open-Core (Free / Developer)</span>
+                </div>
+                <p class="text-muted mb-3" style="font-size: 11px; line-height: 1.5;">
+                    Atomic volume state tar-archiving, SHA-256 image digest verification, and sidecar runtime configuration rollback require a licensed edition of Fleptix. To enable Time Machine for container <code class="px-1 bg-light border rounded text-dark">@c.Name</code>, set <code class="px-1 bg-light border rounded text-dark">TIMEMACHINE_ENABLED=true</code> or update <code class="px-1 bg-light border rounded text-dark">TimeMachine:Enabled</code> in configuration.
+                </p>
+                <div class="d-flex align-items-center justify-content-between pt-2 border-top" style="font-size: 11px;">
+                    <a href="/Settings" class="btn btn-sm btn-light border d-inline-flex align-items-center gap-1 font-mono text-dark" style="font-size: 11px; padding: 3px 10px;">
+                        <i class="bi bi-gear"></i> View Runtime License Settings
+                    </a>
+                    <span class="text-muted" style="font-size: 10px;">Feature key: <code>TimeMachine:Enabled</code> (Disabled)</span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="bg-white p-3 rounded border mb-3 shadow-xs d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                <div>
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-clock-history text-warning fs-5"></i>
+                        <span class="fw-bold text-dark font-mono" style="font-size: 13px;">Time Machine Snapshots</span>
+                        <span class="badge font-mono ms-0.5" style="background-color: #fef3c7; color: #b45309; font-size: 8px; padding: 1px 3px; border: 1px solid #fde68a;">PRO</span>
+                    </div>
+                    <div class="text-muted font-mono mt-1" style="font-size: 11px;">
+                        Captures atomic volume state tar-archives, image sha256 digests, and JSON runtime configuration manifests while freezing in-flight I/O.
+                    </div>
+                </div>
+                <form method="post" asp-page-handler="Snapshot" asp-route-id="@c.Id" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-sm text-white font-mono d-inline-flex align-items-center gap-1" style="background-color: var(--accent-navy); font-size: 11px; padding: 5px 14px;">
+                        <i class="bi bi-camera"></i> Capture New Snapshot
+                    </button>
+                </form>
+            </div>
+
+            <div class="fleptix-table-container">
+                <table class="fleptix-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 25%;">Snapshot ID</th>
+                            <th style="width: 18%;">Captured Timestamp</th>
+                            <th style="width: 18%;">Volume Archive (.tar)</th>
+                            <th style="width: 18%;">Config Sidecar (.json)</th>
+                            <th style="width: 11%;">Image Digest</th>
+                            <th style="width: 10%;" class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="snapshotsTableBody">
+                        @if (Model.Snapshots.Any())
+                        {
+                            @foreach (var snap in Model.Snapshots)
+                            {
+                                <tr>
+                                    <td class="font-mono fw-bold text-dark">
+                                        <i class="bi bi-box-seam me-1 text-primary"></i>
+                                        @snap.SnapshotId
+                                    </td>
+                                    <td class="font-mono text-muted">@snap.Timestamp.ToString("yyyy-MM-dd HH:mm:ss UTC")</td>
+                                    <td class="font-mono text-dark">
+                                        <span class="badge bg-light text-dark border">
+                                            @(snap.ArchiveSizeBytes > 0 ? $"{(snap.ArchiveSizeBytes / 1024.0):F1} KB" : "Archive created")
+                                        </span>
+                                        <div class="text-muted text-truncate" style="font-size: 10px; max-width: 180px;" title="@snap.ArchivePath">
+                                            @System.IO.Path.GetFileName(snap.ArchivePath)
+                                        </div>
+                                    </td>
+                                    <td class="font-mono text-dark">
+                                        <span class="badge bg-light text-success border">Sidecar Valid</span>
+                                        <div class="text-muted text-truncate" style="font-size: 10px; max-width: 180px;" title="@snap.SidecarPath">
+                                            @System.IO.Path.GetFileName(snap.SidecarPath)
+                                        </div>
+                                    </td>
+                                    <td class="font-mono text-muted text-truncate" style="max-width: 120px;" title="@snap.ImageHash">
+                                        @(string.IsNullOrEmpty(snap.ImageHash) ? "sha256:current" : (snap.ImageHash.Length > 15 ? snap.ImageHash[..15] + "..." : snap.ImageHash))
+                                    </td>
+                                    <td class="text-end font-mono">
+                                        <form method="post" asp-page-handler="Restore" asp-route-id="@c.Id" asp-route-snapshotId="@snap.SnapshotId" class="d-inline" id="tableRestoreForm_@snap.SnapshotId">
+                                            @Html.AntiForgeryToken()
+                                            <button type="button" class="btn btn-sm btn-outline-danger font-mono d-inline-flex align-items-center gap-1 py-0 px-2" style="font-size: 11px; height: 24px;" onclick="handleRestoreClick(event, '@c.Id', '@snap.SnapshotId', this)" title="Restore container state from this snapshot">
+                                                <i class="bi bi-arrow-counterclockwise"></i> Restore
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
                         {
                             <tr>
-                                <td class="font-mono fw-bold text-dark">
-                                    <i class="bi bi-box-seam me-1 text-primary"></i>
-                                    @snap.SnapshotId
-                                </td>
-                                <td class="font-mono text-muted">@snap.Timestamp.ToString("yyyy-MM-dd HH:mm:ss UTC")</td>
-                                <td class="font-mono text-dark">
-                                    <span class="badge bg-light text-dark border">
-                                        @(snap.ArchiveSizeBytes > 0 ? $"{(snap.ArchiveSizeBytes / 1024.0):F1} KB" : "Archive created")
-                                    </span>
-                                    <div class="text-muted text-truncate" style="font-size: 10px; max-width: 180px;" title="@snap.ArchivePath">
-                                        @System.IO.Path.GetFileName(snap.ArchivePath)
-                                    </div>
-                                </td>
-                                <td class="font-mono text-dark">
-                                    <span class="badge bg-light text-success border">Sidecar Valid</span>
-                                    <div class="text-muted text-truncate" style="font-size: 10px; max-width: 180px;" title="@snap.SidecarPath">
-                                        @System.IO.Path.GetFileName(snap.SidecarPath)
-                                    </div>
-                                </td>
-                                <td class="font-mono text-muted text-truncate" style="max-width: 120px;" title="@snap.ImageHash">
-                                    @(string.IsNullOrEmpty(snap.ImageHash) ? "sha256:current" : (snap.ImageHash.Length > 15 ? snap.ImageHash[..15] + "..." : snap.ImageHash))
-                                </td>
-                                <td class="text-end font-mono">
-                                    <form method="post" asp-page-handler="Restore" asp-route-id="@c.Id" asp-route-snapshotId="@snap.SnapshotId" class="d-inline" id="tableRestoreForm_@snap.SnapshotId">
-                                        @Html.AntiForgeryToken()
-                                        <button type="button" class="btn btn-sm btn-outline-danger font-mono d-inline-flex align-items-center gap-1 py-0 px-2" style="font-size: 11px; height: 24px;" onclick="handleRestoreClick(event, '@c.Id', '@snap.SnapshotId', this)" title="Restore container state from this snapshot">
-                                            <i class="bi bi-arrow-counterclockwise"></i> Restore
-                                        </button>
-                                    </form>
+                                <td colspan="6" class="text-muted font-mono text-center p-4">
+                                    <i class="bi bi-clock-history d-block fs-3 mb-1 text-secondary"></i>
+                                    No Time Machine snapshots recorded for container '@c.Name' yet.
                                 </td>
                             </tr>
                         }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td colspan="6" class="text-muted font-mono text-center p-4">
-                                <i class="bi bi-clock-history d-block fs-3 mb-1 text-secondary"></i>
-                                No Time Machine snapshots recorded for container '@c.Name' yet.
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                    </tbody>
+                </table>
+            </div>
+        }
     </div>
 </div>
 

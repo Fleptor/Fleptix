@@ -175,10 +175,6 @@ function handleClusterTelemetry(payload) {
     const memEl = document.getElementById('dashTotalMem');
     if (memEl) memEl.textContent = payload.totalMemoryUsageMb.toFixed(1) + ' MB';
 
-    const ratioEl = document.getElementById('dashStateRatio');
-    if (ratioEl) {
-        ratioEl.innerHTML = `<span class="text-success">${payload.runningCount}</span> / <span class="text-warning">${payload.pausedCount}</span> / <span class="text-muted">${payload.stoppedCount}</span>`;
-    }
 
     // Push to charts
     const timeStr = new Date(payload.timestamp).toLocaleTimeString();

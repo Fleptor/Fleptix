@@ -1,5 +1,6 @@
 namespace Fleptix.Observer.Services;
 
+using System.Formats.Tar;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Docker.DotNet;
@@ -585,5 +586,144 @@ public class DockerContainerService : IContainerService
             _logger.LogError(ex, "Failed to read logs for container {ContainerId}", containerId);
             return new[] { $"[Error reading logs: {ex.Message}]" };
         }
+    }
+
+    /// <summary>
+    /// Browses container filesystem at the specified path using Docker.DotNet GetArchiveFromContainerAsync
+    /// and parses tar entries using System.Formats.Tar.
+    /// </summary>
+    public async Task<IReadOnlyList<ContainerFileSystemItem>> GetContainerFilesAsync(
+        string containerId,
+        string path = "/",
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(path)) path = "/";
+        path = path.Trim();
+        if (!path.StartsWith('/')) path = "/" + path;
+
+        try
+        {
+            var response = await _client.Containers.GetArchiveFromContainerAsync(
+                containerId,
+                new GetArchiveFromContainerParameters { Path = path },
+                statOnly: false,
+                cancellationToken);
+
+            if (response.Stream == null)
+            {
+                return Array.Empty<ContainerFileSystemItem>();
+            }
+
+            using var stream = response.Stream;
+            using var tarReader = new TarReader(stream);
+
+            string normTarget = path.Trim('/');
+            var itemsMap = new Dictionary<string, ContainerFileSystemItem>(StringComparer.OrdinalIgnoreCase);
+
+            TarEntry? entry;
+            int entriesScanned = 0;
+            const int maxEntries = 5000;
+
+            while (entriesScanned++ < maxEntries && (entry = tarReader.GetNextEntry()) != null)
+            {
+                string raw = entry.Name.Replace('\\', '/').Trim();
+                while (raw.StartsWith("./")) raw = raw[2..];
+                raw = raw.TrimStart('/');
+
+                // Skip root or self folder
+                if (string.IsNullOrEmpty(raw) || raw.Equals(normTarget, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                // If queried a sub-path, Docker entry names start with the folder name prefix
+                string rel = raw;
+                if (!string.IsNullOrEmpty(normTarget))
+                {
+                    if (rel.StartsWith(normTarget + "/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        rel = rel[(normTarget.Length + 1)..];
+                    }
+                    else if (rel.Equals(normTarget, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+                }
+
+                rel = rel.Trim('/');
+                if (string.IsNullOrEmpty(rel)) continue;
+
+                var parts = rel.Split('/', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 0) continue;
+
+                string directChildName = parts[0];
+                bool isSubItem = parts.Length > 1;
+                bool isDir = isSubItem || entry.EntryType == TarEntryType.Directory || entry.Name.EndsWith('/');
+
+                string childFullPath = string.IsNullOrEmpty(normTarget)
+                    ? $"/{directChildName}"
+                    : $"/{normTarget}/{directChildName}";
+
+                string typeStr = isDir ? "directory" : entry.EntryType switch
+                {
+                    TarEntryType.SymbolicLink => "symlink",
+                    TarEntryType.HardLink => "hardlink",
+                    TarEntryType.BlockDevice => "block",
+                    TarEntryType.CharacterDevice => "char",
+                    TarEntryType.Fifo => "fifo",
+                    _ => "file"
+                };
+
+                if (itemsMap.TryGetValue(directChildName, out var existing))
+                {
+                    if (isDir && !existing.IsDirectory)
+                    {
+                        existing.IsDirectory = true;
+                        existing.Type = "directory";
+                        existing.Size = 0;
+                    }
+
+                    if (!isSubItem)
+                    {
+                        existing.ModifiedTime = entry.ModificationTime;
+                        if (!isDir) existing.Size = entry.Length;
+                        if (!string.IsNullOrEmpty(entry.LinkName)) existing.LinkTarget = entry.LinkName;
+                        if (entry.Mode != 0) existing.Mode = ConvertModeToString(entry.Mode, isDir);
+                    }
+                }
+                else
+                {
+                    var newItem = new ContainerFileSystemItem
+                    {
+                        Name = directChildName,
+                        Path = childFullPath,
+                        IsDirectory = isDir,
+                        Size = isDir ? 0 : entry.Length,
+                        Type = typeStr,
+                        ModifiedTime = entry.ModificationTime,
+                        LinkTarget = !string.IsNullOrEmpty(entry.LinkName) ? entry.LinkName : null,
+                        Mode = entry.Mode != 0 ? ConvertModeToString(entry.Mode, isDir) : null
+                    };
+
+                    itemsMap[directChildName] = newItem;
+                }
+            }
+
+            return itemsMap.Values
+                .OrderByDescending(x => x.IsDirectory)
+                .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to browse container filesystem for {ContainerId} at {Path}", containerId, path);
+            return Array.Empty<ContainerFileSystemItem>();
+        }
+    }
+
+    private static string ConvertModeToString(System.IO.UnixFileMode mode, bool isDir)
+    {
+        int modeInt = (int)mode & 0xFFF;
+        return (isDir ? "d" : "-") + Convert.ToString(modeInt, 8).PadLeft(3, '0');
     }
 }

@@ -179,6 +179,26 @@ public class ContainerServiceManager : IContainerService
 
         return await _demoService.GetLogsAsync(containerId, tailLines, cancellationToken);
     }
+
+    public async Task<IReadOnlyList<ContainerFileSystemItem>> GetContainerFilesAsync(string containerId, string path = "/", CancellationToken cancellationToken = default)
+    {
+        if (!_forceDemoMode)
+        {
+            try
+            {
+                if (await _dockerService.CheckConnectivityAsync(cancellationToken))
+                {
+                    return await _dockerService.GetContainerFilesAsync(containerId, path, cancellationToken);
+                }
+            }
+            catch
+            {
+                // Fallback to DemoContainerService on Docker connection failure
+            }
+        }
+
+        return await _demoService.GetContainerFilesAsync(containerId, path, cancellationToken);
+    }
 }
 
 

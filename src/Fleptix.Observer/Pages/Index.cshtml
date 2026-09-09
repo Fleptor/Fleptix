@@ -166,43 +166,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Container Fleet Status Ribbon -->
-    <div class="bg-white border rounded p-3 mb-3 d-flex flex-wrap align-items-center justify-content-between gap-3">
-        <div class="d-flex flex-wrap align-items-center gap-3">
-            <div class="d-flex align-items-center gap-2">
-                <span class="fw-bold" style="color: var(--accent-navy); font-size: 14px;">Fleet Status</span>
-                <span class="font-mono px-2 py-0.5 rounded bg-light text-dark fw-semibold" style="font-size: 11px; border: 1px solid var(--border-color);">@Model.Containers.Count Total</span>
-            </div>
-            <div class="d-flex align-items-center gap-3 font-mono" style="font-size: 12px;" id="dashStateRatio">
-                <!-- Running -->
-                <div class="d-flex align-items-center gap-1">
-                    <span class="rounded-circle d-inline-block" style="width: 8px; height: 8px; background-color: var(--status-running-dot);"></span>
-                    <span class="fw-semibold text-dark">@runningCount</span>
-                    <span class="text-muted">Running</span>
-                </div>
-                <span class="text-muted">/</span>
-                <!-- Alerting / Paused -->
-                <div class="d-flex align-items-center gap-1 px-2 py-0.5 rounded" style="background-color: @(pausedCount > 0 ? "#fee2e2" : "#fef3c7"); color: @(pausedCount > 0 ? "#dc2626" : "#b45309");">
-                    <span class="rounded-circle d-inline-block" style="width: 8px; height: 8px; background-color: @(pausedCount > 0 ? "#dc2626" : "#d97706");"></span>
-                    <span class="fw-semibold">@pausedCount Alerting</span>
-                </div>
-                <span class="text-muted">/</span>
-                <!-- Stopped -->
-                <div class="d-flex align-items-center gap-1">
-                    <span class="rounded-circle d-inline-block" style="width: 8px; height: 8px; background-color: var(--status-stopped-dot);"></span>
-                    <span class="fw-semibold text-dark">@stoppedCount</span>
-                    <span class="text-muted">Stopped</span>
-                </div>
-            </div>
-        </div>
-        <a href="/Containers" class="btn btn-sm d-inline-flex align-items-center gap-1 text-decoration-none" style="background-color: var(--accent-navy); color: #ffffff; font-size: 12px; padding: 5px 12px; border-radius: 4px;">
-            <i class="bi bi-layers"></i>
-            <span>View Full Container Fleet</span>
-            <i class="bi bi-arrow-right ms-1"></i>
-        </a>
-    </div>
-
     <!-- Main Operational Two-Column Layout -->
     <div class="row g-3">
         <!-- Left Column: Priority Workloads & Host Daemon Actions (~60% width) -->
