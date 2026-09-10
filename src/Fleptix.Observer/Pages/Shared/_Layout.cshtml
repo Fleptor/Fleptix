@@ -89,18 +89,15 @@
         <div class="app-main">
             @{
                 var pageRoute = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
-                var isDashboard = pageRoute == "/Index" || pageRoute == "/" || string.IsNullOrEmpty(pageRoute);
                 var isContainers = pageRoute == "/Containers";
             }
-            @if (!isDashboard)
+            @if (isContainers)
             {
-                <!-- Minimal Top Bar: Centered on Containers, hidden on Dashboard -->
-                <header class="app-topbar @(isContainers ? "topbar-centered" : "")">
+                <!-- Minimal Top Bar: Centered on Containers list page only -->
+                <header class="app-topbar topbar-centered">
                     <div class="topbar-search">
                         <i class="bi bi-search search-icon"></i>
                         <input type="search" id="globalSearchInput" class="topbar-search-input" placeholder="Search containers, images, ports... (Press '/' to focus)" />
-                    </div>
-                    <div class="topbar-actions">
                     </div>
                 </header>
             }
