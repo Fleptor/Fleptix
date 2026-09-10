@@ -4,6 +4,10 @@
     <ProjectReference Include="..\Fleptix.Core\Fleptix.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup Condition="Exists('..\Fleptix.TimeMachine\Fleptix.TimeMachine.csproj')">
+    <ProjectReference Include="..\Fleptix.TimeMachine\Fleptix.TimeMachine.csproj" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Docker.DotNet" Version="3.125.15" />
   </ItemGroup>

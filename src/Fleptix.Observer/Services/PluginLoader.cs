@@ -20,16 +20,37 @@ public static class PluginLoader
         this IServiceCollection services, 
         IConfiguration configuration)
     {
+        // 1. Check if Fleptix.TimeMachine is already referenced/loaded in the current AppDomain
+        var loadedAssembly = AppDomain.CurrentDomain.GetAssemblies()
+            .FirstOrDefault(a => string.Equals(a.GetName().Name, "Fleptix.TimeMachine", StringComparison.OrdinalIgnoreCase));
+
+        if (loadedAssembly != null)
+        {
+            if (TryRegisterFromAssembly(loadedAssembly, services, configuration, "AppDomain reference"))
+            {
+                return services;
+            }
+        }
+
+        // 2. Probe known deployment and development locations
+        var baseDir = AppContext.BaseDirectory;
+        var currentDir = Directory.GetCurrentDirectory();
+
         var probedPaths = new[]
         {
-            Path.Combine(AppContext.BaseDirectory, "plugins", "Fleptix.TimeMachine.dll"),
-            Path.Combine(AppContext.BaseDirectory, "Fleptix.TimeMachine.dll"),
+            Path.Combine(baseDir, "Fleptix.TimeMachine.dll"),
+            Path.Combine(baseDir, "plugins", "Fleptix.TimeMachine.dll"),
+            "/app/Fleptix.TimeMachine.dll",
             "/app/plugins/Fleptix.TimeMachine.dll",
-            // Local dev path: relative project output probing
-            Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "Fleptix.TimeMachine", "bin", "Debug", "net10.0", "Fleptix.TimeMachine.dll")
+            // Relative development output probing
+            Path.Combine(baseDir, "..", "..", "..", "..", "Fleptix.TimeMachine", "bin", "Debug", "net10.0", "Fleptix.TimeMachine.dll"),
+            Path.Combine(baseDir, "..", "..", "..", "..", "Fleptix.TimeMachine", "bin", "Release", "net10.0", "Fleptix.TimeMachine.dll"),
+            Path.Combine(baseDir, "..", "..", "Fleptix.TimeMachine", "bin", "Debug", "net10.0", "Fleptix.TimeMachine.dll"),
+            Path.Combine(baseDir, "..", "..", "Fleptix.TimeMachine", "bin", "Release", "net10.0", "Fleptix.TimeMachine.dll"),
+            Path.Combine(currentDir, "src", "Fleptix.TimeMachine", "bin", "Debug", "net10.0", "Fleptix.TimeMachine.dll"),
+            Path.Combine(currentDir, "src", "Fleptix.TimeMachine", "bin", "Release", "net10.0", "Fleptix.TimeMachine.dll")
         };
 
-        string? resolvedPath = null;
         foreach (var candidate in probedPaths)
         {
             try
@@ -37,34 +58,16 @@ public static class PluginLoader
                 var fullPath = Path.GetFullPath(candidate);
                 if (File.Exists(fullPath))
                 {
-                    resolvedPath = fullPath;
-                    break;
-                }
-            }
-            catch
-            {
-                // Path resolution error or invalid candidate; ignore and check next
-            }
-        }
-
-        if (resolvedPath != null)
-        {
-            try
-            {
-                var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(resolvedPath);
-                var pluginType = assembly.GetType("Fleptix.TimeMachine.TimeMachinePlugin");
-                var registerMethod = pluginType?.GetMethod("RegisterServices", BindingFlags.Public | BindingFlags.Static);
-
-                if (registerMethod != null)
-                {
-                    registerMethod.Invoke(null, new object[] { services, configuration });
-                    Console.WriteLine($"[Fleptix] Successfully activated commercial plugin: {resolvedPath}");
-                    return services;
+                    var assembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(fullPath);
+                    if (TryRegisterFromAssembly(assembly, services, configuration, fullPath))
+                    {
+                        return services;
+                    }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Fleptix] Warning: Failed to load commercial plugin from '{resolvedPath}': {ex.Message}. Falling back to Community mode.");
+                Console.WriteLine($"[Fleptix] Debug: Candidate '{candidate}' probe failed: {ex.Message}");
             }
         }
 
@@ -74,5 +77,31 @@ public static class PluginLoader
         services.AddSingleton<ISnapshotService, NullSnapshotService>();
 
         return services;
+    }
+
+    private static bool TryRegisterFromAssembly(
+        Assembly assembly, 
+        IServiceCollection services, 
+        IConfiguration configuration,
+        string sourceLocation)
+    {
+        try
+        {
+            var pluginType = assembly.GetType("Fleptix.TimeMachine.TimeMachinePlugin");
+            var registerMethod = pluginType?.GetMethod("RegisterServices", BindingFlags.Public | BindingFlags.Static);
+
+            if (registerMethod != null)
+            {
+                registerMethod.Invoke(null, new object[] { services, configuration });
+                Console.WriteLine($"[Fleptix] Successfully activated commercial plugin from {sourceLocation}");
+                return true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Fleptix] Warning: Failed to register commercial plugin from '{sourceLocation}': {ex.Message}");
+        }
+
+        return false;
     }
 }

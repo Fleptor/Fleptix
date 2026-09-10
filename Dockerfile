@@ -18,12 +18,11 @@ RUN dotnet restore "src/Fleptix.Observer/Fleptix.Observer.csproj"
 COPY src/ src/
 
 # Step 1.4: Publish the application in Release mode into /app/publish.
-# --no-restore skips redundant package resolution since restore ran above.
+# When Fleptix.TimeMachine is present (e.g. in official container builds), it is automatically compiled and published.
 WORKDIR "/src/src/Fleptix.Observer"
 RUN dotnet publish "Fleptix.Observer.csproj" \
     -c Release \
-    -o /app/publish \
-    --no-restore
+    -o /app/publish
 
 
 # ==============================================================================
