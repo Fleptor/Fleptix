@@ -207,6 +207,9 @@
               <button class="install-tab-btn" data-tab="compose" id="tabBtnCompose">
                 <i class="bi bi-file-earmark-code me-1"></i> docker-compose.yml
               </button>
+              <button class="install-tab-btn" data-tab="script" id="tabBtnScript">
+                <i class="bi bi-magic me-1"></i> install.sh
+              </button>
             </div>
 
             <button class="copy-btn" id="copyInstallBtn" title="Copy command to clipboard">
@@ -216,21 +219,28 @@
           </div>
 
           <div class="code-block">
-            <pre><code id="installCodeBlock"></code></pre>
+            <pre><code id="installCodeBlock"><span class="code-comment"># Stop & replace any existing container, then run Fleptix Observer</span>
+<span class="code-keyword">docker</span> rm <span class="code-arg">-f</span> <span class="code-val">fleptix-observer</span> 2&gt;/dev/null; <span class="code-keyword">docker</span> run <span class="code-arg">-d</span> \
+  <span class="code-arg">--name</span> <span class="code-val">fleptix-observer</span> \
+  <span class="code-arg">-p</span> <span class="code-val">7373:80</span> \
+  <span class="code-arg">-v</span> <span class="code-val">/var/run/docker.sock:/var/run/docker.sock</span> \
+  <span class="code-arg">-v</span> <span class="code-val">fleptix-data:/app/snapshots</span> \
+  <span class="code-arg">--restart</span> <span class="code-val">unless-stopped</span> \
+  <span class="code-val">ghcr.io/fleptor/fleptix:latest</span></code></pre>
           </div>
 
           <div class="install-meta">
             <div class="meta-items">
               <div class="meta-item">
                 <i class="bi bi-shield-check text-success"></i>
-                <span>Read-only socket mount (:ro)</span>
+                <span>Direct Docker socket integration</span>
               </div>
               <div class="meta-item">
                 <i class="bi bi-speedometer text-info"></i>
                 <span>&lt; 35MB RAM footprint</span>
               </div>
             </div>
-            <span>Access at: <strong style="color: var(--color-ice);">http://localhost:5000</strong></span>
+            <span>Access at: <strong style="color: var(--color-ice);">http://localhost:7373</strong></span>
           </div>
         </div>
       </div>
@@ -649,8 +659,8 @@
     <span class="toast-text">Copied to clipboard!</span>
   </div>
 
-  <!-- Interactive Script -->
-  <script src="script.js"></script>
+  <!-- Interactive Script with cache busting -->
+  <script src="script.js?v=2.2"></script>
 </body>
 
 </html>

@@ -8,6 +8,46 @@ function pushContainerMetric(metric) {
     if (liveTelemetry) {
         liveTelemetry.textContent = `CPU: ${metric.cpuPercentage.toFixed(1)}% | RAM: ${metric.memoryUsageMb.toFixed(1)} MB`;
     }
+
+    // Update CPU Value
+    const cpuVal = document.getElementById('detailsCpuVal');
+    if (cpuVal) {
+        cpuVal.textContent = `${metric.cpuPercentage.toFixed(1)}%`;
+    }
+
+    // Update Memory Value and Bar
+    const memVal = document.getElementById('detailsMemVal');
+    if (memVal) {
+        memVal.textContent = `${metric.memoryUsageMb.toFixed(0)} MB`;
+    }
+    const memBar = document.getElementById('detailsMemBar');
+    if (memBar && metric.memoryPercentage) {
+        memBar.style.width = `${Math.min(100, Math.max(5, metric.memoryPercentage))}%`;
+    }
+
+    // Update Network I/O
+    const netRx = document.getElementById('detailsNetRx');
+    if (netRx && metric.networkRxBytes != null) {
+        netRx.textContent = `${(metric.networkRxBytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+    const netTx = document.getElementById('detailsNetTx');
+    if (netTx && metric.networkTxBytes != null) {
+        netTx.textContent = `${(metric.networkTxBytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    // Update Block / Disk I/O
+    const diskRead = document.getElementById('detailsDiskRead');
+    if (diskRead && metric.blockReadMb != null) {
+        diskRead.textContent = `${metric.blockReadMb.toFixed(1)} MB`;
+    }
+    const diskWrite = document.getElementById('detailsDiskWrite');
+    if (diskWrite && metric.blockWriteMb != null) {
+        diskWrite.textContent = `${metric.blockWriteMb.toFixed(1)} MB`;
+    }
+    const diskTotal = document.getElementById('detailsDiskTotal');
+    if (diskTotal && metric.blockReadMb != null && metric.blockWriteMb != null) {
+        diskTotal.textContent = (metric.blockReadMb + metric.blockWriteMb).toFixed(1);
+    }
 }
 
 // Action Dispatcher for Details view

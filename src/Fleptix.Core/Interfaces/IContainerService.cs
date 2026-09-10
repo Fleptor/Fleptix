@@ -8,9 +8,24 @@ using Fleptix.Core.Models;
 public interface IContainerService
 {
     /// <summary>
-    /// Indicates whether the service is running in live Docker or simulation mode.
+    /// Indicates whether the service is actively connected to the Docker daemon.
     /// </summary>
     bool IsConnectedToDocker { get; }
+
+    /// <summary>
+    /// The target Docker daemon endpoint URI.
+    /// </summary>
+    Uri DockerUri { get; }
+
+    /// <summary>
+    /// Holds the error description if the daemon is unreachable.
+    /// </summary>
+    string? LastConnectionError { get; }
+
+    /// <summary>
+    /// Asynchronously probes connectivity to the Docker engine.
+    /// </summary>
+    Task<bool> CheckConnectivityAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Retrieves all containers for dashboard display.
@@ -37,6 +52,12 @@ public interface IContainerService
     /// </summary>
     Task<ContainerMetrics?> GetMetricsAsync(
         string containerId, 
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves host and Docker daemon storage allocation breakdown.
+    /// </summary>
+    Task<DockerStorageInfo> GetStorageInfoAsync(
         CancellationToken cancellationToken = default);
 
     /// <summary>

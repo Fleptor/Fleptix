@@ -11,8 +11,8 @@
             <div class="d-flex align-items-center gap-3 flex-wrap">
                 <div class="d-flex align-items-baseline gap-2">
                     <h1 class="h6 fw-bold mb-0 text-dark" style="font-size: 16px;">Deploy Container</h1>
-                    <span class="font-mono text-muted px-2 py-0.5 rounded bg-light border" style="font-size: 11px;">
-                        @(Model.IsConnectedToDocker ? "Docker Engine (Native)" : "Simulated Demo Engine")
+                    <span class="font-mono px-2 py-0.5 rounded border @(Model.IsConnectedToDocker ? "bg-light text-success border-success-subtle" : "bg-light text-danger border-danger-subtle")" style="font-size: 11px;">
+                        @(Model.IsConnectedToDocker ? "Docker Engine (Native)" : "Daemon Disconnected")
                     </span>
                 </div>
             </div>
@@ -41,6 +41,22 @@
             </div>
         </div>
     </div>
+
+    @if (!Model.IsConnectedToDocker)
+    {
+        <div class="alert alert-danger py-2 px-3 d-flex align-items-center justify-content-between font-mono mb-3" style="font-size: 12px;" id="daemonDisconnectedBanner">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-exclamation-octagon-fill text-danger fs-6"></i>
+                <div>
+                    <strong>Docker Daemon Offline</strong> &mdash;
+                    <span id="daemonBannerDetails">Cannot deploy containers without an active Docker connection (@Model.DaemonEndpoint). @(Model.LastConnectionError ?? "Verify Docker socket mount.")</span>
+                </div>
+            </div>
+            <button class="btn btn-sm btn-outline-danger font-mono py-0 px-2" onclick="retryDaemonConnection()">
+                <i class="bi bi-arrow-repeat"></i> Retry
+            </button>
+        </div>
+    }
 
     <!-- Main Deployment Grid -->
     <div class="row g-3">

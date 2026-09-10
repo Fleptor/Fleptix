@@ -9,26 +9,27 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 public class DeployModel : PageModel
 {
     private readonly IContainerService _containerService;
-    private readonly ContainerServiceManager _manager;
 
     public bool IsConnectedToDocker => _containerService.IsConnectedToDocker;
-    public bool IsDemoMode => _manager.ForceDemoMode || !_manager.IsConnectedToDocker;
+    public string DaemonEndpoint => _containerService.DockerUri.ToString();
+    public string? LastConnectionError => _containerService.LastConnectionError;
 
     [BindProperty]
     public DeployContainerRequest DeployRequest { get; set; } = new();
 
     public DeployContainerResult? Result { get; set; }
 
-    public DeployModel(
-        IContainerService containerService,
-        ContainerServiceManager manager)
+    public DeployModel(IContainerService containerService)
     {
         _containerService = containerService;
-        _manager = manager;
     }
 
-    public void OnGet()
+    public async Task OnGetAsync(CancellationToken cancellationToken = default)
     {
+        if (!_containerService.IsConnectedToDocker)
+        {
+            await _containerService.CheckConnectivityAsync(cancellationToken);
+        }
     }
 
     public async Task<IActionResult> OnPostAsync(CancellationToken cancellationToken)

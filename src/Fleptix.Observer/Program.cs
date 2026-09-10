@@ -11,6 +11,13 @@ builder.Services.AddControllers();
 // Add SignalR for live metrics and status streaming
 builder.Services.AddSignalR();
 
+// Register HTTP Client for Lemon Squeezy licensing API
+builder.Services.AddHttpClient("LemonSqueezy", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
 // Register Licensing and Feature Services
 builder.Services.AddSingleton<ILicenseService, LicenseService>();
 
@@ -19,9 +26,7 @@ builder.Services.AddFleptixTimeMachine(builder.Configuration);
 
 // Register Container Services
 builder.Services.AddSingleton<DockerContainerService>();
-builder.Services.AddSingleton<DemoContainerService>();
-builder.Services.AddSingleton<ContainerServiceManager>();
-builder.Services.AddSingleton<IContainerService>(sp => sp.GetRequiredService<ContainerServiceManager>());
+builder.Services.AddSingleton<IContainerService>(sp => sp.GetRequiredService<DockerContainerService>());
 
 
 // Register real-time telemetry background publisher

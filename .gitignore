@@ -484,3 +484,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Fleptix runtime data and snapshots
+snapshots/
+license.json

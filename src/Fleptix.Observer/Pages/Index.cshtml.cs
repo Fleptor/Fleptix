@@ -10,17 +10,20 @@ public class IndexModel : PageModel
 
     public IReadOnlyList<ContainerSummary> Containers { get; private set; } = [];
     public IReadOnlyDictionary<string, ContainerMetrics> InitialMetrics { get; private set; } = new Dictionary<string, ContainerMetrics>();
-    public bool IsConnectedToDocker { get; private set; }
+    public DockerStorageInfo StorageInfo { get; private set; } = new();
+    public bool IsConnectedToDocker => _containerService.IsConnectedToDocker;
+    public string DaemonEndpoint => _containerService.DockerUri.ToString();
+    public string? LastConnectionError => _containerService.LastConnectionError;
 
     public IndexModel(IContainerService containerService)
     {
         _containerService = containerService;
     }
 
-    public async Task OnGetAsync()
+    public async Task OnGetAsync(CancellationToken cancellationToken = default)
     {
-        IsConnectedToDocker = _containerService.IsConnectedToDocker;
-        Containers = await _containerService.GetContainersAsync(includeAll: true);
-        InitialMetrics = await _containerService.GetAllCurrentMetricsAsync();
+        Containers = await _containerService.GetContainersAsync(includeAll: true, cancellationToken);
+        InitialMetrics = await _containerService.GetAllCurrentMetricsAsync(cancellationToken);
+        StorageInfo = await _containerService.GetStorageInfoAsync(cancellationToken);
     }
 }

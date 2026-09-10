@@ -6,10 +6,14 @@
     var d = Model.Details!;
     var m = Model.InitialMetrics;
 
-    var cpu = m != null ? m.CpuPercentage : 18.2;
-    var memMb = m != null ? m.MemoryUsageMb : 1980.0;
-    var memLimitMb = m != null && m.MemoryLimitMb > 0 ? m.MemoryLimitMb : 2048.0;
-    var memPct = m != null && m.MemoryPercentage > 0 ? m.MemoryPercentage : 96.7;
+    var cpu = m != null ? m.CpuPercentage : 0.0;
+    var memMb = m != null ? m.MemoryUsageMb : 0.0;
+    var memLimitMb = m != null && m.MemoryLimitMb > 0 ? m.MemoryLimitMb : 1024.0;
+    var memPct = m != null && m.MemoryPercentage > 0 ? m.MemoryPercentage : 0.0;
+    var rxMb = m != null ? Math.Round((double)m.NetworkRxBytes / (1024.0 * 1024.0), 2) : 0.0;
+    var txMb = m != null ? Math.Round((double)m.NetworkTxBytes / (1024.0 * 1024.0), 2) : 0.0;
+    var blockReadMb = m != null ? m.BlockReadMb : 0.0;
+    var blockWriteMb = m != null ? m.BlockWriteMb : 0.0;
 
     string stackName = "standalone";
     var n = c.Name.ToLowerInvariant();
@@ -264,15 +268,15 @@
                         </div>
                         <div class="font-mono my-1" style="font-size: 11px;">
                             <div class="d-flex justify-content-between">
-                                <span class="text-muted">RX:</span> <span class="fw-bold text-dark">14.2 MB/s</span>
+                                <span class="text-muted">RX:</span> <span class="fw-bold text-dark" id="detailsNetRx">@rxMb.ToString("F1") MB</span>
                             </div>
                             <div class="d-flex justify-content-between">
-                                <span class="text-muted">TX:</span> <span class="fw-bold text-secondary">2.8 MB/s</span>
+                                <span class="text-muted">TX:</span> <span class="fw-bold text-secondary" id="detailsNetTx">@txMb.ToString("F1") MB</span>
                             </div>
                         </div>
                         <div class="border-top pt-1 font-mono text-muted d-flex justify-content-between" style="font-size: 9px;">
-                            <span>Total: 42.1 GB</span>
-                            <span>Drops: 0</span>
+                            <span>Total: @((rxMb + txMb).ToString("F1")) MB</span>
+                            <span>Live Socket</span>
                         </div>
                     </div>
                 </div>
@@ -286,15 +290,15 @@
                         </div>
                         <div class="font-mono my-1" style="font-size: 11px;">
                             <div class="d-flex justify-content-between">
-                                <span class="text-muted">Read:</span> <span class="fw-bold text-dark">120.4 MB</span>
+                                <span class="text-muted">Read:</span> <span class="fw-bold text-dark" id="detailsDiskRead">@blockReadMb.ToString("F1") MB</span>
                             </div>
                             <div class="d-flex justify-content-between">
-                                <span class="text-muted">Write:</span> <span class="fw-bold text-secondary">450.8 MB</span>
+                                <span class="text-muted">Write:</span> <span class="fw-bold text-secondary" id="detailsDiskWrite">@blockWriteMb.ToString("F1") MB</span>
                             </div>
                         </div>
                         <div class="border-top pt-1 font-mono text-muted d-flex justify-content-between" style="font-size: 9px;">
-                            <span>IOPS: 142 op/s</span>
-                            <span>NVMe Pool</span>
+                            <span>Total: @((blockReadMb + blockWriteMb).ToString("F1")) MB</span>
+                            <span>Host Storage</span>
                         </div>
                     </div>
                 </div>

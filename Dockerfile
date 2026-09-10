@@ -37,15 +37,13 @@ WORKDIR /app
 # Step 2.1: Copy published binaries and static assets from the build stage.
 COPY --from=build /app/publish .
 
-# Step 2.2: Create and switch to a dedicated non-root user.
-# Running as non-root is a critical security best practice to prevent privilege
-# escalation if the container process is compromised.
+# Step 2.2: Create dedicated fleptix user.
+# By default, the container executes as root to permit accessing the mounted Docker daemon socket
+# (/var/run/docker.sock), matching standard container managers like Portainer, Watchtower, and Dozzle.
+# The fleptix user (UID 10001) is preserved for environments opting to supply --user fleptix --group-add <docker-gid>.
 RUN groupadd -g 10001 fleptix && \
     useradd -u 10001 -g fleptix -s /bin/false -m fleptix && \
     chown -R fleptix:fleptix /app
-
-# Switch active execution user to non-root fleptix
-USER fleptix
 
 # Step 2.3: Expose port 80 and configure ASP.NET Core URL bindings.
 ENV ASPNETCORE_HTTP_PORTS=80

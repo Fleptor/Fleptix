@@ -35,6 +35,22 @@
 }
 
 <div class="container-fluid p-0">
+    @if (!Model.IsConnectedToDocker)
+    {
+        <div class="alert alert-danger py-2 px-3 d-flex align-items-center justify-content-between font-mono mb-3" style="font-size: 12px;" id="daemonDisconnectedBanner">
+            <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-exclamation-octagon-fill text-danger fs-6"></i>
+                <div>
+                    <strong>Docker Daemon Offline</strong> &mdash;
+                    <span id="daemonBannerDetails">Cannot connect to Docker daemon at @Model.DaemonEndpoint. @(Model.LastConnectionError ?? "Verify socket mount and permissions.")</span>
+                </div>
+            </div>
+            <button class="btn btn-sm btn-outline-danger font-mono py-0 px-2" onclick="retryDaemonConnection()">
+                <i class="bi bi-arrow-repeat"></i> Retry
+            </button>
+        </div>
+    }
+
     <!-- Operational Header & Multi-state Filter Bar -->
     <div class="bg-white p-3 rounded border mb-3 shadow-xs d-flex flex-column gap-3">
         <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
@@ -129,6 +145,27 @@
                 </tr>
             </thead>
             <tbody id="containerTableBody">
+                @if (!Model.Containers.Any())
+                {
+                    <tr>
+                        <td colspan="9" class="text-center py-4 font-mono text-muted" style="font-size: 12px;">
+                            @if (!Model.IsConnectedToDocker)
+                            {
+                                <div class="text-danger fw-semibold mb-1">
+                                    <i class="bi bi-exclamation-octagon me-1"></i> Docker daemon is unreachable.
+                                </div>
+                                <div style="font-size: 11px;">
+                                    Cannot communicate with @Model.DaemonEndpoint. Ensure Docker is running and the socket has correct permissions.
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="mb-1">No containers currently running or stopped on this host.</div>
+                                <div style="font-size: 11px;"><a href="/Deploy" class="text-decoration-none">Deploy a new container</a> to get started.</div>
+                            }
+                        </td>
+                    </tr>
+                }
                 @foreach (var group in stackGroups)
                 {
                     <!-- Stack Header Row -->

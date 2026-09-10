@@ -52,10 +52,10 @@
 
 
             <div class="sidebar-footer">
-                <div class="engine-indicator" id="engineStatusBadge" title="Engine Status">
-                    <span class="pulse-dot"></span>
-                    <span class="engine-text" id="engineStatusText">Docker Engine</span>
-                    <button class="btn-engine-toggle" id="btnToggleEngine" title="Toggle Demo / Docker Engine">
+                <div class="engine-indicator" id="engineStatusBadge" title="Docker Daemon Status">
+                    <span class="pulse-dot online" id="enginePulseDot"></span>
+                    <span class="engine-text font-mono" id="engineStatusText">Docker Engine</span>
+                    <button class="btn-engine-retry" id="btnRetryEngine" title="Retry Daemon Connection" style="display: none;" onclick="retryDaemonConnection()">
                         <i class="bi bi-arrow-repeat"></i>
                     </button>
                 </div>
@@ -121,36 +121,63 @@
             }
         };
 
-        // Engine Status & Mode Toggle
+        // Engine Daemon Connectivity & Reconnect Handling
+        function updateDaemonStatusUI(isConnected, endpoint, error) {
+            const dot = document.getElementById('enginePulseDot');
+            const text = document.getElementById('engineStatusText');
+            const retryBtn = document.getElementById('btnRetryEngine');
+            const banner = document.getElementById('daemonDisconnectedBanner');
+            const bannerDetails = document.getElementById('daemonBannerDetails');
+
+            if (isConnected) {
+                if (dot) { dot.className = 'pulse-dot online'; }
+                if (text) { text.textContent = 'Docker Engine'; }
+                if (retryBtn) { retryBtn.style.display = 'none'; }
+                if (banner) { banner.style.display = 'none'; }
+            } else {
+                if (dot) { dot.className = 'pulse-dot offline'; }
+                if (text) { text.textContent = 'Daemon Offline'; }
+                if (retryBtn) { retryBtn.style.display = 'inline-block'; }
+                if (banner) {
+                    banner.style.display = 'flex';
+                    if (bannerDetails && error) {
+                        bannerDetails.textContent = `Cannot connect to Docker daemon at ${endpoint || 'socket'}. Error: ${error}. Verify Docker socket mount and permissions.`;
+                    }
+                }
+            }
+        }
+
         async function checkEngineStatus() {
             try {
                 const res = await fetch('/api/system/status');
                 if (res.ok) {
                     const data = await res.json();
-                    const text = document.getElementById('engineStatusText');
-                    if (text) {
-                        text.textContent = data.isConnectedToDocker ? 'Docker Native' : 'Simulated (Demo)';
-                    }
+                    updateDaemonStatusUI(data.isConnectedToDocker, data.endpoint, data.lastError);
                 }
             } catch (err) {
                 console.error("Failed to check engine status:", err);
+                updateDaemonStatusUI(false, '', err.message);
             }
         }
 
-        document.getElementById('btnToggleEngine')?.addEventListener('click', async (e) => {
-            e.stopPropagation();
+        window.retryDaemonConnection = async function() {
+            window.showToast('Probing Docker daemon connection...');
             try {
-                const res = await fetch('/api/system/toggle-mode', { method: 'POST' });
+                const res = await fetch('/api/system/retry-connection', { method: 'POST' });
                 if (res.ok) {
                     const data = await res.json();
-                    window.showToast(`Switched engine mode to: ${data.engineType}`);
-                    await checkEngineStatus();
-                    if (window.refreshDashboard) window.refreshDashboard();
+                    updateDaemonStatusUI(data.isConnectedToDocker, data.endpoint, data.lastError);
+                    if (data.isConnectedToDocker) {
+                        window.showToast('Successfully connected to Docker Engine');
+                        setTimeout(() => window.location.reload(), 500);
+                    } else {
+                        window.showToast(`Connection failed: ${data.lastError || 'Daemon unreachable'}`, true);
+                    }
                 }
             } catch (err) {
-                window.showToast('Failed to switch engine mode', true);
+                window.showToast('Failed to contact server: ' + err.message, true);
             }
-        });
+        };
 
         checkEngineStatus();
     </script>

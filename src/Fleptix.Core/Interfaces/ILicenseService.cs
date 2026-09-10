@@ -50,4 +50,22 @@ public interface ILicenseService
     /// Gets the maximum allowed concurrent Docker nodes for this license tier.
     /// </summary>
     int GetMaxAllowedNodes();
+
+    /// <summary>
+    /// Gets complete license details and customer metadata.
+    /// </summary>
+    Fleptix.Core.Models.LicenseInfo GetLicenseInfo();
+
+    /// <summary>
+    /// Activates a Lemon Squeezy license key via remote API and local volume persistence.
+    /// </summary>
+    Task<Fleptix.Core.Models.LicenseActivationResult> ActivateLicenseAsync(
+        string licenseKey, 
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deactivates the currently active license key.
+    /// </summary>
+    Task<Fleptix.Core.Models.LicenseDeactivationResult> DeactivateLicenseAsync(
+        CancellationToken cancellationToken = default);
 }

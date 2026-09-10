@@ -10,20 +10,17 @@ using Microsoft.AspNetCore.Mvc;
 public class ContainersApiController : ControllerBase
 {
     private readonly IContainerService _containerService;
-    private readonly ContainerServiceManager _manager;
     private readonly ITimeMachineSettingsStore _settingsStore;
     private readonly ISnapshotService _snapshotService;
     private readonly ILicenseService _licenseService;
 
     public ContainersApiController(
         IContainerService containerService,
-        ContainerServiceManager manager,
         ITimeMachineSettingsStore settingsStore,
         ISnapshotService snapshotService,
         ILicenseService licenseService)
     {
         _containerService = containerService;
-        _manager = manager;
         _settingsStore = settingsStore;
         _snapshotService = snapshotService;
         _licenseService = licenseService;
@@ -205,33 +202,32 @@ public class ContainersApiController : ControllerBase
     }
 
     [HttpGet("/api/system/status")]
-    public IActionResult GetSystemStatus()
+    public async Task<IActionResult> GetSystemStatus(CancellationToken cancellationToken)
     {
+        if (!_containerService.IsConnectedToDocker)
+        {
+            await _containerService.CheckConnectivityAsync(cancellationToken);
+        }
+
         return Ok(new
         {
             isConnectedToDocker = _containerService.IsConnectedToDocker,
-            forceDemoMode = _manager.ForceDemoMode,
-            engineType = _containerService.IsConnectedToDocker ? "Docker Engine (Native)" : "Simulated Engine (Live Demo)"
+            engineType = _containerService.IsConnectedToDocker ? "Docker Engine (Native)" : "Disconnected",
+            endpoint = _containerService.DockerUri.ToString(),
+            lastError = _containerService.LastConnectionError
         });
     }
 
-    [HttpPost("/api/system/toggle-mode")]
-    public IActionResult ToggleMode([FromBody] ToggleModeRequest? request)
+    [HttpPost("/api/system/retry-connection")]
+    public async Task<IActionResult> RetryConnection(CancellationToken cancellationToken)
     {
-        if (request != null && request.ForceDemo.HasValue)
-        {
-            _manager.ForceDemoMode = request.ForceDemo.Value;
-        }
-        else
-        {
-            _manager.ForceDemoMode = !_manager.ForceDemoMode;
-        }
-
+        var isConnected = await _containerService.CheckConnectivityAsync(cancellationToken);
         return Ok(new
         {
-            isConnectedToDocker = _containerService.IsConnectedToDocker,
-            forceDemoMode = _manager.ForceDemoMode,
-            engineType = _containerService.IsConnectedToDocker ? "Docker Engine (Native)" : "Simulated Engine (Live Demo)"
+            isConnectedToDocker = isConnected,
+            engineType = isConnected ? "Docker Engine (Native)" : "Disconnected",
+            endpoint = _containerService.DockerUri.ToString(),
+            lastError = _containerService.LastConnectionError
         });
     }
 
@@ -422,5 +418,3 @@ public record ContainerOverrideRequest
     public ContainerAutoSnapshotOverride? Override { get; init; }
     public string? OverrideState { get; init; }
 }
-
-public record ToggleModeRequest(bool? ForceDemo);

@@ -1,24 +1,61 @@
 // Fleptix Marketing Site — Client Interactivity
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Command Snippets
+  // Command Snippets (Single Source of Truth for both copying & display)
   const snippets = {
-    dockerrun: `docker run -d \
-  --name fleptix-observer \
-  -p 7373:80 \
-  -v /var/run/docker.sock:/var/run/docker.sock:ro \
-  --restart unless-stopped \
+    dockerrun: {
+      text: `docker rm -f fleptix-observer 2>/dev/null; docker run -d \\
+  --name fleptix-observer \\
+  -p 7373:80 \\
+  -v /var/run/docker.sock:/var/run/docker.sock \\
+  -v fleptix-data:/app/snapshots \\
+  --restart unless-stopped \\
   ghcr.io/fleptor/fleptix:latest`,
+      html: `<span class="code-comment"># Stop & replace any existing container, then run Fleptix Observer</span>
+<span class="code-keyword">docker</span> rm <span class="code-arg">-f</span> <span class="code-val">fleptix-observer</span> 2&gt;/dev/null; <span class="code-keyword">docker</span> run <span class="code-arg">-d</span> \\
+  <span class="code-arg">--name</span> <span class="code-val">fleptix-observer</span> \\
+  <span class="code-arg">-p</span> <span class="code-val">7373:80</span> \\
+  <span class="code-arg">-v</span> <span class="code-val">/var/run/docker.sock:/var/run/docker.sock</span> \\
+  <span class="code-arg">-v</span> <span class="code-val">fleptix-data:/app/snapshots</span> \\
+  <span class="code-arg">--restart</span> <span class="code-val">unless-stopped</span> \\
+  <span class="code-val">ghcr.io/fleptor/fleptix:latest</span>`
+    },
 
-    compose: `services:
+    compose: {
+      text: `services:
   fleptix-observer:
     image: ghcr.io/fleptor/fleptix:latest
     container_name: fleptix-observer
     ports:
       - "7373:80"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    restart: unless-stopped`
+      - /var/run/docker.sock:/var/run/docker.sock
+      - fleptix-data:/app/snapshots
+    restart: unless-stopped
+
+volumes:
+  fleptix-data:`,
+      html: `<span class="code-comment"># docker-compose.yml (handles container replacement & volume persistence automatically)</span>
+<span class="code-keyword">services:</span>
+  <span class="code-keyword">fleptix-observer:</span>
+    <span class="code-arg">image:</span> <span class="code-val">ghcr.io/fleptor/fleptix:latest</span>
+    <span class="code-arg">container_name:</span> <span class="code-val">fleptix-observer</span>
+    <span class="code-arg">ports:</span>
+      - <span class="code-val">"7373:80"</span>
+    <span class="code-arg">volumes:</span>
+      - <span class="code-val">/var/run/docker.sock:/var/run/docker.sock</span>
+      - <span class="code-val">fleptix-data:/app/snapshots</span>
+    <span class="code-arg">restart:</span> <span class="code-val">unless-stopped</span>
+
+<span class="code-keyword">volumes:</span>
+  <span class="code-keyword">fleptix-data:</span>`
+    },
+
+    script: {
+      text: `curl -fsSL https://raw.githubusercontent.com/fleptor/Fleptix/main/install.sh | bash`,
+      html: `<span class="code-comment"># One-line automated installer with environment check & container replacement</span>
+<span class="code-keyword">curl</span> <span class="code-arg">-fsSL</span> <span class="code-val">https://raw.githubusercontent.com/fleptor/Fleptix/main/install.sh</span> | <span class="code-keyword">bash</span>`
+    }
   };
 
   let activeTab = 'dockerrun';
@@ -28,27 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const codeDisplay = document.getElementById('installCodeBlock');
 
   function renderCode() {
-    if (!codeDisplay) return;
-    if (activeTab === 'dockerrun') {
-      codeDisplay.innerHTML = `<span class="code-comment"># Pull & run Fleptix Observer via Docker CLI</span>
-<span class="code-keyword">docker</span> run <span class="code-arg">-d</span> \\
-  <span class="code-arg">--name</span> <span class="code-val">fleptix-observer</span> \\
-  <span class="code-arg">-p</span> <span class="code-val">5000:80</span> \\
-  <span class="code-arg">-v</span> <span class="code-val">/var/run/docker.sock:/var/run/docker.sock:ro</span> \\
-  <span class="code-arg">--restart</span> <span class="code-val">unless-stopped</span> \\
-  <span class="code-val">ghcr.io/fleptix/observer:latest</span>`;
-    } else {
-      codeDisplay.innerHTML = `<span class="code-comment"># docker-compose.yml snippet</span>
-<span class="code-keyword">services:</span>
-  <span class="code-keyword">fleptix-observer:</span>
-    <span class="code-arg">image:</span> <span class="code-val">ghcr.io/fleptix/observer:latest</span>
-    <span class="code-arg">container_name:</span> <span class="code-val">fleptix-observer</span>
-    <span class="code-arg">ports:</span>
-      - <span class="code-val">"5000:80"</span>
-    <span class="code-arg">volumes:</span>
-      - <span class="code-val">/var/run/docker.sock:/var/run/docker.sock:ro</span>
-    <span class="code-arg">restart:</span> <span class="code-val">unless-stopped</span>`;
-    }
+    if (!codeDisplay || !snippets[activeTab]) return;
+    codeDisplay.innerHTML = snippets[activeTab].html;
   }
 
   tabButtons.forEach(btn => {
@@ -78,7 +96,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (copyBtn) {
     copyBtn.addEventListener('click', async () => {
-      const textToCopy = snippets[activeTab];
+      const entry = snippets[activeTab];
+      const textToCopy = entry ? entry.text : '';
       try {
         await navigator.clipboard.writeText(textToCopy);
         const originalText = copyBtn.innerHTML;

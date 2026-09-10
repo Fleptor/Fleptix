@@ -16,7 +16,11 @@ using Fleptix.Core.Models;
 public class DockerContainerService : IContainerService
 {
     private volatile bool _isConnectedToDocker;
+    private volatile string? _lastConnectionError;
+
     public bool IsConnectedToDocker => _isConnectedToDocker;
+    public string? LastConnectionError => _lastConnectionError;
+    public Uri DockerUri { get; }
 
     private readonly DockerClient _client;
     private readonly ILogger<DockerContainerService> _logger;
@@ -25,30 +29,44 @@ public class DockerContainerService : IContainerService
     {
         _logger = logger;
 
-        Uri dockerUri = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? new Uri("npipe://./pipe/docker_engine")
-            : new Uri("unix:///var/run/docker.sock");
+        string? dockerHost = Environment.GetEnvironmentVariable("DOCKER_HOST");
+        if (!string.IsNullOrWhiteSpace(dockerHost))
+        {
+            DockerUri = new Uri(dockerHost);
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            DockerUri = new Uri("npipe://./pipe/docker_engine");
+        }
+        else
+        {
+            DockerUri = new Uri("unix:///var/run/docker.sock");
+        }
 
-        _client = new DockerClientConfiguration(dockerUri).CreateClient();
+        _logger.LogInformation("DockerContainerService configured with Docker endpoint: {DockerUri}", DockerUri);
+        _client = new DockerClientConfiguration(DockerUri).CreateClient();
     }
 
     /// <summary>
-    /// Non-blocking asynchronous connectivity probe with a strict 300ms timeout.
+    /// Non-blocking asynchronous connectivity probe with a 1000ms timeout.
     /// </summary>
     public async Task<bool> CheckConnectivityAsync(CancellationToken cancellationToken = default)
     {
         try
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            cts.CancelAfter(TimeSpan.FromMilliseconds(300));
+            cts.CancelAfter(TimeSpan.FromMilliseconds(1000));
 
             await _client.System.PingAsync(cts.Token);
             _isConnectedToDocker = true;
+            _lastConnectionError = null;
             return true;
         }
-        catch
+        catch (Exception ex)
         {
             _isConnectedToDocker = false;
+            _lastConnectionError = ex.Message;
+            _logger.LogDebug(ex, "Docker connectivity check probe failed at {DockerUri}: {Error}", DockerUri, ex.Message);
             return false;
         }
     }
@@ -60,6 +78,9 @@ public class DockerContainerService : IContainerService
             var containers = await _client.Containers.ListContainersAsync(
                 new ContainersListParameters { All = includeAll }, 
                 cancellationToken);
+
+            _isConnectedToDocker = true;
+            _lastConnectionError = null;
 
             return containers.Select(c => new ContainerSummary
             {
@@ -74,6 +95,8 @@ public class DockerContainerService : IContainerService
         }
         catch (Exception ex)
         {
+            _isConnectedToDocker = false;
+            _lastConnectionError = ex.Message;
             _logger.LogError(ex, "Failed to list containers from Docker engine.");
             return Array.Empty<ContainerSummary>();
         }
@@ -219,6 +242,23 @@ public class DockerContainerService : IContainerService
             }
         }
 
+        ulong blockRead = 0;
+        ulong blockWrite = 0;
+        if (stats.BlkioStats?.IoServiceBytesRecursive != null)
+        {
+            foreach (var entry in stats.BlkioStats.IoServiceBytesRecursive)
+            {
+                if (string.Equals(entry.Op, "Read", StringComparison.OrdinalIgnoreCase))
+                {
+                    blockRead += entry.Value;
+                }
+                else if (string.Equals(entry.Op, "Write", StringComparison.OrdinalIgnoreCase))
+                {
+                    blockWrite += entry.Value;
+                }
+            }
+        }
+
         return new ContainerMetrics
         {
             ContainerId = containerId,
@@ -227,7 +267,97 @@ public class DockerContainerService : IContainerService
             MemoryUsageBytes = memUsage,
             MemoryLimitBytes = memLimit,
             NetworkRxBytes = rx,
-            NetworkTxBytes = tx
+            NetworkTxBytes = tx,
+            BlockReadBytes = blockRead,
+            BlockWriteBytes = blockWrite
+        };
+    }
+
+    public async Task<DockerStorageInfo> GetStorageInfoAsync(CancellationToken cancellationToken = default)
+    {
+        DriveInfo? drive = null;
+        try
+        {
+            drive = new DriveInfo("/");
+        }
+        catch
+        {
+            try
+            {
+                drive = DriveInfo.GetDrives().FirstOrDefault(d => d.IsReady);
+            }
+            catch { }
+        }
+
+        double totalGb = drive != null ? Math.Round((double)drive.TotalSize / (1024.0 * 1024.0 * 1024.0), 1) : 100.0;
+        double freeGb = drive != null ? Math.Round((double)drive.AvailableFreeSpace / (1024.0 * 1024.0 * 1024.0), 1) : 50.0;
+        double usedGb = Math.Max(0.0, Math.Round(totalGb - freeGb, 1));
+
+        string driver = "overlay2";
+        string fsName = drive?.DriveFormat ?? "ext4";
+
+        try
+        {
+            var sysInfo = await _client.System.GetSystemInfoAsync(cancellationToken);
+            if (!string.IsNullOrWhiteSpace(sysInfo.Driver))
+            {
+                driver = sysInfo.Driver;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Could not query Docker system info");
+        }
+
+        double imagesGb = 0.0;
+        try
+        {
+            var images = await _client.Images.ListImagesAsync(new ImagesListParameters { All = true }, cancellationToken);
+            long totalImgBytes = images.Sum(i => i.Size);
+            imagesGb = Math.Round((double)totalImgBytes / (1024.0 * 1024.0 * 1024.0), 1);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Could not query images list for storage calculation");
+        }
+
+        double containersGb = 0.0;
+        try
+        {
+            var containers = await _client.Containers.ListContainersAsync(new ContainersListParameters { All = true, Size = true }, cancellationToken);
+            long totalContainerBytes = containers.Sum(c => c.SizeRw);
+            containersGb = Math.Round((double)totalContainerBytes / (1024.0 * 1024.0 * 1024.0), 2);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Could not query containers list for storage calculation");
+        }
+
+        double volumesGb = 0.0;
+        try
+        {
+            var volumes = await _client.Volumes.ListAsync(cancellationToken);
+            if (volumes?.Volumes != null)
+            {
+                long totalVolBytes = volumes.Volumes.Sum(v => v.UsageData?.Size ?? 0);
+                volumesGb = Math.Round((double)totalVolBytes / (1024.0 * 1024.0 * 1024.0), 1);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Could not query volumes list for storage calculation");
+        }
+
+        return new DockerStorageInfo
+        {
+            TotalDiskGb = totalGb,
+            UsedDiskGb = usedGb,
+            FreeDiskGb = freeGb,
+            ImagesSizeGb = imagesGb,
+            VolumesSizeGb = volumesGb,
+            ContainersSizeGb = containersGb,
+            StorageDriver = driver,
+            FileSystemName = fsName
         };
     }
 

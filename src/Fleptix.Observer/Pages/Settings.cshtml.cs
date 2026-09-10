@@ -7,35 +7,41 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 public class SettingsModel : PageModel
 {
-    private readonly ContainerServiceManager _manager;
+    private readonly IContainerService _containerService;
     private readonly IWebHostEnvironment _env;
     private readonly ILicenseService _licenseService;
 
-    public string DaemonEndpoint { get; private set; } = string.Empty;
-    public bool IsConnectedToDocker => _manager.IsConnectedToDocker;
-    public bool IsDemoMode => _manager.ForceDemoMode || !_manager.IsConnectedToDocker;
+    public string DaemonEndpoint => _containerService.DockerUri.ToString();
+    public bool IsConnectedToDocker => _containerService.IsConnectedToDocker;
+    public string? LastConnectionError => _containerService.LastConnectionError;
     public string EnvironmentName => _env.EnvironmentName;
-    public string EngineDescription => _manager.IsConnectedToDocker ? "Docker Engine (Native Pipe/Socket)" : "Simulated In-Memory Engine (Live Demo Mode)";
+    public string EngineDescription => _containerService.IsConnectedToDocker 
+        ? "Docker Engine (Native Pipe/Socket)" 
+        : "Disconnected (Docker Engine Unreachable)";
     public int TelemetryIntervalMs { get; private set; } = 1200;
     public bool IsTimeMachineEnabled => _licenseService.IsTimeMachineEnabled();
     public LicenseTier LicenseTier => _licenseService.GetLicenseTier();
     public string LicenseTierName => _licenseService.GetTierDisplayName();
     public int MaxAllowedNodes => _licenseService.GetMaxAllowedNodes();
+    public Fleptix.Core.Models.LicenseInfo LicenseInfo { get; private set; } = new();
 
     public SettingsModel(
-        ContainerServiceManager manager, 
+        IContainerService containerService, 
         IWebHostEnvironment env,
         ILicenseService licenseService)
     {
-        _manager = manager;
+        _containerService = containerService;
         _env = env;
         _licenseService = licenseService;
     }
 
-    public void OnGet()
+    public async Task OnGetAsync(CancellationToken cancellationToken = default)
     {
-        DaemonEndpoint = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-            ? "npipe://./pipe/docker_engine"
-            : "unix:///var/run/docker.sock";
+        LicenseInfo = _licenseService.GetLicenseInfo();
+
+        if (!_containerService.IsConnectedToDocker)
+        {
+            await _containerService.CheckConnectivityAsync(cancellationToken);
+        }
     }
 }

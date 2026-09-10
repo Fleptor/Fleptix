@@ -17,4 +17,8 @@ public record ContainerMetrics
     public double MemoryLimitMb => Math.Round((double)MemoryLimitBytes / (1024.0 * 1024.0), 2);
     public ulong NetworkRxBytes { get; init; }
     public ulong NetworkTxBytes { get; init; }
+    public ulong BlockReadBytes { get; init; }
+    public ulong BlockWriteBytes { get; init; }
+    public double BlockReadMb => Math.Round((double)BlockReadBytes / (1024.0 * 1024.0), 2);
+    public double BlockWriteMb => Math.Round((double)BlockWriteBytes / (1024.0 * 1024.0), 2);
 }
