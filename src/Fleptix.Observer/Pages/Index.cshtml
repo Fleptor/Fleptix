@@ -134,17 +134,27 @@
                     <!-- Segmented Storage Bar -->
                     @{
                         var totalDisk = Math.Max(1.0, Model.StorageInfo.TotalDiskGb);
-                        var imgBarPct = Math.Min(100.0, Math.Round((Model.StorageInfo.ImagesSizeGb / totalDisk) * 100.0, 1));
-                        var volBarPct = Math.Min(100.0 - imgBarPct, Math.Round((Model.StorageInfo.VolumesSizeGb / totalDisk) * 100.0, 1));
+                        var totalDockerGb = Model.StorageInfo.ImagesSizeGb + Model.StorageInfo.VolumesSizeGb + Model.StorageInfo.ContainersSizeGb;
+                        var safeDockerGb = Math.Min(Model.StorageInfo.UsedDiskGb, totalDockerGb);
+                        var systemUsedGb = Math.Max(0.0, Model.StorageInfo.UsedDiskGb - safeDockerGb);
+
+                        var dockerPct = Math.Round((safeDockerGb / totalDisk) * 100.0, 1);
+                        var sysPct = Math.Min(100.0 - dockerPct, Math.Round((systemUsedGb / totalDisk) * 100.0, 1));
                     }
                     <div class="w-100 rounded-pill overflow-hidden d-flex mb-1" style="height: 6px; background-color: #e2e8f0;">
-                        <div style="width: @(Math.Max(2.0, imgBarPct))%; background-color: var(--accent-navy);" title="Images: @(Model.StorageInfo.ImagesSizeGb) GB"></div>
-                        <div style="width: @(Math.Max(2.0, volBarPct))%; background-color: #64748b;" title="Volumes: @(Model.StorageInfo.VolumesSizeGb) GB"></div>
+                        @if (dockerPct > 0)
+                        {
+                            <div style="width: @(Math.Max(1.5, dockerPct))%; background-color: var(--accent-navy);" title="Docker: @(safeDockerGb.ToString("F1")) GB (@dockerPct%)"></div>
+                        }
+                        @if (sysPct > 0)
+                        {
+                            <div style="width: @sysPct%; background-color: #64748b;" title="System &amp; Other: @(systemUsedGb.ToString("F1")) GB (@sysPct%)"></div>
+                        }
                     </div>
                     <div class="d-flex justify-content-between font-mono text-muted" style="font-size: 11px;">
-                        <span>images: @(Model.StorageInfo.ImagesSizeGb.ToString("F1"))G</span>
-                        <span>volumes: @(Model.StorageInfo.VolumesSizeGb.ToString("F1"))G</span>
-                        <span>Free: @(Model.StorageInfo.FreeDiskGb.ToString("F1"))G</span>
+                        <span title="Docker allocated data (images, volumes, layers)">Docker: @(safeDockerGb.ToString("F1"))G</span>
+                        <span title="Host OS and other software">System: @(systemUsedGb.ToString("F1"))G</span>
+                        <span title="Available unallocated disk space">Free: @(Model.StorageInfo.FreeDiskGb.ToString("F1"))G</span>
                     </div>
                 </div>
             </div>
@@ -416,6 +426,13 @@
             </div>
 
             <!-- Storage Pool Diagnostics Breakdown -->
+            @{
+                var totalDockerAllocated = Model.StorageInfo.ImagesSizeGb + Model.StorageInfo.VolumesSizeGb + Model.StorageInfo.ContainersSizeGb;
+                var poolDenominator = Math.Max(0.1, totalDockerAllocated);
+                var volPoolPct = Math.Round((Model.StorageInfo.VolumesSizeGb / poolDenominator) * 100.0, 1);
+                var imgPoolPct = Math.Round((Model.StorageInfo.ImagesSizeGb / poolDenominator) * 100.0, 1);
+                var cntPoolPct = Math.Round((Model.StorageInfo.ContainersSizeGb / poolDenominator) * 100.0, 1);
+            }
             <div class="bg-white border rounded p-3 d-flex flex-column gap-2">
                 <div class="d-flex align-items-center justify-content-between">
                     <h3 class="h6 fw-bold mb-0" style="color: var(--accent-navy); font-size: 13px;">Storage Pool Diagnostics</h3>
@@ -429,17 +446,17 @@
                             <span class="fw-semibold text-dark">@(Model.StorageInfo.VolumesSizeGb.ToString("F1")) GB</span>
                         </div>
                         <div class="w-100 rounded-pill overflow-hidden" style="height: 6px; background-color: #e2e8f0;">
-                            <div style="width: @(Math.Min(100.0, Math.Max(3.0, (Model.StorageInfo.VolumesSizeGb / Math.Max(1.0, Model.StorageInfo.UsedDiskGb)) * 100.0)))%; height: 100%; background-color: var(--accent-navy);"></div>
+                            <div style="width: @(Model.StorageInfo.VolumesSizeGb > 0 ? Math.Min(100.0, Math.Max(2.0, volPoolPct)) : 0)%; height: 100%; background-color: var(--accent-navy);" title="Volumes: @(Model.StorageInfo.VolumesSizeGb.ToString("F1")) GB (@volPoolPct%)"></div>
                         </div>
                     </div>
 
                     <div>
                         <div class="d-flex justify-content-between font-mono text-muted mb-1" style="font-size: 11px;">
-                            <span>Docker Images (Layers)</span>
+                            <span>Docker Overlay2 Images</span>
                             <span class="fw-semibold text-dark">@(Model.StorageInfo.ImagesSizeGb.ToString("F1")) GB</span>
                         </div>
                         <div class="w-100 rounded-pill overflow-hidden" style="height: 6px; background-color: #e2e8f0;">
-                            <div style="width: @(Math.Min(100.0, Math.Max(3.0, (Model.StorageInfo.ImagesSizeGb / Math.Max(1.0, Model.StorageInfo.UsedDiskGb)) * 100.0)))%; height: 100%; background-color: var(--accent-navy);"></div>
+                            <div style="width: @(Model.StorageInfo.ImagesSizeGb > 0 ? Math.Min(100.0, Math.Max(2.0, imgPoolPct)) : 0)%; height: 100%; background-color: var(--accent-navy);" title="Images: @(Model.StorageInfo.ImagesSizeGb.ToString("F1")) GB (@imgPoolPct%)"></div>
                         </div>
                     </div>
 
@@ -449,13 +466,13 @@
                             <span class="fw-semibold text-dark">@(Model.StorageInfo.ContainersSizeGb.ToString("F2")) GB</span>
                         </div>
                         <div class="w-100 rounded-pill overflow-hidden" style="height: 6px; background-color: #e2e8f0;">
-                            <div style="width: @(Math.Min(100.0, Math.Max(3.0, (Model.StorageInfo.ContainersSizeGb / Math.Max(1.0, Model.StorageInfo.UsedDiskGb)) * 100.0)))%; height: 100%; background-color: #64748b;"></div>
+                            <div style="width: @(Model.StorageInfo.ContainersSizeGb > 0 ? Math.Min(100.0, Math.Max(2.0, cntPoolPct)) : 0)%; height: 100%; background-color: #64748b;" title="Layers: @(Model.StorageInfo.ContainersSizeGb.ToString("F2")) GB (@cntPoolPct%)"></div>
                         </div>
                     </div>
                 </div>
 
                 <div class="pt-2 border-top d-flex align-items-center justify-content-between font-mono text-muted" style="font-size: 11px;">
-                    <span>Total Docker Allocated: @((Model.StorageInfo.ImagesSizeGb + Model.StorageInfo.VolumesSizeGb + Model.StorageInfo.ContainersSizeGb).ToString("F1")) GB</span>
+                    <span>Total Docker Allocated: @(totalDockerAllocated.ToString("F1")) GB</span>
                     <span class="@(Model.StorageInfo.DiskUsagePercentage > 90 ? "text-danger" : "text-success") fw-bold">@(Model.StorageInfo.DiskUsagePercentage > 90 ? "Low Disk Space" : "Healthy")</span>
                 </div>
             </div>
