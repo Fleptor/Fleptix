@@ -61,6 +61,12 @@ public interface IContainerService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Retrieves live host hardware and operating system telemetry.
+    /// </summary>
+    Task<HostSystemInfo> GetHostSystemInfoAsync(
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Streams live metrics for a container as an asynchronous stream.
     /// </summary>
     IAsyncEnumerable<ContainerMetrics> GetMetricsStreamAsync(

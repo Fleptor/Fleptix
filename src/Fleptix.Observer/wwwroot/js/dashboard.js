@@ -168,13 +168,59 @@ function appendEventFeed(text, isHighlight = false) {
 function handleClusterTelemetry(payload) {
     if (!payload) return;
 
-    // Update Top Strip Metrics
+    // 1. Update Card 1: Container Fleet
+    if (payload.totalContainers !== undefined) {
+        const fleetRunning = document.getElementById('dashFleetRunning');
+        if (fleetRunning && payload.runningCount !== undefined) fleetRunning.textContent = payload.runningCount;
+        const fleetTotal = document.getElementById('dashFleetTotal');
+        if (fleetTotal) fleetTotal.textContent = payload.totalContainers;
+
+        const footRun = document.getElementById('dashFleetFooterRunning');
+        if (footRun && payload.runningCount !== undefined) footRun.textContent = payload.runningCount;
+        const footStop = document.getElementById('dashFleetFooterStopped');
+        if (footStop && payload.stoppedCount !== undefined) footStop.textContent = payload.stoppedCount;
+        const footPause = document.getElementById('dashFleetFooterPaused');
+        if (footPause && payload.pausedCount !== undefined) footPause.textContent = payload.pausedCount;
+
+        if (payload.totalContainers > 0) {
+            const runPct = (payload.runningCount / payload.totalContainers) * 100;
+            const stopPct = (payload.stoppedCount / payload.totalContainers) * 100;
+            const pausePct = (payload.pausedCount / payload.totalContainers) * 100;
+
+            const barRun = document.getElementById('dashFleetBarRunning');
+            if (barRun) barRun.style.width = runPct + '%';
+            const barStop = document.getElementById('dashFleetBarStopped');
+            if (barStop) barStop.style.width = stopPct + '%';
+            const barPause = document.getElementById('dashFleetBarPaused');
+            if (barPause) barPause.style.width = pausePct + '%';
+
+            const fleetBadge = document.getElementById('dashFleetBadge');
+            if (fleetBadge) {
+                fleetBadge.textContent = payload.runningCount === payload.totalContainers ? '100% Healthy' : Math.round(runPct) + '% Running';
+                if (payload.runningCount === payload.totalContainers) {
+                    fleetBadge.className = 'badge bg-success-subtle text-success border border-success-subtle font-mono';
+                } else {
+                    fleetBadge.className = 'badge bg-light text-dark border font-mono';
+                }
+            }
+        }
+    }
+
+    // 2. Update Card 2: Host CPU
     const cpuEl = document.getElementById('dashTotalCpu');
-    if (cpuEl) cpuEl.textContent = payload.totalCpuPercentage.toFixed(1) + '%';
+    if (cpuEl && payload.totalCpuPercentage !== undefined) {
+        cpuEl.textContent = payload.totalCpuPercentage.toFixed(1) + '%';
+    }
+    const cpuBar = document.getElementById('dashCpuMeterBar');
+    if (cpuBar && payload.totalCpuPercentage !== undefined) {
+        cpuBar.style.width = Math.min(100, Math.max(payload.totalCpuPercentage > 0 ? 2 : 0, payload.totalCpuPercentage)) + '%';
+    }
 
-    const memEl = document.getElementById('dashTotalMem');
-    if (memEl) memEl.textContent = payload.totalMemoryUsageMb.toFixed(1) + ' MB';
-
+    // 3. Update Card 3: Host Memory
+    const memFootDocker = document.getElementById('dashMemFooterDocker');
+    if (memFootDocker && payload.totalMemoryUsageMb !== undefined) {
+        memFootDocker.textContent = payload.totalMemoryUsageMb.toFixed(0) + 'M';
+    }
 
     // Push to charts
     const timeStr = new Date(payload.timestamp).toLocaleTimeString();

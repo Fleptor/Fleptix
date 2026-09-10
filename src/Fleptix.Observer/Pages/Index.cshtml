@@ -5,6 +5,14 @@
     var runningCount = Model.Containers.Count(c => c.State == "running");
     var pausedCount = Model.Containers.Count(c => c.State == "paused");
     var stoppedCount = Model.Containers.Count(c => c.State == "exited" || c.State == "created");
+    var totalContainers = Math.Max(1, Model.Containers.Count);
+    var runningPct = Math.Round(((double)runningCount / totalContainers) * 100.0, 1);
+    var stoppedPct = Math.Round(((double)stoppedCount / totalContainers) * 100.0, 1);
+    var pausedPct = Math.Round(((double)pausedCount / totalContainers) * 100.0, 1);
+
+    var stackCount = Model.Containers.Any() 
+        ? Model.Containers.Select(c => c.Name.Contains('_') ? c.Name.Split('_')[0] : (c.Name.Contains('-') ? c.Name.Split('-')[0] : "standalone")).Distinct().Count()
+        : 0;
     
     double initialCpu = 0;
     ulong initialMemBytes = 0;
@@ -41,7 +49,43 @@
 
     <!-- Top Operational Telemetry Bar (4-Card Metric Grid) -->
     <div class="row g-3 mb-3">
-        <!-- Card 1: Host CPU -->
+        <!-- Card 1: Container Fleet -->
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="bg-white border rounded p-3 h-100 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-box-seam text-secondary fs-6"></i>
+                            <span class="text-uppercase fw-semibold text-muted" style="font-size: 11px; letter-spacing: 0.04em;">Container Fleet</span>
+                        </div>
+                        <span class="font-mono text-muted" style="font-size: 11px;" id="dashFleetStacks">@stackCount stacks</span>
+                    </div>
+                    <div class="d-flex align-items-baseline justify-content-between my-2">
+                        <span class="fw-bold fs-3" style="color: var(--accent-navy); font-family: var(--font-mono); line-height: 1.2;">
+                            <span id="dashFleetRunning">@runningCount</span> <span class="text-muted fw-normal fs-6">/ <span id="dashFleetTotal">@Model.Containers.Count</span> active</span>
+                        </span>
+                        <span class="badge @(runningCount == Model.Containers.Count && Model.Containers.Any() ? "bg-success-subtle text-success border border-success-subtle" : "bg-light text-dark border") font-mono" style="font-size: 10px;" id="dashFleetBadge">
+                            @(Model.Containers.Any() ? (runningCount == Model.Containers.Count ? "100% Healthy" : $"{runningPct:F0}% Running") : "Idle")
+                        </span>
+                    </div>
+                </div>
+                <div>
+                    <!-- Segmented Fleet Status Bar -->
+                    <div class="w-100 rounded-pill overflow-hidden d-flex mb-1" style="height: 6px; background-color: #e2e8f0;">
+                        <div id="dashFleetBarRunning" style="width: @runningPct%; background-color: var(--status-running-dot);" title="Running: @runningCount"></div>
+                        <div id="dashFleetBarStopped" style="width: @stoppedPct%; background-color: #94a3b8;" title="Stopped: @stoppedCount"></div>
+                        <div id="dashFleetBarPaused" style="width: @pausedPct%; background-color: var(--status-restarting-dot);" title="Paused: @pausedCount"></div>
+                    </div>
+                    <div class="d-flex justify-content-between font-mono text-muted" style="font-size: 11px;">
+                        <span>running: <strong class="text-success" id="dashFleetFooterRunning">@runningCount</strong></span>
+                        <span>stopped: <strong class="text-dark" id="dashFleetFooterStopped">@stoppedCount</strong></span>
+                        <span>paused: <strong class="text-warning" id="dashFleetFooterPaused">@pausedCount</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: Host CPU -->
         <div class="col-12 col-sm-6 col-xl-3">
             <div class="bg-white border rounded p-3 h-100 d-flex flex-column justify-content-between">
                 <div>
@@ -50,36 +94,38 @@
                             <i class="bi bi-cpu text-secondary fs-6"></i>
                             <span class="text-uppercase fw-semibold text-muted" style="font-size: 11px; letter-spacing: 0.04em;">Host CPU</span>
                         </div>
-                        <span class="font-mono text-muted" style="font-size: 11px;">8 Cores</span>
+                        <span class="font-mono text-muted" style="font-size: 11px;">@Model.HostInfo.CpuCores vCPUs</span>
                     </div>
                     <div class="d-flex align-items-baseline justify-content-between my-2">
-                        <span class="fw-bold fs-3" style="color: var(--accent-navy); font-family: var(--font-mono); line-height: 1.2;" id="dashTotalCpu">@(initialCpu > 0 ? Math.Round(initialCpu, 1).ToString("F1") : "28.9")%</span>
-                        <span class="font-mono text-muted text-truncate" style="font-size: 11px; max-width: 120px;" title="AMD Ryzen 5 5600G">Ryzen 5 5600G</span>
+                        <span class="fw-bold fs-3" style="color: var(--accent-navy); font-family: var(--font-mono); line-height: 1.2;" id="dashTotalCpu">@(initialCpu.ToString("F1"))%</span>
+                        <span class="font-mono text-muted text-truncate" style="font-size: 11px; max-width: 140px;" title="@Model.HostInfo.CpuModelName">@Model.HostInfo.CpuModelShort</span>
                     </div>
                 </div>
                 <div>
-                    <!-- Inline Micro Sparkline -->
-                    <div class="w-100 mb-1" style="height: 28px;">
-                        <svg class="w-100 h-100" viewBox="0 0 100 24" preserveAspectRatio="none" style="overflow: visible;">
-                            <defs>
-                                <linearGradient id="cpuSparkGrad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stop-color="#CADCFC" stop-opacity="0.6"/>
-                                    <stop offset="100%" stop-color="#CADCFC" stop-opacity="0.05"/>
-                                </linearGradient>
-                            </defs>
-                            <path d="M0,18 L10,16 L20,19 L30,12 L40,15 L50,8 L60,14 L70,11 L80,17 L90,10 L100,7 L100,24 L0,24 Z" fill="url(#cpuSparkGrad)"/>
-                            <path d="M0,18 L10,16 L20,19 L30,12 L40,15 L50,8 L60,14 L70,11 L80,17 L90,10 L100,7" fill="none" stroke="#1E2761" stroke-width="1.8" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
-                        </svg>
+                    <!-- Live CPU Progress Bar -->
+                    <div class="w-100 rounded-pill overflow-hidden d-flex mb-1" style="height: 6px; background-color: #e2e8f0;">
+                        <div id="dashCpuMeterBar" style="width: @(Math.Min(100.0, Math.Max(initialCpu > 0 ? 2.0 : 0.0, initialCpu)))%; background-color: var(--accent-navy);" title="Fleet CPU: @(initialCpu.ToString("F1"))%"></div>
                     </div>
                     <div class="d-flex justify-content-between font-mono text-muted" style="font-size: 11px;">
-                        <span>Load Avg: 1.42</span>
-                        <span>Peak: <span id="liveCpuBadge">41.2%</span></span>
+                        <span>Load: @(Model.HostInfo.LoadAvg1m.ToString("F2"))</span>
+                        <span>5m: @(Model.HostInfo.LoadAvg5m.ToString("F2"))</span>
+                        <span>Peak: <span id="liveCpuBadge">@(initialCpu.ToString("F1"))%</span></span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Card 2: Host Memory -->
+        <!-- Card 3: Host Memory -->
+        @{
+            var hostTotalMem = Math.Max(1.0, Model.HostInfo.TotalMemoryGb);
+            var hostUsedMem = Model.HostInfo.UsedMemoryGb;
+            var dockerMemGb = Math.Round(initialMemMb / 1024.0, 2);
+            var sysMemGb = Math.Max(0.0, Math.Round(hostUsedMem - dockerMemGb, 2));
+
+            var dockerMemPct = Math.Min(100.0, Math.Round((dockerMemGb / hostTotalMem) * 100.0, 1));
+            var sysMemPct = Math.Min(100.0 - dockerMemPct, Math.Round((sysMemGb / hostTotalMem) * 100.0, 1));
+            var hostMemPct = Model.HostInfo.MemoryUsagePercentage;
+        }
         <div class="col-12 col-sm-6 col-xl-3">
             <div class="bg-white border rounded p-3 h-100 d-flex flex-column justify-content-between">
                 <div>
@@ -88,31 +134,31 @@
                             <i class="bi bi-memory text-secondary fs-6"></i>
                             <span class="text-uppercase fw-semibold text-muted" style="font-size: 11px; letter-spacing: 0.04em;">Host Memory</span>
                         </div>
-                        <span class="font-mono text-dark fw-medium" style="font-size: 11px;">30.0%</span>
+                        <span class="font-mono text-dark fw-medium" style="font-size: 11px;" id="dashMemPct">@(hostMemPct.ToString("F1"))%</span>
                     </div>
                     <div class="d-flex align-items-baseline justify-content-between my-2">
-                        <span class="fw-bold fs-3" style="color: var(--accent-navy); font-family: var(--font-mono); line-height: 1.2;" id="dashTotalMem">
-                            @(initialMemMb > 0 ? initialMemMb.ToString("F1") : "4.8") <span class="text-muted fw-normal fs-6">/ 16.0 GB</span>
+                        <span class="fw-bold fs-3" style="color: var(--accent-navy); font-family: var(--font-mono); line-height: 1.2;">
+                            <span id="dashTotalMemVal">@(hostUsedMem.ToString("F1"))</span> <span class="text-muted fw-normal fs-6">/ @(hostTotalMem.ToString("F1")) GB</span>
                         </span>
-                        <span class="font-mono px-2 py-0.5 rounded bg-light text-dark fw-medium" style="font-size: 10px; border: 1px solid var(--border-color);">DDR4-3200</span>
+                        <span class="font-mono px-2 py-0.5 rounded bg-light text-dark fw-medium text-truncate" style="font-size: 10px; border: 1px solid var(--border-color); max-width: 120px;" title="@Model.HostInfo.OperatingSystem">@Model.HostInfo.MemoryLabel</span>
                     </div>
                 </div>
                 <div>
                     <!-- Segmented Memory Bar -->
                     <div class="w-100 rounded-pill overflow-hidden d-flex mb-1" style="height: 6px; background-color: #e2e8f0;">
-                        <div style="width: 24%; background-color: var(--accent-navy);" title="Active: 3.8 GB"></div>
-                        <div style="width: 6%; background-color: #64748b;" title="Cache: 1.0 GB"></div>
+                        <div id="dashMemBarDocker" style="width: @(dockerMemPct > 0 ? Math.Max(1.5, dockerMemPct) : 0)%; background-color: var(--accent-navy);" title="Docker Containers: @(dockerMemGb.ToString("F2")) GB (@dockerMemPct%)"></div>
+                        <div id="dashMemBarSystem" style="width: @(sysMemPct > 0 ? sysMemPct : 0)%; background-color: #64748b;" title="Host OS &amp; Buffers: @(sysMemGb.ToString("F1")) GB (@sysMemPct%)"></div>
                     </div>
                     <div class="d-flex justify-content-between font-mono text-muted" style="font-size: 11px;">
-                        <span>Act: 3.8G</span>
-                        <span>Cache: 1.0G</span>
-                        <span>Avail: 11.2G</span>
+                        <span>Docker: <span id="dashMemFooterDocker">@(initialMemMb.ToString("F0"))M</span></span>
+                        <span>System: @(sysMemGb.ToString("F1"))G</span>
+                        <span>Avail: @(Model.HostInfo.AvailableMemoryGb.ToString("F1"))G</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Card 3: Docker Root Storage -->
+        <!-- Card 4: Docker Root Storage -->
         <div class="col-12 col-sm-6 col-xl-3">
             <div class="bg-white border rounded p-3 h-100 d-flex flex-column justify-content-between">
                 <div>
@@ -159,44 +205,8 @@
                 </div>
             </div>
         </div>
-
-        <!-- Card 4: Network I/O -->
-        <div class="col-12 col-sm-6 col-xl-3">
-            <div class="bg-white border rounded p-3 h-100 d-flex flex-column justify-content-between">
-                <div>
-                    <div class="d-flex align-items-center justify-content-between mb-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <i class="bi bi-arrow-down-up text-secondary fs-6"></i>
-                            <span class="text-uppercase fw-semibold text-muted" style="font-size: 11px; letter-spacing: 0.04em;">Network I/O</span>
-                        </div>
-                        <span class="font-mono px-2 py-0.5 rounded bg-light text-muted fw-medium" style="font-size: 10px; border: 1px solid var(--border-color);">eth0 1GbE</span>
-                    </div>
-                    <div class="row g-2 my-1">
-                        <div class="col-6">
-                            <div class="d-flex align-items-center gap-1 text-muted" style="font-size: 10px;">
-                                <i class="bi bi-arrow-down text-primary"></i> RX
-                            </div>
-                            <div class="font-mono fw-bold text-dark" style="font-size: 16px;">
-                                12.4 <span class="text-muted fw-normal" style="font-size: 11px;">MB/s</span>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="d-flex align-items-center gap-1 text-muted" style="font-size: 10px;">
-                                <i class="bi bi-arrow-up text-secondary"></i> TX
-                            </div>
-                            <div class="font-mono fw-bold text-secondary" style="font-size: 16px;">
-                                4.2 <span class="text-muted fw-normal" style="font-size: 11px;">MB/s</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="d-flex justify-content-between font-mono text-muted mt-2" style="font-size: 11px;">
-                    <span>Drops: 0</span>
-                    <span>Packets: 9.8k/s</span>
-                </div>
-            </div>
-        </div>
     </div>
+
     <!-- Main Operational Two-Column Layout -->
     <div class="row g-3">
         <!-- Left Column: Priority Workloads & Host Daemon Actions (~60% width) -->

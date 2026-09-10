@@ -2,8 +2,10 @@ namespace Fleptix.Observer.Services;
 
 using System.Diagnostics;
 using System.Formats.Tar;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using Fleptix.Core.Interfaces;
@@ -358,6 +360,156 @@ public class DockerContainerService : IContainerService
             ContainersSizeGb = containersGb,
             StorageDriver = driver,
             FileSystemName = fsName
+        };
+    }
+
+    public async Task<HostSystemInfo> GetHostSystemInfoAsync(CancellationToken cancellationToken = default)
+    {
+        int cpuCores = Environment.ProcessorCount;
+        string cpuModel = "Generic x86_64";
+        string cpuShort = "x86_64";
+        double load1 = 0.0, load5 = 0.0, load15 = 0.0;
+
+        // 1. CPU detection from /proc/cpuinfo
+        try
+        {
+            if (File.Exists("/proc/cpuinfo"))
+            {
+                var lines = await File.ReadAllLinesAsync("/proc/cpuinfo", cancellationToken);
+                var modelLine = lines.FirstOrDefault(l => l.StartsWith("model name", StringComparison.OrdinalIgnoreCase));
+                if (modelLine != null)
+                {
+                    var parts = modelLine.Split(':', 2);
+                    if (parts.Length > 1)
+                    {
+                        cpuModel = parts[1].Trim();
+                        // Shorten model name cleanly (e.g. "AMD Ryzen 5 2600X Six-Core Processor" -> "AMD Ryzen 5 2600X")
+                        cpuShort = Regex.Replace(cpuModel, @"\s*\(R\)\s*|\s*\(TM\)\s*|\s*Processor\s*|\s*(Six|Eight|Quad|Ten|Twelve|Sixteen)-Core\s*", " ", RegexOptions.IgnoreCase);
+                        cpuShort = Regex.Replace(cpuShort, @"\s*CPU\s*", " ", RegexOptions.IgnoreCase);
+                        cpuShort = string.Join(" ", cpuShort.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries));
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Could not parse /proc/cpuinfo");
+        }
+
+        // 2. Load average from /proc/loadavg
+        try
+        {
+            if (File.Exists("/proc/loadavg"))
+            {
+                var loadContent = await File.ReadAllTextAsync("/proc/loadavg", cancellationToken);
+                var tokens = loadContent.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                if (tokens.Length >= 3)
+                {
+                    double.TryParse(tokens[0], NumberStyles.Float, CultureInfo.InvariantCulture, out load1);
+                    double.TryParse(tokens[1], NumberStyles.Float, CultureInfo.InvariantCulture, out load5);
+                    double.TryParse(tokens[2], NumberStyles.Float, CultureInfo.InvariantCulture, out load15);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Could not parse /proc/loadavg");
+        }
+
+        // 3. Memory detection from /proc/meminfo
+        double totalMemGb = 0.0;
+        double availMemGb = 0.0;
+        try
+        {
+            if (File.Exists("/proc/meminfo"))
+            {
+                var lines = await File.ReadAllLinesAsync("/proc/meminfo", cancellationToken);
+                long memTotalKb = 0;
+                long memAvailKb = 0;
+                long memFreeKb = 0;
+                long buffersKb = 0;
+                long cachedKb = 0;
+
+                foreach (var line in lines)
+                {
+                    var parts = line.Split(':', 2);
+                    if (parts.Length != 2) continue;
+                    var key = parts[0].Trim();
+                    var valStr = parts[1].Replace("kB", "").Trim();
+                    if (!long.TryParse(valStr, out var valKb)) continue;
+
+                    if (key.Equals("MemTotal", StringComparison.OrdinalIgnoreCase)) memTotalKb = valKb;
+                    else if (key.Equals("MemAvailable", StringComparison.OrdinalIgnoreCase)) memAvailKb = valKb;
+                    else if (key.Equals("MemFree", StringComparison.OrdinalIgnoreCase)) memFreeKb = valKb;
+                    else if (key.Equals("Buffers", StringComparison.OrdinalIgnoreCase)) buffersKb = valKb;
+                    else if (key.Equals("Cached", StringComparison.OrdinalIgnoreCase)) cachedKb = valKb;
+                }
+
+                if (memAvailKb == 0 && memFreeKb > 0)
+                {
+                    memAvailKb = memFreeKb + buffersKb + cachedKb;
+                }
+
+                totalMemGb = Math.Round((double)memTotalKb / (1024.0 * 1024.0), 1);
+                availMemGb = Math.Round((double)memAvailKb / (1024.0 * 1024.0), 1);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Could not parse /proc/meminfo");
+        }
+
+        // 4. Docker system info fallback / enrichment
+        string osName = "Linux";
+        string kernel = "";
+        string arch = RuntimeInformation.ProcessArchitecture.ToString();
+
+        try
+        {
+            var sysInfo = await _client.System.GetSystemInfoAsync(cancellationToken);
+            if (sysInfo != null)
+            {
+                if (sysInfo.NCPU > 0) cpuCores = (int)sysInfo.NCPU;
+                if (!string.IsNullOrWhiteSpace(sysInfo.OperatingSystem)) osName = sysInfo.OperatingSystem;
+                if (!string.IsNullOrWhiteSpace(sysInfo.KernelVersion)) kernel = sysInfo.KernelVersion;
+                if (!string.IsNullOrWhiteSpace(sysInfo.Architecture)) arch = sysInfo.Architecture;
+
+                if (totalMemGb <= 0 && sysInfo.MemTotal > 0)
+                {
+                    totalMemGb = Math.Round((double)sysInfo.MemTotal / (1024.0 * 1024.0 * 1024.0), 1);
+                    availMemGb = Math.Round(totalMemGb * 0.5, 1);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Could not query Docker system info for host stats");
+        }
+
+        if (totalMemGb <= 0)
+        {
+            var gcMem = GC.GetGCMemoryInfo().TotalAvailableMemoryBytes;
+            totalMemGb = gcMem > 0 ? Math.Round((double)gcMem / (1024.0 * 1024.0 * 1024.0), 1) : 16.0;
+            availMemGb = Math.Round(totalMemGb * 0.5, 1);
+        }
+
+        double usedMemGb = Math.Max(0.0, Math.Round(totalMemGb - availMemGb, 1));
+
+        return new HostSystemInfo
+        {
+            CpuModelName = cpuModel,
+            CpuModelShort = cpuShort,
+            CpuCores = cpuCores,
+            LoadAvg1m = Math.Round(load1, 2),
+            LoadAvg5m = Math.Round(load5, 2),
+            LoadAvg15m = Math.Round(load15, 2),
+            TotalMemoryGb = totalMemGb,
+            UsedMemoryGb = usedMemGb,
+            AvailableMemoryGb = availMemGb,
+            MemoryLabel = !string.IsNullOrWhiteSpace(osName) ? osName : "Host RAM",
+            OperatingSystem = osName,
+            KernelVersion = kernel,
+            Architecture = arch
         };
     }
 
