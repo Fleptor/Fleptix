@@ -153,7 +153,110 @@
         </div>
     </div>
 
-    <!-- Section 3: License & Edition -->
+    <!-- Section 3: CLI & Console Windows (Live Logs, Event Streams, Exec) -->
+    <div class="settings-section mb-4" id="sectionCliWindows">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <h2 class="settings-section-title">
+                <i class="bi bi-terminal me-2" style="color: var(--accent-navy);"></i> CLI &amp; Console Windows
+            </h2>
+            <span class="text-muted font-mono" style="font-size: 10.5px;">Live Logs &bull; Event Streams &bull; Exec Tab</span>
+        </div>
+
+        <div class="settings-panel">
+            <!-- Live Preview Console -->
+            <div class="p-3 border-bottom" style="background-color: var(--bg-surface-elevated);">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span class="settings-desc font-mono text-uppercase fw-bold" style="font-size: 10px;">Live Viewport Preview</span>
+                    <span class="badge font-mono bg-light text-muted border" style="font-size: 9px; padding: 2px 6px;">REAL-TIME SYNCHRONIZED</span>
+                </div>
+                <div id="cliPreviewWindow" class="p-3 rounded font-mono" style="background-color: var(--cli-bg, #0a0e17); color: var(--cli-fg, #e2e8f0); font-family: var(--cli-font, monospace); font-size: 11.5px; line-height: 1.5; min-height: 90px; border: 1px solid var(--border-color);">
+                    <div><span style="opacity: 0.5;">$</span> fleptix-observer daemon --status</div>
+                    <div><span style="opacity: 0.5;">[12:00:01]</span> Streaming daemon IPC events via /var/run/docker.sock</div>
+                    <div><span style="opacity: 0.5;">[12:00:02]</span> Fleet telemetry: 14 active containers, 0 degraded</div>
+                    <div><span style="opacity: 0.5;">[12:00:03]</span> Exec terminal session ready (stdin/stdout hooked)</div>
+                </div>
+            </div>
+
+            <!-- Row 1: Font Type / Family -->
+            <div class="settings-row">
+                <div class="settings-label-col">
+                    <span class="settings-label">Terminal Font Type</span>
+                    <span class="settings-desc">Monospaced font family across Live Logs, Daemon event streams, and Exec terminal</span>
+                </div>
+                <div class="settings-control-col">
+                    <select id="cliFontSelect" class="form-select form-select-sm font-mono" style="max-width: 280px; font-size: 11.5px; height: 30px;" onchange="setCliFont(this.value)">
+                        <option value="'JetBrains Mono', monospace">JetBrains Mono (Recommended)</option>
+                        <option value="'Fira Code', monospace">Fira Code</option>
+                        <option value="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace">SF Mono / System Monospace</option>
+                        <option value="'Cascadia Code', monospace">Cascadia Code</option>
+                        <option value="'Consolas', monospace">Consolas</option>
+                        <option value="'Ubuntu Mono', monospace">Ubuntu Mono</option>
+                        <option value="'Courier New', monospace">Courier New</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Row 2: Background Color -->
+            <div class="settings-row">
+                <div class="settings-label-col">
+                    <span class="settings-label">Console Background</span>
+                    <span class="settings-desc">Viewport background tone for Live Logs, Daemon cluster feeds, and Exec shell</span>
+                </div>
+                <div class="settings-control-col">
+                    <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+                        <div class="d-flex align-items-center gap-1">
+                            <button type="button" class="btn btn-xs border p-0 rounded" style="width: 20px; height: 20px; background-color: #0a0e17;" title="Obsidian Dark (#0a0e17)" onclick="setCliBg('#0a0e17')"></button>
+                            <button type="button" class="btn btn-xs border p-0 rounded" style="width: 20px; height: 20px; background-color: #000000;" title="Pure Black (#000000)" onclick="setCliBg('#000000')"></button>
+                            <button type="button" class="btn btn-xs border p-0 rounded" style="width: 20px; height: 20px; background-color: #0b1329;" title="Deep Navy (#0b1329)" onclick="setCliBg('#0b1329')"></button>
+                            <button type="button" class="btn btn-xs border p-0 rounded" style="width: 20px; height: 20px; background-color: #161b22;" title="Charcoal Slate (#161b22)" onclick="setCliBg('#161b22')"></button>
+                            <button type="button" class="btn btn-xs border p-0 rounded" style="width: 20px; height: 20px; background-color: #002b36;" title="Solarized Dark (#002b36)" onclick="setCliBg('#002b36')"></button>
+                            <button type="button" class="btn btn-xs border p-0 rounded" style="width: 20px; height: 20px; background-color: #031005;" title="Matrix Dark (#031005)" onclick="setCliBg('#031005')"></button>
+                        </div>
+                        <div class="d-flex align-items-center gap-1.5">
+                            <input type="color" id="cliBgPicker" class="form-control form-control-color p-0 border" style="width: 28px; height: 28px; cursor: pointer;" onchange="setCliBg(this.value)">
+                            <input type="text" id="cliBgText" class="form-control form-control-sm font-mono text-uppercase" style="width: 85px; font-size: 11px; height: 28px;" placeholder="#0A0E17" onchange="setCliBg(this.value)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 3: Foreground Color -->
+            <div class="settings-row">
+                <div class="settings-label-col">
+                    <span class="settings-label">Console Foreground (Text)</span>
+                    <span class="settings-desc">Primary stream output, timestamp, and command prompt text color</span>
+                </div>
+                <div class="settings-control-col">
+                    <div class="d-flex align-items-center gap-2 flex-wrap justify-content-end">
+                        <div class="d-flex align-items-center gap-1">
+                            <button type="button" class="btn btn-xs border p-0 rounded" style="width: 20px; height: 20px; background-color: #e2e8f0;" title="Silver White (#e2e8f0)" onclick="setCliFg('#e2e8f0')"></button>
+                            <button type="button" class="btn btn-xs border p-0 rounded" style="width: 20px; height: 20px; background-color: #4ade80;" title="Terminal Green (#4ade80)" onclick="setCliFg('#4ade80')"></button>
+                            <button type="button" class="btn btn-xs border p-0 rounded" style="width: 20px; height: 20px; background-color: #facc15;" title="Amber Gold (#facc15)" onclick="setCliFg('#facc15')"></button>
+                            <button type="button" class="btn btn-xs border p-0 rounded" style="width: 20px; height: 20px; background-color: #38bdf8;" title="Ice Cyan (#38bdf8)" onclick="setCliFg('#38bdf8')"></button>
+                            <button type="button" class="btn btn-xs border p-0 rounded" style="width: 20px; height: 20px; background-color: #f472b6;" title="Neon Pink (#f472b6)" onclick="setCliFg('#f472b6')"></button>
+                            <button type="button" class="btn btn-xs border p-0 rounded" style="width: 20px; height: 20px; background-color: #a78bfa;" title="Purple Haze (#a78bfa)" onclick="setCliFg('#a78bfa')"></button>
+                        </div>
+                        <div class="d-flex align-items-center gap-1.5">
+                            <input type="color" id="cliFgPicker" class="form-control form-control-color p-0 border" style="width: 28px; height: 28px; cursor: pointer;" onchange="setCliFg(this.value)">
+                            <input type="text" id="cliFgText" class="form-control form-control-sm font-mono text-uppercase" style="width: 85px; font-size: 11px; height: 28px;" placeholder="#E2E8F0" onchange="setCliFg(this.value)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel Footer -->
+            <div class="settings-panel-footer">
+                <span class="text-muted font-mono" style="font-size: 11px;">
+                    <i class="bi bi-info-circle me-1"></i> Customizations apply instantly to Live Logs, Event Feeds, and Exec Shell
+                </span>
+                <button type="button" class="btn btn-sm btn-outline-secondary font-mono d-inline-flex align-items-center gap-1 py-1 px-2.5" style="font-size: 11px; height: 28px;" onclick="resetCliSettings()">
+                    <i class="bi bi-arrow-counterclockwise"></i> Reset to Defaults
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 4: License & Edition -->
     <div class="settings-section mb-4" id="sectionLicense">
         <div class="d-flex align-items-center justify-content-between mb-2">
             <h2 class="settings-section-title">
@@ -255,7 +358,7 @@
         </div>
     </div>
 
-    <!-- Section 4: Automated Protection (Time Machine) -->
+    <!-- Section 5: Automated Protection (Time Machine) -->
     <div class="settings-section mb-4" id="panelAutomatedProtection">
         <div class="d-flex align-items-center justify-content-between mb-2">
             <h2 class="settings-section-title">
@@ -397,7 +500,7 @@
         </div>
     </div>
 
-    <!-- Section 5: Application Environment -->
+    <!-- Section 6: Application Environment -->
     <div class="settings-section mb-4">
         <div class="d-flex align-items-center justify-content-between mb-2">
             <h2 class="settings-section-title">
@@ -432,7 +535,7 @@
         </div>
     </div>
 
-    <!-- Section 6: Maintenance & Container Updates -->
+    <!-- Section 7: Maintenance & Container Updates -->
     <div class="settings-section mb-4" id="sectionMaintenance">
         <div class="d-flex align-items-center justify-content-between mb-2">
             <h2 class="settings-section-title">

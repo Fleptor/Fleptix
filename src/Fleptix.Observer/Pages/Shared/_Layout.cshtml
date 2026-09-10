@@ -16,10 +16,15 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
 
+    <!-- Google Fonts: JetBrains Mono & Fira Code -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
     <!-- Fleptix Design System -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 
-    <!-- Synchronous Theme & Font Scale Loader (Prevents FOUC) -->
+    <!-- Synchronous Theme, Font Scale & CLI Console Loader (Prevents FOUC) -->
     <script>
         (function() {
             try {
@@ -32,8 +37,15 @@
 
                 var fontSize = localStorage.getItem('fleptix_font_size') || 'default';
                 document.documentElement.setAttribute('data-font-size', fontSize);
+
+                var cliBg = localStorage.getItem('fleptix_cli_bg') || '#0a0e17';
+                var cliFg = localStorage.getItem('fleptix_cli_fg') || '#e2e8f0';
+                var cliFont = localStorage.getItem('fleptix_cli_font') || "'JetBrains Mono', monospace";
+                document.documentElement.style.setProperty('--cli-bg', cliBg);
+                document.documentElement.style.setProperty('--cli-fg', cliFg);
+                document.documentElement.style.setProperty('--cli-font', cliFont);
             } catch (e) {
-                console.error('Theme/Font initialization error:', e);
+                console.error('Theme/Font/CLI initialization error:', e);
             }
         })();
     </script>
@@ -90,9 +102,6 @@
                     <input type="search" id="globalSearchInput" class="topbar-search-input" placeholder="Search containers, images, ports... (Press '/' to focus)" />
                 </div>
                 <div class="topbar-actions">
-                    <button type="button" class="topbar-btn" id="btnQuickThemeToggle" title="Toggle Theme (Light / Dark)" onclick="window.toggleQuickTheme()">
-                        <i class="bi bi-moon-stars" id="iconQuickTheme"></i>
-                    </button>
                     <span class="signalr-pill" id="signalrStatusPill">
                         <i class="bi bi-broadcast"></i> Live
                     </span>
@@ -238,11 +247,6 @@
         };
 
         window.syncThemeUI = function() {
-            const effective = window.getEffectiveTheme();
-            const quickIcon = document.getElementById('iconQuickTheme');
-            if (quickIcon) {
-                quickIcon.className = (effective === 'dark') ? 'bi bi-sun' : 'bi bi-moon-stars';
-            }
             const stored = window.getStoredTheme();
             const radioLight = document.getElementById('themeRadioLight');
             const radioDark = document.getElementById('themeRadioDark');
@@ -262,6 +266,65 @@
             if (radioLarge) radioLarge.checked = (size === 'large');
         };
 
+        // ==========================================
+        // CLI Windows Customization Management
+        // (Live Logs, Daemon Streams, Exec Shell)
+        // ==========================================
+        window.setCliBg = function(color) {
+            localStorage.setItem('fleptix_cli_bg', color);
+            document.documentElement.style.setProperty('--cli-bg', color);
+            window.syncCliUI();
+        };
+
+        window.setCliFg = function(color) {
+            localStorage.setItem('fleptix_cli_fg', color);
+            document.documentElement.style.setProperty('--cli-fg', color);
+            window.syncCliUI();
+        };
+
+        window.setCliFont = function(font) {
+            localStorage.setItem('fleptix_cli_font', font);
+            document.documentElement.style.setProperty('--cli-font', font);
+            window.syncCliUI();
+        };
+
+        window.resetCliSettings = function() {
+            localStorage.removeItem('fleptix_cli_bg');
+            localStorage.removeItem('fleptix_cli_fg');
+            localStorage.removeItem('fleptix_cli_font');
+            document.documentElement.style.setProperty('--cli-bg', '#0a0e17');
+            document.documentElement.style.setProperty('--cli-fg', '#e2e8f0');
+            document.documentElement.style.setProperty('--cli-font', "'JetBrains Mono', monospace");
+            window.syncCliUI();
+            if (typeof window.showToast === 'function') {
+                window.showToast('CLI terminal styles reset to defaults.');
+            }
+        };
+
+        window.syncCliUI = function() {
+            const bg = localStorage.getItem('fleptix_cli_bg') || '#0a0e17';
+            const fg = localStorage.getItem('fleptix_cli_fg') || '#e2e8f0';
+            const font = localStorage.getItem('fleptix_cli_font') || "'JetBrains Mono', monospace";
+
+            const inputBg = document.getElementById('cliBgPicker');
+            const inputBgText = document.getElementById('cliBgText');
+            const inputFg = document.getElementById('cliFgPicker');
+            const inputFgText = document.getElementById('cliFgText');
+            const selectFont = document.getElementById('cliFontSelect');
+            const previewBox = document.getElementById('cliPreviewWindow');
+
+            if (inputBg) inputBg.value = bg.startsWith('#') && bg.length === 7 ? bg : '#0a0e17';
+            if (inputBgText) inputBgText.value = bg;
+            if (inputFg) inputFg.value = fg.startsWith('#') && fg.length === 7 ? fg : '#e2e8f0';
+            if (inputFgText) inputFgText.value = fg;
+            if (selectFont) selectFont.value = font;
+            if (previewBox) {
+                previewBox.style.setProperty('background-color', bg, 'important');
+                previewBox.style.setProperty('color', fg, 'important');
+                previewBox.style.setProperty('font-family', font, 'important');
+            }
+        };
+
         if (window.matchMedia) {
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
                 if (window.getStoredTheme() === 'system') {
@@ -274,6 +337,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             window.syncThemeUI();
             window.syncFontSizeUI();
+            window.syncCliUI();
         });
 
         checkEngineStatus();

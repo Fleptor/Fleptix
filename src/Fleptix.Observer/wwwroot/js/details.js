@@ -910,10 +910,10 @@ window.executeContainerCommand = async function(cmd) {
         if (outContainer) {
             let html = '';
             if (data.stdout && data.stdout.length > 0) {
-                html += `<pre class="m-0 font-mono" style="font-size: 11px; color: #e2e8f0; white-space: pre-wrap; word-break: break-all;">${escapeHtml(data.stdout)}</pre>`;
+                html += `<pre class="m-0 font-mono exec-stdout" style="font-size: 11px; color: var(--cli-fg, #e2e8f0); white-space: pre-wrap; word-break: break-all;">${escapeHtml(data.stdout)}</pre>`;
             }
             if (data.stderr && data.stderr.length > 0) {
-                html += `<pre class="m-0 font-mono mt-1" style="font-size: 11px; color: #f87171; white-space: pre-wrap; word-break: break-all;">${escapeHtml(data.stderr)}</pre>`;
+                html += `<pre class="m-0 font-mono mt-1 exec-stderr" style="font-size: 11px; color: #f87171; white-space: pre-wrap; word-break: break-all;">${escapeHtml(data.stderr)}</pre>`;
             }
             if (data.errorMessage) {
                 html += `<div class="font-mono mt-1" style="font-size: 11px; color: #f87171;">${escapeHtml(data.errorMessage)}</div>`;
