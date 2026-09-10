@@ -70,7 +70,8 @@ html[data-theme="dark"] {
     --text-muted: #8b98ad;
     --text-dim: #64748b;
     
-    --accent-navy: #172138;
+    --accent-navy: #60a5fa;
+    --accent-navy-hover: #93c5fd;
     --accent-ice: #93c5fd;
     
     --status-running-bg: rgba(34, 197, 94, 0.15);
@@ -1444,4 +1445,254 @@ html[data-theme="dark"] [style*="border-color:#cbd5e1"],
 html[data-theme="dark"] [style*="border-color:#e2e8f0"],
 html[data-theme="dark"] [style*="border-color:#f1f5f9"] {
     border-color: #1e293b !important;
+}
+
+/* ==========================================================================
+   PRIORITY WORKLOAD ROWS & TABLE ALERTING STATES
+   ========================================================================== */
+
+/* Workload Row Base */
+.dash-workload-row {
+    background-color: #ffffff;
+    border: 1px solid var(--border-color) !important;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.dash-workload-row .dash-workload-name {
+    color: #0f172a;
+    transition: color 0.15s ease;
+}
+.dash-workload-row .dash-workload-name:hover {
+    color: var(--accent-navy);
+}
+.dash-workload-row .dash-workload-icon i {
+    font-size: 1.25rem;
+}
+.dash-workload-row .dash-workload-meta {
+    color: #64748b;
+}
+.dash-workload-row .dash-meta-label {
+    color: #334155;
+    font-weight: 500;
+}
+
+/* Light Mode Alerting Workload */
+html[data-theme="light"] .dash-workload-row.workload-alerting,
+html:not([data-theme="dark"]) .dash-workload-row.workload-alerting {
+    background-color: #fef2f2 !important;
+    border-color: #fecaca !important;
+    border-left: 3px solid #dc2626 !important;
+}
+html[data-theme="light"] .dash-workload-row.workload-alerting .dash-workload-name,
+html:not([data-theme="dark"]) .dash-workload-row.workload-alerting .dash-workload-name {
+    color: #991b1b !important;
+}
+html[data-theme="light"] .dash-workload-row.workload-alerting .dash-workload-name:hover,
+html:not([data-theme="dark"]) .dash-workload-row.workload-alerting .dash-workload-name:hover {
+    color: #7f1d1d !important;
+}
+html[data-theme="light"] .dash-workload-row.workload-alerting .dash-workload-icon i,
+html:not([data-theme="dark"]) .dash-workload-row.workload-alerting .dash-workload-icon i {
+    color: #dc2626 !important;
+}
+html[data-theme="light"] .dash-workload-row.workload-alerting .dash-meta-label,
+html:not([data-theme="dark"]) .dash-workload-row.workload-alerting .dash-meta-label {
+    color: #991b1b !important;
+}
+
+/* Dark Mode Normal Workload Row */
+html[data-theme="dark"] .dash-workload-row {
+    background-color: #121827 !important;
+    border: 1px solid #1e293b !important;
+}
+html[data-theme="dark"] .dash-workload-row .dash-workload-name {
+    color: #f1f5f9 !important;
+}
+html[data-theme="dark"] .dash-workload-row .dash-workload-name:hover {
+    color: #60a5fa !important;
+}
+html[data-theme="dark"] .dash-workload-row .dash-workload-meta {
+    color: #8b98ad !important;
+}
+html[data-theme="dark"] .dash-workload-row .dash-meta-label {
+    color: #cbd5e1 !important;
+}
+
+/* Dark Mode Alerting Workload (Crisp, High-Contrast Red Operational Alert) */
+html[data-theme="dark"] .dash-workload-row.workload-alerting,
+html[data-theme="dark"] .dash-workload-row[data-state="exited"],
+html[data-theme="dark"] .dash-workload-row[data-state="created"],
+html[data-theme="dark"] .dash-workload-row[data-state="dead"] {
+    background-color: #201216 !important;
+    border: 1px solid rgba(239, 68, 68, 0.45) !important;
+    border-left: 3px solid #ef4444 !important;
+}
+html[data-theme="dark"] .dash-workload-row.workload-alerting .dash-workload-name,
+html[data-theme="dark"] .dash-workload-row[data-state="exited"] .dash-workload-name,
+html[data-theme="dark"] .dash-workload-row[data-state="created"] .dash-workload-name,
+html[data-theme="dark"] .dash-workload-row[data-state="dead"] .dash-workload-name {
+    color: #ffffff !important;
+}
+html[data-theme="dark"] .dash-workload-row.workload-alerting .dash-workload-name:hover,
+html[data-theme="dark"] .dash-workload-row[data-state="exited"] .dash-workload-name:hover,
+html[data-theme="dark"] .dash-workload-row[data-state="created"] .dash-workload-name:hover,
+html[data-theme="dark"] .dash-workload-row[data-state="dead"] .dash-workload-name:hover {
+    color: #fca5a5 !important;
+}
+html[data-theme="dark"] .dash-workload-row.workload-alerting .dash-workload-icon i,
+html[data-theme="dark"] .dash-workload-row[data-state="exited"] .dash-workload-icon i,
+html[data-theme="dark"] .dash-workload-row[data-state="created"] .dash-workload-icon i,
+html[data-theme="dark"] .dash-workload-row[data-state="dead"] .dash-workload-icon i {
+    color: #f87171 !important;
+}
+html[data-theme="dark"] .dash-workload-row.workload-alerting .dash-workload-meta,
+html[data-theme="dark"] .dash-workload-row[data-state="exited"] .dash-workload-meta,
+html[data-theme="dark"] .dash-workload-row[data-state="created"] .dash-workload-meta,
+html[data-theme="dark"] .dash-workload-row[data-state="dead"] .dash-workload-meta {
+    color: #94a3b8 !important;
+}
+html[data-theme="dark"] .dash-workload-row.workload-alerting .dash-meta-label,
+html[data-theme="dark"] .dash-workload-row[data-state="exited"] .dash-meta-label,
+html[data-theme="dark"] .dash-workload-row[data-state="created"] .dash-meta-label,
+html[data-theme="dark"] .dash-workload-row[data-state="dead"] .dash-meta-label {
+    color: #fca5a5 !important;
+}
+html[data-theme="dark"] .dash-workload-row.workload-alerting .btn-light,
+html[data-theme="dark"] .dash-workload-row[data-state="exited"] .btn-light,
+html[data-theme="dark"] .dash-workload-row[data-state="created"] .btn-light,
+html[data-theme="dark"] .dash-workload-row[data-state="dead"] .btn-light {
+    background-color: #1a1b2e !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+}
+html[data-theme="dark"] .dash-workload-row.workload-alerting .btn-light:hover,
+html[data-theme="dark"] .dash-workload-row[data-state="exited"] .btn-light:hover,
+html[data-theme="dark"] .dash-workload-row[data-state="created"] .btn-light:hover,
+html[data-theme="dark"] .dash-workload-row[data-state="dead"] .btn-light:hover {
+    background-color: #262d47 !important;
+    color: #ffffff !important;
+}
+html[data-theme="dark"] .dash-workload-row.workload-alerting .btn-icon-action,
+html[data-theme="dark"] .dash-workload-row[data-state="exited"] .btn-icon-action,
+html[data-theme="dark"] .dash-workload-row[data-state="created"] .btn-icon-action,
+html[data-theme="dark"] .dash-workload-row[data-state="dead"] .btn-icon-action {
+    background-color: #1a1b2e !important;
+    border-color: #334155 !important;
+    color: #4ade80 !important;
+}
+html[data-theme="dark"] .dash-workload-row.workload-alerting .btn-icon-action:hover,
+html[data-theme="dark"] .dash-workload-row[data-state="exited"] .btn-icon-action:hover,
+html[data-theme="dark"] .dash-workload-row[data-state="created"] .btn-icon-action:hover,
+html[data-theme="dark"] .dash-workload-row[data-state="dead"] .btn-icon-action:hover {
+    background-color: #262d47 !important;
+    color: #86efac !important;
+}
+
+/* Containers Table Row Alerting States */
+html[data-theme="light"] .table-row-item.row-alerting,
+html:not([data-theme="dark"]) .table-row-item.row-alerting {
+    background-color: rgba(254, 242, 242, 0.5) !important;
+}
+html[data-theme="dark"] .table-row-item.row-alerting {
+    background-color: rgba(239, 68, 68, 0.08) !important;
+}
+html[data-theme="dark"] .table-row-item.row-alerting:hover {
+    background-color: rgba(239, 68, 68, 0.14) !important;
+}
+
+/* ==========================================================================
+   DARK MODE ACCENT, LINK, HEADING & BUTTON ENHANCEMENTS
+   ========================================================================== */
+
+/* Dark Mode Links & Action Triggers */
+.dash-fleet-link {
+    color: var(--accent-navy);
+    transition: color 0.15s ease;
+}
+.dash-fleet-link:hover {
+    color: var(--accent-navy-hover);
+    text-decoration: underline !important;
+}
+
+.dash-buffer-export-btn {
+    color: var(--accent-navy);
+    transition: color 0.15s ease;
+}
+.dash-buffer-export-btn:hover {
+    color: var(--accent-navy-hover);
+    text-decoration: underline !important;
+}
+
+html[data-theme="dark"] .dash-fleet-link,
+html[data-theme="dark"] a.dash-fleet-link,
+html[data-theme="dark"] .dash-buffer-export-btn,
+html[data-theme="dark"] a[style*="color: var(--accent-navy)"],
+html[data-theme="dark"] a.text-decoration-none[style*="color: var(--accent-navy)"],
+html[data-theme="dark"] .btn-link[style*="color: var(--accent-navy)"],
+html[data-theme="dark"] a:not(.btn):not(.brand-link):not(.nav-item):not(.dash-workload-name):not(.text-dark) {
+    color: #60a5fa !important;
+}
+
+html[data-theme="dark"] .dash-fleet-link:hover,
+html[data-theme="dark"] a.dash-fleet-link:hover,
+html[data-theme="dark"] .dash-buffer-export-btn:hover,
+html[data-theme="dark"] a[style*="color: var(--accent-navy)"]:hover,
+html[data-theme="dark"] a.text-decoration-none[style*="color: var(--accent-navy)"]:hover,
+html[data-theme="dark"] .btn-link[style*="color: var(--accent-navy)"]:hover,
+html[data-theme="dark"] a:not(.btn):not(.brand-link):not(.nav-item):not(.dash-workload-name):not(.text-dark):hover {
+    color: #93c5fd !important;
+    text-decoration: underline !important;
+}
+
+/* Dark Mode Section Headings with var(--accent-navy) */
+html[data-theme="dark"] h2[style*="color: var(--accent-navy)"],
+html[data-theme="dark"] h3[style*="color: var(--accent-navy)"],
+html[data-theme="dark"] h4[style*="color: var(--accent-navy)"],
+html[data-theme="dark"] .h6[style*="color: var(--accent-navy)"] {
+    color: #f1f5f9 !important;
+}
+
+/* Dark Mode Stat Numbers & Metric Values */
+html[data-theme="dark"] span.fs-3[style*="color: var(--accent-navy)"],
+html[data-theme="dark"] span.fs-4[style*="color: var(--accent-navy)"],
+html[data-theme="dark"] #dashTotalCpu,
+html[data-theme="dark"] #detailsCpuVal {
+    color: #f1f5f9 !important;
+}
+
+/* Dark Mode Icons styled with var(--accent-navy) or text-primary */
+html[data-theme="dark"] i[style*="color: var(--accent-navy)"],
+html[data-theme="dark"] .text-primary {
+    color: #60a5fa !important;
+}
+
+/* Dark Mode Progress Bar Fill & Tracks */
+html[data-theme="dark"] div[style*="background-color: var(--accent-navy)"],
+html[data-theme="dark"] #dashCpuMeterBar,
+html[data-theme="dark"] #dashMemBarDocker {
+    background-color: #3b82f6 !important;
+}
+
+html[data-theme="dark"] [style*="background-color: #e2e8f0"],
+html[data-theme="dark"] [style*="background-color:#e2e8f0"] {
+    background-color: #1e293b !important;
+}
+
+/* Dark Mode Primary Buttons styled with var(--accent-navy) */
+html[data-theme="dark"] button[style*="background-color: var(--accent-navy)"],
+html[data-theme="dark"] a.btn[style*="background-color: var(--accent-navy)"] {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+}
+html[data-theme="dark"] button[style*="background-color: var(--accent-navy)"]:hover,
+html[data-theme="dark"] a.btn[style*="background-color: var(--accent-navy)"]:hover {
+    background-color: #1d4ed8 !important;
+    border-color: #1d4ed8 !important;
+}
+
+/* Dark Mode Fallback for any lingering light red backgrounds */
+html[data-theme="dark"] [style*="background-color: #fef2f2"],
+html[data-theme="dark"] [style*="background-color:#fef2f2"] {
+    background-color: #201216 !important;
+    border-color: rgba(239, 68, 68, 0.45) !important;
 }

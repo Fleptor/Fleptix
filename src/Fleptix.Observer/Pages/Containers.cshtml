@@ -190,13 +190,12 @@
                         var memPct = hasMetric ? metric!.MemoryPercentage : 0.0;
                         var isAlerting = c.State != "running";
 
-                        <tr class="table-row-item" 
+                        <tr class="table-row-item @(isAlerting ? "row-alerting" : "")" 
                             data-container-id="@c.Id" 
                             data-name="@c.Name.ToLower()" 
                             data-image="@c.Image.ToLower()" 
                             data-state="@c.State"
-                            data-stack="@group.Key"
-                            style="background-color: @(isAlerting ? "rgba(254, 242, 242, 0.4)" : "transparent");">
+                            data-stack="@group.Key">
                             <td class="text-center">
                                 <input type="checkbox" class="row-checkbox form-check-input m-0" data-id="@c.Id" style="cursor: pointer;" />
                             </td>

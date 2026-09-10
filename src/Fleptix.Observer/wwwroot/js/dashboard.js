@@ -242,6 +242,22 @@ function updateWorkloadRow(container, metric) {
 
     row.setAttribute('data-state', container.state);
 
+    if (container.state === 'running') {
+        row.classList.remove('workload-alerting');
+    } else {
+        row.classList.add('workload-alerting');
+    }
+
+    // Update Icon
+    const iconContainer = document.getElementById(`dash-icon-${cid}`);
+    if (iconContainer) {
+        if (container.state === 'running') {
+            iconContainer.innerHTML = `<i class="bi bi-box-seam text-secondary fs-5"></i>`;
+        } else {
+            iconContainer.innerHTML = `<i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>`;
+        }
+    }
+
     // Update Pill
     const pillContainer = document.getElementById(`dash-pill-${cid}`);
     if (pillContainer) {

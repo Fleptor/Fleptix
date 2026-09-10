@@ -243,22 +243,23 @@
                             var memPct = hasMetric ? metric!.MemoryPercentage : 0.0;
                             var isAlerting = c.State != "running";
 
-                            <div class="p-2 rounded border dash-workload-row d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2" 
+                            <div class="p-2 rounded border dash-workload-row @(isAlerting ? "workload-alerting" : "") d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2" 
                                  data-container-id="@c.Id" 
-                                 data-state="@c.State"
-                                 style="background-color: @(isAlerting ? "#fef2f2" : "#ffffff"); border-color: @(isAlerting ? "#fecaca" : "var(--border-color)") !important;">
+                                 data-state="@c.State">
                                 <div class="d-flex align-items-start gap-2 min-w-0">
-                                    @if (isAlerting)
-                                    {
-                                        <i class="bi bi-exclamation-triangle-fill text-danger fs-5 mt-0.5 flex-shrink-0"></i>
-                                    }
-                                    else
-                                    {
-                                        <i class="bi bi-box-seam text-secondary fs-5 mt-0.5 flex-shrink-0"></i>
-                                    }
+                                    <div class="dash-workload-icon flex-shrink-0 mt-0.5" id="dash-icon-@c.Id">
+                                        @if (isAlerting)
+                                        {
+                                            <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-box-seam text-secondary fs-5"></i>
+                                        }
+                                    </div>
                                     <div class="min-w-0">
                                         <div class="d-flex align-items-center gap-2 flex-wrap">
-                                            <a href="/Details?id=@c.Id" class="fw-bold text-dark text-decoration-none text-truncate" style="font-size: 13px;">@c.Name</a>
+                                            <a href="/Details?id=@c.Id" class="fw-bold dash-workload-name text-decoration-none text-truncate" style="font-size: 13px;">@c.Name</a>
                                             <span id="dash-pill-@c.Id">
                                                 <partial name="_StatusPill" model="c.State" />
                                             </span>
@@ -267,10 +268,10 @@
                                                 <span class="font-mono text-muted" style="font-size: 11px;">ports: @string.Join(", ", c.Ports.Take(2))</span>
                                             }
                                         </div>
-                                        <div class="font-mono text-muted mt-1 d-flex align-items-center gap-2 flex-wrap" style="font-size: 11px;">
-                                            <span class="text-dark fw-medium">CPU: <span id="dash-cpu-val-@c.Id">@cpu.ToString("F1")%</span></span>
+                                        <div class="font-mono text-muted dash-workload-meta mt-1 d-flex align-items-center gap-2 flex-wrap" style="font-size: 11px;">
+                                            <span class="dash-meta-label">CPU: <span id="dash-cpu-val-@c.Id">@cpu.ToString("F1")%</span></span>
                                             <span>&bull;</span>
-                                            <span>RAM: <span id="dash-mem-val-@c.Id">@memMb.ToString("F1") MB</span></span>
+                                            <span class="dash-meta-label">RAM: <span id="dash-mem-val-@c.Id">@memMb.ToString("F1") MB</span></span>
                                             <span>&bull;</span>
                                             <span class="text-truncate">@c.Image</span>
                                         </div>
@@ -331,7 +332,7 @@
                 <!-- Footnote Navigation link -->
                 <div class="pt-3 mt-2 border-top d-flex align-items-center justify-content-between">
                     <span class="font-mono text-muted" style="font-size: 11px;">Showing top @priorityContainers.Count prioritized workloads</span>
-                    <a href="/Containers" class="text-decoration-none fw-semibold d-inline-flex align-items-center gap-1" style="color: var(--accent-navy); font-size: 12px;">
+                    <a href="/Containers" class="text-decoration-none fw-semibold d-inline-flex align-items-center gap-1 dash-fleet-link" style="font-size: 12px;">
                         <span>View all @Model.Containers.Count containers in fleet</span>
                         <i class="bi bi-arrow-right"></i>
                     </a>
@@ -431,7 +432,7 @@
 
                 <div class="px-3 py-2 bg-light border-top rounded-bottom d-flex align-items-center justify-content-between font-mono text-muted" style="font-size: 11px;">
                     <span>Filtering: <span class="text-dark fw-medium" id="eventFeedCount">All events (4)</span></span>
-                    <button class="btn btn-link p-0 text-decoration-none fw-semibold" style="color: var(--accent-navy); font-size: 11px;" onclick="window.showToast('Buffer exported to clipboard')">Export Buffer</button>
+                    <button class="btn btn-link p-0 text-decoration-none fw-semibold dash-buffer-export-btn" style="font-size: 11px;" onclick="window.showToast('Buffer exported to clipboard')">Export Buffer</button>
                 </div>
             </div>
 
