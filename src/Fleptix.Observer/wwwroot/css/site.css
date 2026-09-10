@@ -2,6 +2,7 @@
 :root {
     --bg-page: #f4f5f7;
     --bg-surface: #ffffff;
+    --bg-surface-elevated: #f8fafc;
     --bg-hover: #f1f3f6;
     
     --border-color: #e2e5eb;
@@ -34,6 +35,47 @@
     
     --sidebar-width: 220px;
     --topbar-height: 48px;
+    
+    /* Font Size Scaling */
+    --app-font-size: 13px;
+}
+
+/* Font Scaling Preferences */
+html[data-font-size="compact"] {
+    --app-font-size: 12px;
+}
+html[data-font-size="default"] {
+    --app-font-size: 13px;
+}
+html[data-font-size="large"] {
+    --app-font-size: 14.5px;
+}
+
+/* Dark Theme Variables */
+html[data-theme="dark"] {
+    --bg-page: #0b0f19;
+    --bg-surface: #111827;
+    --bg-surface-elevated: #1e293b;
+    --bg-hover: #1f293d;
+    
+    --border-color: #273142;
+    --border-dark: #374151;
+    
+    --text-main: #f3f4f6;
+    --text-muted: #94a3b8;
+    --text-dim: #64748b;
+    
+    --accent-navy: #1e2761;
+    --accent-ice: #cadcfc;
+    
+    --status-running-bg: rgba(22, 163, 74, 0.2);
+    --status-running-text: #4ade80;
+    
+    --status-stopped-bg: rgba(148, 163, 184, 0.15);
+    --status-stopped-text: #cbd5e1;
+    
+    --status-restarting-bg: rgba(217, 119, 6, 0.2);
+    --status-restarting-text: #fcd34d;
 }
 
 * {
@@ -46,9 +88,10 @@ body.fleptix-app {
     font-family: var(--font-ui);
     background-color: var(--bg-page);
     color: var(--text-main);
-    font-size: 13px;
+    font-size: var(--app-font-size, 13px);
     line-height: 1.45;
     -webkit-font-smoothing: antialiased;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .font-mono {
@@ -270,6 +313,45 @@ body.fleptix-app {
 
 .signalr-pill i {
     font-size: 10px;
+}
+
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.topbar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 4px;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.topbar-btn:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-main);
+    border-color: var(--border-dark);
+}
+
+.settings-locked-box {
+    border-left: 3px solid #d97706;
+    background-color: var(--bg-surface-elevated);
+    border-radius: 0 4px 4px 0;
+}
+
+.terminal-command-card {
+    background-color: var(--bg-surface-elevated);
+    border: 1px solid var(--border-color);
 }
 
 .app-content {
@@ -808,10 +890,11 @@ body.fleptix-app {
 
 /* SETTINGS AUTOMATED PROTECTION & UNIFIED DESIGN SYSTEM */
 .fleptix-panel, .settings-panel {
-    background-color: #ffffff;
+    background-color: var(--bg-surface);
     border: 1px solid var(--border-color);
     border-radius: 4px;
     overflow: hidden;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .settings-section-title {
@@ -829,10 +912,10 @@ body.fleptix-app {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 11px 16px;
-    gap: 16px;
-    border-bottom: 1px solid #f1f5f9;
-    min-height: 52px;
+    padding: 13px 18px;
+    gap: 20px;
+    border-bottom: 1px solid var(--border-color);
+    min-height: 54px;
     transition: background-color 0.1s ease;
 }
 
@@ -841,26 +924,27 @@ body.fleptix-app {
 }
 
 .settings-row:hover {
-    background-color: #fafbfc;
+    background-color: var(--bg-hover);
 }
 
 .settings-label-col {
     display: flex;
     flex-direction: column;
-    flex: 1;
-    min-width: 0;
+    flex: 0 0 320px;
+    max-width: 340px;
+    min-width: 240px;
 }
 
 .settings-label {
     font-size: 12.5px;
     font-weight: 600;
-    color: #0f172a;
+    color: var(--text-main);
     line-height: 1.3;
 }
 
 .settings-desc {
     font-size: 11px;
-    color: #64748b;
+    color: var(--text-muted);
     line-height: 1.4;
     margin-top: 2px;
 }
@@ -870,13 +954,14 @@ body.fleptix-app {
     align-items: center;
     justify-content: flex-end;
     gap: 10px;
-    flex-shrink: 0;
+    flex: 1;
+    min-width: 0;
 }
 
 .settings-value-mono {
     font-family: var(--font-mono);
     font-size: 12px;
-    color: #1e293b;
+    color: var(--text-main);
 }
 
 .settings-input-group {
@@ -887,19 +972,22 @@ body.fleptix-app {
     height: 28px;
     font-size: 12px;
     padding: 2px 8px;
-    border-color: #cbd5e1;
+    border-color: var(--border-color);
+    background-color: var(--bg-surface);
+    color: var(--text-main);
 }
 
 .settings-input-group .input-group-text {
     height: 28px;
     font-size: 11px;
     padding: 2px 8px;
-    background-color: #f8fafc;
-    border-color: #cbd5e1;
+    background-color: var(--bg-surface-elevated);
+    border-color: var(--border-color);
+    color: var(--text-muted);
 }
 
 .settings-panel-footer {
-    background-color: #f8fafc;
+    background-color: var(--bg-surface-elevated);
     border-top: 1px solid var(--border-color);
     padding: 10px 16px;
     display: flex;
@@ -925,12 +1013,178 @@ body.fleptix-app {
 }
 
 .segmented-control .btn-outline-secondary {
-    border-color: #cbd5e1;
-    color: #475569;
+    border-color: var(--border-color);
+    color: var(--text-muted);
 }
 
 .segmented-control .btn-outline-secondary:hover {
-    background-color: #f1f5f9;
-    border-color: #94a3b8;
-    color: #0f172a;
+    background-color: var(--bg-hover);
+    border-color: var(--border-dark);
+    color: var(--text-main);
+}
+
+@media (max-width: 768px) {
+    .settings-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .settings-label-col {
+        flex: 1 1 100%;
+        max-width: 100%;
+    }
+    .settings-control-col {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
+/* =======================================================
+   DARK THEME COMPONENT OVERRIDES
+   ======================================================= */
+html[data-theme="dark"] .bg-white {
+    background-color: var(--bg-surface) !important;
+    color: var(--text-main) !important;
+}
+
+html[data-theme="dark"] .bg-light {
+    background-color: var(--bg-surface-elevated) !important;
+    color: var(--text-main) !important;
+}
+
+html[data-theme="dark"] .text-dark {
+    color: #f3f4f6 !important;
+}
+
+html[data-theme="dark"] .text-muted {
+    color: var(--text-muted) !important;
+}
+
+html[data-theme="dark"] .border,
+html[data-theme="dark"] .border-top,
+html[data-theme="dark"] .border-bottom,
+html[data-theme="dark"] .border-start,
+html[data-theme="dark"] .border-end {
+    border-color: var(--border-color) !important;
+}
+
+html[data-theme="dark"] .app-topbar {
+    background-color: var(--bg-surface);
+    border-bottom-color: var(--border-color);
+}
+
+html[data-theme="dark"] .topbar-search-input {
+    background-color: #0b0f19;
+    border-color: var(--border-color);
+    color: var(--text-main);
+}
+
+html[data-theme="dark"] .topbar-search-input:focus {
+    background-color: #0b0f19;
+    border-color: #3b82f6;
+    color: #ffffff;
+}
+
+html[data-theme="dark"] .topbar-search .search-icon {
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .signalr-pill {
+    background-color: var(--bg-surface-elevated);
+    border-color: var(--border-color);
+    color: #4ade80;
+}
+
+html[data-theme="dark"] .form-control,
+html[data-theme="dark"] .form-select {
+    background-color: #0b0f19;
+    border-color: var(--border-color);
+    color: var(--text-main);
+}
+
+html[data-theme="dark"] .form-control:focus,
+html[data-theme="dark"] .form-select:focus {
+    background-color: #0b0f19;
+    border-color: #3b82f6;
+    color: #ffffff;
+}
+
+html[data-theme="dark"] .btn-light {
+    background-color: var(--bg-surface-elevated);
+    border-color: var(--border-color);
+    color: var(--text-main);
+}
+
+html[data-theme="dark"] .btn-light:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--border-dark);
+    color: #ffffff;
+}
+
+html[data-theme="dark"] .btn-outline-secondary {
+    border-color: var(--border-color);
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .btn-outline-secondary:hover {
+    background-color: var(--bg-surface-elevated);
+    border-color: var(--border-dark);
+    color: #ffffff;
+}
+
+html[data-theme="dark"] .data-table thead th {
+    background-color: #111827;
+    border-bottom-color: var(--border-color);
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .data-table tbody tr {
+    background-color: var(--bg-surface);
+    border-bottom-color: var(--border-color);
+}
+
+html[data-theme="dark"] .data-table tbody tr:hover {
+    background-color: var(--bg-hover);
+}
+
+html[data-theme="dark"] .data-table tbody td {
+    color: var(--text-main);
+}
+
+html[data-theme="dark"] .btn-icon-action {
+    background-color: var(--bg-surface-elevated);
+    border-color: var(--border-color);
+    color: var(--text-muted);
+}
+
+html[data-theme="dark"] .btn-icon-action:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-main);
+}
+
+html[data-theme="dark"] .toast {
+    background-color: var(--bg-surface) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-main) !important;
+}
+
+html[data-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > * {
+    background-color: rgba(255, 255, 255, 0.02);
+    color: var(--text-main);
+}
+
+html[data-theme="dark"] .segmented-control .btn-check:checked + .btn {
+    background-color: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
+}
+
+html[data-theme="dark"] .settings-locked-box {
+    border-left-color: #d97706;
+    background-color: var(--bg-surface-elevated);
+}
+
+html[data-theme="dark"] .terminal-command-card {
+    background-color: #0b0f19;
+    border-color: var(--border-color);
 }

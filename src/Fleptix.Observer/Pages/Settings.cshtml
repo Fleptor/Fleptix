@@ -89,7 +89,173 @@
         </div>
     </div>
 
-    <!-- Section 2: Automated Protection (Time Machine) -->
+    <!-- Section 2: Appearance & Interface -->
+    <div class="settings-section mb-4" id="sectionAppearance">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <h2 class="settings-section-title">
+                <i class="bi bi-palette me-2" style="color: var(--accent-navy);"></i> Appearance &amp; Interface
+            </h2>
+            <span class="text-muted font-mono" style="font-size: 10.5px;">Client-side &bull; Local Storage</span>
+        </div>
+
+        <div class="settings-panel">
+            <!-- Row 1: Color Theme -->
+            <div class="settings-row">
+                <div class="settings-label-col">
+                    <span class="settings-label">Color Theme</span>
+                    <span class="settings-desc">Select operational color scheme or inherit operating system preference</span>
+                </div>
+                <div class="settings-control-col">
+                    <div class="btn-group btn-group-sm segmented-control" role="group" aria-label="Theme mode selector">
+                        <input type="radio" class="btn-check" name="radioThemeMode" id="themeRadioLight" value="light" autocomplete="off" onchange="setTheme('light')">
+                        <label class="btn btn-outline-secondary font-mono d-inline-flex align-items-center gap-1.5" for="themeRadioLight">
+                            <i class="bi bi-sun"></i> Light
+                        </label>
+
+                        <input type="radio" class="btn-check" name="radioThemeMode" id="themeRadioDark" value="dark" autocomplete="off" onchange="setTheme('dark')">
+                        <label class="btn btn-outline-secondary font-mono d-inline-flex align-items-center gap-1.5" for="themeRadioDark">
+                            <i class="bi bi-moon-stars"></i> Dark
+                        </label>
+
+                        <input type="radio" class="btn-check" name="radioThemeMode" id="themeRadioSystem" value="system" autocomplete="off" onchange="setTheme('system')">
+                        <label class="btn btn-outline-secondary font-mono d-inline-flex align-items-center gap-1.5" for="themeRadioSystem">
+                            <i class="bi bi-circle-half"></i> System
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: Font Scaling -->
+            <div class="settings-row">
+                <div class="settings-label-col">
+                    <span class="settings-label">Interface Density &amp; Text Scale</span>
+                    <span class="settings-desc">Adjust UI typography scaling across telemetry charts, tables, and metric cards</span>
+                </div>
+                <div class="settings-control-col">
+                    <div class="btn-group btn-group-sm segmented-control" role="group" aria-label="Font scale selector">
+                        <input type="radio" class="btn-check" name="radioFontSize" id="fontScaleCompact" value="compact" autocomplete="off" onchange="setFontSize('compact')">
+                        <label class="btn btn-outline-secondary font-mono" for="fontScaleCompact">
+                            Compact (12px)
+                        </label>
+
+                        <input type="radio" class="btn-check" name="radioFontSize" id="fontScaleDefault" value="default" autocomplete="off" onchange="setFontSize('default')">
+                        <label class="btn btn-outline-secondary font-mono" for="fontScaleDefault">
+                            Default (13px)
+                        </label>
+
+                        <input type="radio" class="btn-check" name="radioFontSize" id="fontScaleLarge" value="large" autocomplete="off" onchange="setFontSize('large')">
+                        <label class="btn btn-outline-secondary font-mono" for="fontScaleLarge">
+                            Large (14.5px)
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: License & Edition -->
+    <div class="settings-section mb-4" id="sectionLicense">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <h2 class="settings-section-title">
+                <i class="bi bi-key me-2" style="color: var(--accent-navy);"></i> License &amp; Edition
+            </h2>
+            <span class="text-muted font-mono" style="font-size: 10.5px;">Lemon Squeezy Entitlements</span>
+        </div>
+
+        <div class="settings-panel">
+            <!-- Row 1: Active Edition & Status -->
+            <div class="settings-row">
+                <div class="settings-label-col">
+                    <span class="settings-label">Active Edition</span>
+                    <span class="settings-desc">Runtime operational tier, node quota, and Time Machine capabilities</span>
+                </div>
+                <div class="settings-control-col">
+                    <div class="d-flex align-items-center gap-2 flex-wrap" id="licenseStatusBadgeContainer">
+                        <span class="settings-value-mono fw-bold" id="labelLicenseTierName">@Model.LicenseTierName</span>
+                        @if (Model.LicenseTier == Fleptix.Core.Interfaces.LicenseTier.Commercial)
+                        {
+                            <span class="status-pill running"><span class="pill-dot"></span><span class="pill-text">Commercial Pro</span></span>
+                        }
+                        else if (Model.LicenseTier == Fleptix.Core.Interfaces.LicenseTier.Personal)
+                        {
+                            <span class="status-pill running"><span class="pill-dot"></span><span class="pill-text">Personal Homelab</span></span>
+                        }
+                        else if (Model.LicenseTier == Fleptix.Core.Interfaces.LicenseTier.Evaluation)
+                        {
+                            <span class="status-pill restarting"><span class="pill-dot"></span><span class="pill-text">Evaluation</span></span>
+                        }
+                        else
+                        {
+                            <span class="status-pill stopped"><span class="pill-dot"></span><span class="pill-text">Community (Open-Core)</span></span>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Row 2: License Key Details / Activation Input -->
+            <div class="settings-row">
+                <div class="settings-label-col">
+                    <span class="settings-label">License Key</span>
+                    <span class="settings-desc">Lemon Squeezy raw UUID key activating proprietary Time Machine features</span>
+                </div>
+                <div class="settings-control-col">
+                    @if (Model.LicenseInfo.IsActive && !string.IsNullOrEmpty(Model.LicenseInfo.LicenseKeyMasked))
+                    {
+                        <div class="d-flex align-items-center justify-content-between gap-3 w-100 flex-wrap">
+                            <div class="d-flex flex-column">
+                                <span class="font-mono fw-bold text-dark" style="font-size: 12px;" id="licenseDisplayMasked">@Model.LicenseInfo.LicenseKeyMasked</span>
+                                <span class="text-muted" style="font-size: 11px;">
+                                    Licensed to: <strong class="text-dark">@(Model.LicenseInfo.CustomerName ?? "Registered User")</strong>
+                                    @(Model.LicenseInfo.ActivatedAt.HasValue ? $"· Activated {Model.LicenseInfo.ActivatedAt.Value:yyyy-MM-dd}" : "")
+                                </span>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-danger font-mono d-inline-flex align-items-center gap-1 py-1 px-2.5" style="font-size: 11px;" id="btnDeactivateLicense" onclick="deactivateLicense()">
+                                <i class="bi bi-x-circle"></i> Deactivate
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <form id="formActivateLicense" onsubmit="handleLicenseActivate(event)" class="w-100 d-flex flex-column align-items-sm-end">
+                            <div class="input-group input-group-sm" style="max-width: 500px; width: 100%;">
+                                <input type="text" id="inputLicenseKey" class="form-control font-mono" placeholder="FADD8E30-C83D-4380-9609-3A5E896F8264" required style="font-size: 12px;" />
+                                <button type="submit" id="btnSubmitLicense" class="btn btn-sm text-white font-mono d-inline-flex align-items-center gap-1.5 px-3 text-nowrap" style="background-color: var(--accent-navy); border-color: var(--accent-navy); font-size: 11px;">
+                                    <i class="bi bi-key-fill" id="iconSubmitLicense"></i>
+                                    <span id="textSubmitLicense">Activate License</span>
+                                    <span id="spinnerSubmitLicense" class="spinner-border spinner-border-sm d-none" style="width: 10px; height: 10px;" role="status"></span>
+                                </button>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 mt-1.5">
+                                <span class="text-muted" style="font-size: 10.5px;">Enter the raw UUID license key received from Lemon Squeezy order fulfillment.</span>
+                            </div>
+                            <div id="licenseActivationError" class="d-none mt-2 p-2 bg-light border border-danger-subtle rounded font-mono text-danger w-100" style="font-size: 11px; max-width: 500px;"></div>
+                        </form>
+                    }
+                </div>
+            </div>
+
+            <!-- Row 3: Node Quota & High Availability -->
+            <div class="settings-row">
+                <div class="settings-label-col">
+                    <span class="settings-label">Node Quota</span>
+                    <span class="settings-desc">Authorized concurrent Docker engine host instances</span>
+                </div>
+                <div class="settings-control-col">
+                    <span class="settings-value-mono fw-bold">1 / @Model.MaxAllowedNodes Node(s)</span>
+                    @if (Model.LicenseTier == Fleptix.Core.Interfaces.LicenseTier.Commercial)
+                    {
+                        <span class="status-pill running"><span class="pill-dot"></span><span class="pill-text">Multi-Host Ready (3 Nodes)</span></span>
+                    }
+                    else
+                    {
+                        <span class="badge font-mono bg-light text-muted border" style="font-size: 9px; padding: 2px 6px;">Single Host</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 4: Automated Protection (Time Machine) -->
     <div class="settings-section mb-4" id="panelAutomatedProtection">
         <div class="d-flex align-items-center justify-content-between mb-2">
             <h2 class="settings-section-title">
@@ -101,27 +267,27 @@
             }
             else
             {
-                <span class="badge font-mono" style="background-color: #fef3c7; color: #b45309; font-size: 9px; padding: 2px 6px; border: 1px solid #fde68a;">LOCKED</span>
+                <span class="badge font-mono" style="background-color: rgba(245, 158, 11, 0.15); color: #d97706; font-size: 9px; padding: 2px 6px; border: 1px solid rgba(245, 158, 11, 0.3);">LOCKED &bull; OBSERVER-ONLY</span>
             }
         </div>
 
         <div class="settings-panel">
             @if (!Model.IsTimeMachineEnabled)
             {
-                <div class="p-3 font-mono" style="border-left: 3px solid #d97706; background-color: #fafbfc;">
-                    <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="p-3 font-mono settings-locked-box">
+                    <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
                         <div class="d-flex align-items-center gap-2">
                             <i class="bi bi-lock-fill" style="color: #d97706; font-size: 13px;"></i>
-                            <span class="fw-bold text-dark" style="font-size: 12px;">Time Machine Protection &bull; Fleptix Pro Feature</span>
-                            <span class="badge font-mono" style="background-color: #fef3c7; color: #b45309; font-size: 9px; padding: 2px 6px; border: 1px solid #fde68a;">INACCESSIBLE &bull; OBSERVER-ONLY</span>
+                            <span class="fw-bold text-main" style="font-size: 12px;">Time Machine Protection &bull; Fleptix Pro Feature</span>
+                            <span class="badge font-mono" style="background-color: rgba(245, 158, 11, 0.15); color: #d97706; font-size: 9px; padding: 2px 6px; border: 1px solid rgba(245, 158, 11, 0.3);">OBSERVER-ONLY</span>
                         </div>
-                        <span class="text-muted" style="font-size: 10.5px;">Tier: @Model.LicenseTierName</span>
+                        <span class="text-muted" style="font-size: 10.5px;">Current Tier: <strong class="font-mono text-main">@Model.LicenseTierName</strong></span>
                     </div>
-                    <p class="text-muted mb-2" style="font-size: 11.5px; font-family: system-ui, -apple-system, sans-serif; line-height: 1.5;">
-                        Automated snapshot scheduling, periodic filesystem state freezing, and volume retention policies are not accessible in observer-only mode. To configure Time Machine automated protection, run Fleptix with <code class="px-1 bg-light border rounded text-dark">TIMEMACHINE_ENABLED=true</code> or update <code class="px-1 bg-light border rounded text-dark">TimeMachine:Enabled</code> in configuration.
+                    <p class="text-muted mb-2" style="font-size: 11.5px; font-family: var(--font-ui); line-height: 1.5;">
+                        Automated snapshot scheduling, periodic filesystem state freezing, and volume retention policies are locked in Community edition. To unlock Time Machine features, activate a Personal or Commercial license key in the <strong>License &amp; Edition</strong> section above.
                     </p>
-                    <div class="d-flex align-items-center justify-content-between pt-2 border-top" style="font-size: 11px;">
-                        <span class="text-muted">Feature key: <code>TimeMachine:Enabled</code> (Disabled)</span>
+                    <div class="d-flex align-items-center justify-content-between pt-2 border-top" style="border-color: var(--border-color) !important; font-size: 11px;">
+                        <span class="text-muted">Feature capability: <code>TimeMachine:Enabled</code> (Locked)</span>
                         <span class="badge font-mono bg-light text-muted border" style="font-size: 9px; padding: 2px 6px;">READ-ONLY OBSERVER</span>
                     </div>
                 </div>
@@ -231,125 +397,7 @@
         </div>
     </div>
 
-    <!-- Section 3: License & Edition (Upgrades & Activation) -->
-    <div class="settings-section mb-4" id="sectionLicense">
-        <div class="d-flex align-items-center justify-content-between mb-2">
-            <h2 class="settings-section-title">
-                <i class="bi bi-key me-2" style="color: var(--accent-navy);"></i> License &amp; Edition
-            </h2>
-            <span class="text-muted font-mono" style="font-size: 10.5px;">Lemon Squeezy Entitlements</span>
-        </div>
-
-        <div class="settings-panel">
-            <!-- Row 1: Active Edition & Status -->
-            <div class="settings-row">
-                <div class="settings-label-col">
-                    <span class="settings-label">Active Edition</span>
-                    <span class="settings-desc">Runtime operational tier, node quota, and Time Machine capabilities</span>
-                </div>
-                <div class="settings-control-col">
-                    <div class="d-flex align-items-center gap-2 flex-wrap" id="licenseStatusBadgeContainer">
-                        <span class="settings-value-mono fw-bold" id="labelLicenseTierName">@Model.LicenseTierName</span>
-                        @if (Model.LicenseTier == Fleptix.Core.Interfaces.LicenseTier.Commercial)
-                        {
-                            <span class="status-pill running"><span class="pill-dot"></span><span class="pill-text">Commercial Pro</span></span>
-                        }
-                        else if (Model.LicenseTier == Fleptix.Core.Interfaces.LicenseTier.Personal)
-                        {
-                            <span class="status-pill running"><span class="pill-dot"></span><span class="pill-text">Personal Homelab</span></span>
-                        }
-                        else if (Model.LicenseTier == Fleptix.Core.Interfaces.LicenseTier.Evaluation)
-                        {
-                            <span class="status-pill restarting"><span class="pill-dot"></span><span class="pill-text">Evaluation</span></span>
-                        }
-                        else
-                        {
-                            <span class="status-pill stopped"><span class="pill-dot"></span><span class="pill-text">Community (Open-Core)</span></span>
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <!-- Row 2: License Key Details / Activation Input -->
-            <div class="settings-row">
-                <div class="settings-label-col">
-                    <span class="settings-label">License Key</span>
-                    <span class="settings-desc">Lemon Squeezy raw UUID key activating proprietary Time Machine features</span>
-                </div>
-                <div class="settings-control-col">
-                    @if (Model.LicenseInfo.IsActive && !string.IsNullOrEmpty(Model.LicenseInfo.LicenseKeyMasked))
-                    {
-                        <div class="d-flex align-items-center justify-content-between gap-3 w-100 flex-wrap">
-                            <div class="d-flex flex-column">
-                                <span class="font-mono fw-bold text-dark" style="font-size: 12px;" id="licenseDisplayMasked">@Model.LicenseInfo.LicenseKeyMasked</span>
-                                <span class="text-muted" style="font-size: 11px;">
-                                    Licensed to: <strong class="text-dark">@(Model.LicenseInfo.CustomerName ?? "Registered User")</strong>
-                                    @(Model.LicenseInfo.ActivatedAt.HasValue ? $"· Activated {Model.LicenseInfo.ActivatedAt.Value:yyyy-MM-dd}" : "")
-                                </span>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-outline-danger font-mono d-inline-flex align-items-center gap-1 py-1 px-2.5" style="font-size: 11px;" id="btnDeactivateLicense" onclick="deactivateLicense()">
-                                <i class="bi bi-x-circle"></i> Deactivate
-                            </button>
-                        </div>
-                    }
-                    else
-                    {
-                        <form id="formActivateLicense" onsubmit="handleLicenseActivate(event)" class="w-100">
-                            <div class="input-group input-group-sm">
-                                <input type="text" id="inputLicenseKey" class="form-control font-mono" placeholder="FADD8E30-C83D-4380-9609-3A5E896F8264" required style="font-size: 12px; max-width: 380px;" />
-                                <button type="submit" id="btnSubmitLicense" class="btn btn-sm text-white font-mono d-inline-flex align-items-center gap-1.5 px-3" style="background-color: var(--accent-navy); border-color: var(--accent-navy); font-size: 11px;">
-                                    <i class="bi bi-key-fill" id="iconSubmitLicense"></i>
-                                    <span id="textSubmitLicense">Activate License</span>
-                                    <span id="spinnerSubmitLicense" class="spinner-border spinner-border-sm d-none" style="width: 10px; height: 10px;" role="status"></span>
-                                </button>
-                            </div>
-                            <div class="d-flex align-items-center gap-2 mt-1.5">
-                                <span class="text-muted" style="font-size: 10.5px;">Enter the raw UUID license key received from Lemon Squeezy order fulfillment.</span>
-                            </div>
-                            <div id="licenseActivationError" class="d-none mt-2 p-2 bg-light border border-danger-subtle rounded font-mono text-danger" style="font-size: 11px;"></div>
-                        </form>
-                    }
-                </div>
-            </div>
-
-            <!-- Row 3: Node Quota & High Availability -->
-            <div class="settings-row">
-                <div class="settings-label-col">
-                    <span class="settings-label">Node Quota</span>
-                    <span class="settings-desc">Authorized concurrent Docker engine host instances</span>
-                </div>
-                <div class="settings-control-col">
-                    <span class="settings-value-mono fw-bold">1 / @Model.MaxAllowedNodes Node(s)</span>
-                    @if (Model.LicenseTier == Fleptix.Core.Interfaces.LicenseTier.Commercial)
-                    {
-                        <span class="status-pill running"><span class="pill-dot"></span><span class="pill-text">Multi-Host Ready (3 Nodes)</span></span>
-                    }
-                    else
-                    {
-                        <span class="badge font-mono bg-light text-muted border" style="font-size: 9px; padding: 2px 6px;">Single Host</span>
-                    }
-                </div>
-            </div>
-
-            <!-- Row 4: Routine Maintenance & Container Updating -->
-            <div class="settings-row">
-                <div class="settings-label-col">
-                    <span class="settings-label">Routine Maintenance &amp; Updates</span>
-                    <span class="settings-desc">Idempotent command to pull latest image layers and refresh container without data loss</span>
-                </div>
-                <div class="settings-control-col">
-                    <div class="d-flex align-items-center gap-2 flex-wrap w-100">
-                        <code class="px-2 py-1 bg-light border rounded text-dark font-mono text-break" style="font-size: 10.5px; user-select: all;" id="codeUpdateCommand">docker pull ghcr.io/fleptor/fleptix:latest &amp;&amp; docker rm -f fleptix-observer 2&gt;/dev/null; docker run -d --name fleptix-observer -p 7373:80 -v /var/run/docker.sock:/var/run/docker.sock -v fleptix-data:/app/snapshots --restart unless-stopped ghcr.io/fleptor/fleptix:latest</code>
-                        <button type="button" class="btn btn-sm btn-light border font-mono d-inline-flex align-items-center gap-1 py-1 px-2 text-dark" style="font-size: 11px;" onclick="copyUpdateCommand()">
-                            <i class="bi bi-clipboard"></i> Copy
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Section 4: Application Environment -->
+    <!-- Section 5: Application Environment -->
     <div class="settings-section mb-4">
         <div class="d-flex align-items-center justify-content-between mb-2">
             <h2 class="settings-section-title">
@@ -366,7 +414,7 @@
                     <span class="settings-desc">ASP.NET Core runtime hosting environment profile</span>
                 </div>
                 <div class="settings-control-col">
-                    <span class="settings-value-mono text-dark fw-bold">@Model.EnvironmentName</span>
+                    <span class="settings-value-mono text-main fw-bold">@Model.EnvironmentName</span>
                     <span class="badge font-mono bg-light text-muted border" style="font-size: 10px;">Production Ready</span>
                 </div>
             </div>
@@ -379,6 +427,38 @@
                 </div>
                 <div class="settings-control-col">
                     <span class="settings-value-mono text-muted">.NET 10.0 (net10.0) · C# 13</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 6: Maintenance & Container Updates -->
+    <div class="settings-section mb-4" id="sectionMaintenance">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <h2 class="settings-section-title">
+                <i class="bi bi-arrow-repeat me-2" style="color: var(--accent-navy);"></i> Maintenance &amp; Container Updates
+            </h2>
+            <span class="text-muted font-mono" style="font-size: 10.5px;">Idempotent Zero-Downtime Roll</span>
+        </div>
+
+        <div class="settings-panel p-3">
+            <div class="d-flex flex-column gap-2">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <span class="settings-label">Update fleptix-observer to Latest Image</span>
+                    <span class="badge font-mono bg-light text-muted border" style="font-size: 9px; padding: 2px 6px;">ghcr.io/fleptor/fleptix:latest</span>
+                </div>
+                <p class="settings-desc mb-2">
+                    Execute this command on your Docker host shell to pull the latest image layers and recreate the container. Mounted volume storage (<code class="font-mono">fleptix-data</code>) preserves all database state, snapshot metadata, and license configuration across updates.
+                </p>
+
+                <div class="terminal-command-card p-2 rounded d-flex align-items-center justify-content-between gap-3">
+                    <div class="d-flex align-items-center gap-2 overflow-x-auto py-1 font-mono text-break" style="font-size: 11px; min-width: 0;">
+                        <span class="text-muted select-none">$</span>
+                        <code class="text-main" id="codeUpdateCommand" style="user-select: all; background: transparent; border: none; padding: 0;">docker pull ghcr.io/fleptor/fleptix:latest &amp;&amp; docker rm -f fleptix-observer 2&gt;/dev/null; docker run -d --name fleptix-observer -p 7373:80 -v /var/run/docker.sock:/var/run/docker.sock -v fleptix-data:/app/snapshots --restart unless-stopped ghcr.io/fleptor/fleptix:latest</code>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary font-mono d-inline-flex align-items-center gap-1.5 py-1 px-2.5 flex-shrink-0" style="font-size: 11px;" onclick="copyUpdateCommand()">
+                        <i class="bi bi-clipboard"></i> Copy Command
+                    </button>
                 </div>
             </div>
         </div>

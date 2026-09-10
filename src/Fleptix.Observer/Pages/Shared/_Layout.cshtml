@@ -18,6 +18,25 @@
 
     <!-- Fleptix Design System -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    <!-- Synchronous Theme & Font Scale Loader (Prevents FOUC) -->
+    <script>
+        (function() {
+            try {
+                var theme = localStorage.getItem('fleptix_theme') || 'system';
+                var effectiveTheme = theme;
+                if (theme === 'system') {
+                    effectiveTheme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+                }
+                document.documentElement.setAttribute('data-theme', effectiveTheme);
+
+                var fontSize = localStorage.getItem('fleptix_font_size') || 'default';
+                document.documentElement.setAttribute('data-font-size', fontSize);
+            } catch (e) {
+                console.error('Theme/Font initialization error:', e);
+            }
+        })();
+    </script>
 </head>
 <body class="fleptix-app">
     <div class="app-layout">
@@ -71,6 +90,9 @@
                     <input type="search" id="globalSearchInput" class="topbar-search-input" placeholder="Search containers, images, ports... (Press '/' to focus)" />
                 </div>
                 <div class="topbar-actions">
+                    <button type="button" class="topbar-btn" id="btnQuickThemeToggle" title="Toggle Theme (Light / Dark)" onclick="window.toggleQuickTheme()">
+                        <i class="bi bi-moon-stars" id="iconQuickTheme"></i>
+                    </button>
                     <span class="signalr-pill" id="signalrStatusPill">
                         <i class="bi bi-broadcast"></i> Live
                     </span>
@@ -178,6 +200,81 @@
                 window.showToast('Failed to contact server: ' + err.message, true);
             }
         };
+
+        // ==========================================
+        // Global Theme & Font Scale Management
+        // ==========================================
+        window.getStoredTheme = function() {
+            return localStorage.getItem('fleptix_theme') || 'system';
+        };
+
+        window.getEffectiveTheme = function() {
+            const stored = window.getStoredTheme();
+            if (stored === 'system') {
+                return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+            }
+            return stored;
+        };
+
+        window.setTheme = function(mode) {
+            localStorage.setItem('fleptix_theme', mode);
+            const effective = (mode === 'system')
+                ? ((window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light')
+                : mode;
+            document.documentElement.setAttribute('data-theme', effective);
+            window.syncThemeUI();
+        };
+
+        window.toggleQuickTheme = function() {
+            const current = window.getEffectiveTheme();
+            const next = (current === 'dark') ? 'light' : 'dark';
+            window.setTheme(next);
+        };
+
+        window.setFontSize = function(size) {
+            localStorage.setItem('fleptix_font_size', size);
+            document.documentElement.setAttribute('data-font-size', size);
+            window.syncFontSizeUI();
+        };
+
+        window.syncThemeUI = function() {
+            const effective = window.getEffectiveTheme();
+            const quickIcon = document.getElementById('iconQuickTheme');
+            if (quickIcon) {
+                quickIcon.className = (effective === 'dark') ? 'bi bi-sun' : 'bi bi-moon-stars';
+            }
+            const stored = window.getStoredTheme();
+            const radioLight = document.getElementById('themeRadioLight');
+            const radioDark = document.getElementById('themeRadioDark');
+            const radioSystem = document.getElementById('themeRadioSystem');
+            if (radioLight) radioLight.checked = (stored === 'light');
+            if (radioDark) radioDark.checked = (stored === 'dark');
+            if (radioSystem) radioSystem.checked = (stored === 'system');
+        };
+
+        window.syncFontSizeUI = function() {
+            const size = localStorage.getItem('fleptix_font_size') || 'default';
+            const radioCompact = document.getElementById('fontScaleCompact');
+            const radioDefault = document.getElementById('fontScaleDefault');
+            const radioLarge = document.getElementById('fontScaleLarge');
+            if (radioCompact) radioCompact.checked = (size === 'compact');
+            if (radioDefault) radioDefault.checked = (size === 'default');
+            if (radioLarge) radioLarge.checked = (size === 'large');
+        };
+
+        if (window.matchMedia) {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+                if (window.getStoredTheme() === 'system') {
+                    document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+                    window.syncThemeUI();
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            window.syncThemeUI();
+            window.syncFontSizeUI();
+        });
 
         checkEngineStatus();
     </script>
