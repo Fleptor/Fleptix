@@ -76,5 +76,29 @@ public interface IContainerService
         string containerId,
         string path = "/",
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Executes a shell command inside the specified container and returns execution results.
+    /// </summary>
+    Task<ContainerExecResult> ExecCommandAsync(
+        string containerId,
+        ContainerExecRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves file content and metadata for previewing a specific file using GetArchiveFromContainerAsync.
+    /// </summary>
+    Task<ContainerFileContentResult> GetFileContentAsync(
+        string containerId,
+        string path,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Retrieves a stream to download a specific file using GetArchiveFromContainerAsync.
+    /// </summary>
+    Task<(Stream? Stream, string FileName, long Size)> GetFileArchiveStreamAsync(
+        string containerId,
+        string path,
+        CancellationToken cancellationToken = default);
 }
 

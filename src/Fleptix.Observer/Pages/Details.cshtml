@@ -165,6 +165,9 @@
             <button class="btn btn-sm btn-link text-decoration-none text-dark details-tab-link font-mono" data-tab="tabLogs" style="font-size: 11px;">
                 <i class="bi bi-terminal me-1"></i> Live Logs <span class="badge bg-danger ms-1">@Model.InitialLogs.Count</span>
             </button>
+            <button class="btn btn-sm btn-link text-decoration-none text-dark details-tab-link font-mono" data-tab="tabExec" style="font-size: 11px;">
+                <i class="bi bi-terminal-dash me-1"></i> Exec
+            </button>
             <button class="btn btn-sm btn-link text-decoration-none text-dark details-tab-link font-mono" data-tab="tabEnv" style="font-size: 11px;">
                 <i class="bi bi-key me-1"></i> Environment &amp; Config (@d.EnvironmentVariables.Count)
             </button>
@@ -346,13 +349,119 @@
                 </button>
             </div>
         </div>
-        <div class="dense-terminal" style="height: 480px;">
+        <div id="terminalLogBody" class="dense-terminal" style="height: 480px;">
             @foreach (var line in Model.InitialLogs)
             {
                 var l = line.ToLowerInvariant();
                 var lineClass = l.Contains("error") || l.Contains("fail") ? "log-line error" : (l.Contains("warn") ? "log-line warn" : "log-line info");
                 <div class="@lineClass">@line</div>
             }
+        </div>
+    </div>
+
+    <!-- TAB: EXEC / INTERACTIVE SHELL -->
+    <div id="tabExec" class="tab-pane-content d-none">
+        <div class="bg-white border rounded overflow-hidden">
+            <!-- Compact Configuration Bar: Shell, Workdir, User (Visually secondary single row) -->
+            <div class="d-flex align-items-center justify-content-between px-2.5 py-1 border-bottom font-mono exec-config-bar overflow-x-auto" style="font-size: 10px; min-height: 28px;">
+                <!-- Left: Execution Configuration Options -->
+                <div class="d-flex align-items-center gap-2.5 text-muted flex-shrink-0">
+                    <div class="d-flex align-items-center gap-1">
+                        <span style="font-size: 10px; color: #64748b;">shell:</span>
+                        <select id="execShellSelect" class="form-select form-select-sm font-mono py-0 ps-1.5 pe-4 bg-white border text-secondary" style="font-size: 10px; height: 22px; width: 90px; border-color: #cbd5e1 !important;">
+                            <option value="/bin/sh" selected>/bin/sh</option>
+                            <option value="/bin/bash">/bin/bash</option>
+                            <option value="/bin/ash">/bin/ash</option>
+                            <option value="direct">direct</option>
+                        </select>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <span style="font-size: 10px; color: #64748b;">workdir:</span>
+                        <input type="text" id="execWorkDirInput" class="form-control form-control-sm font-mono py-0 px-1.5 bg-white border text-secondary" placeholder="/" value="/" style="font-size: 10px; height: 22px; width: 80px; border-color: #cbd5e1 !important;">
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1">
+                        <span style="font-size: 10px; color: #64748b;">user:</span>
+                        <input type="text" id="execUserInput" class="form-control form-control-sm font-mono py-0 px-1.5 bg-white border text-secondary" placeholder="root" value="root" style="font-size: 10px; height: 22px; width: 65px; border-color: #cbd5e1 !important;">
+                    </div>
+                </div>
+
+                <!-- Right: Utilities (Auto-scroll, Copy, Clear) -->
+                <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-2">
+                    <div class="form-check form-switch mb-0 d-flex align-items-center gap-1" style="font-size: 10px;">
+                        <input class="form-check-input" type="checkbox" role="switch" id="execAutoScrollSwitch" checked style="cursor: pointer; width: 22px; height: 12px; margin-top: 0;">
+                        <label class="form-check-label text-muted" for="execAutoScrollSwitch" style="font-size: 10px;">auto-scroll</label>
+                    </div>
+                    <span class="text-muted" style="opacity: 0.35;">|</span>
+                    <button type="button" class="btn btn-xs bg-white border py-0 px-1.5 font-mono text-secondary d-inline-flex align-items-center gap-1" style="font-size: 10px; height: 22px; border-color: #cbd5e1 !important;" onclick="copyExecTerminalOutput()" title="Copy entire terminal output">
+                        <i class="bi bi-clipboard" style="font-size: 9px;"></i> Copy
+                    </button>
+                    <button type="button" class="btn btn-xs bg-white border py-0 px-1.5 font-mono text-secondary d-inline-flex align-items-center gap-1" style="font-size: 10px; height: 22px; border-color: #cbd5e1 !important;" onclick="clearExecTerminal()" title="Clear terminal screen">
+                        <i class="bi bi-trash3" style="font-size: 9px;"></i> Clear
+                    </button>
+                </div>
+            </div>
+
+            <!-- Presets Toolbar: Cohesive, unified toolbar -->
+            <div class="d-flex flex-wrap align-items-center gap-1 px-2.5 py-1 border-bottom font-mono" style="font-size: 10px; background-color: #f1f5f9;">
+                <span class="text-muted me-1 fw-semibold" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em;">Presets:</span>
+                <button type="button" class="btn btn-xs exec-preset-btn font-mono" onclick="insertExecPreset('uname -a')">uname -a</button>
+                <button type="button" class="btn btn-xs exec-preset-btn font-mono" onclick="insertExecPreset('whoami')">whoami</button>
+                <button type="button" class="btn btn-xs exec-preset-btn font-mono" onclick="insertExecPreset('ps aux')">ps aux</button>
+                <button type="button" class="btn btn-xs exec-preset-btn font-mono" onclick="insertExecPreset('df -h')">df -h</button>
+                <button type="button" class="btn btn-xs exec-preset-btn font-mono" onclick="insertExecPreset('free -m')">free -m</button>
+                <button type="button" class="btn btn-xs exec-preset-btn font-mono" onclick="insertExecPreset('env')">env</button>
+                <button type="button" class="btn btn-xs exec-preset-btn font-mono" onclick="insertExecPreset('ls -la')">ls -la</button>
+                <button type="button" class="btn btn-xs exec-preset-btn font-mono" onclick="insertExecPreset('cat /etc/os-release')">os-release</button>
+            </div>
+
+            <!-- State Warning if Container is Not Running (Neutral, non-amber) -->
+            <div id="execStateAlert" class="@(c.State == "running" ? "d-none" : "") p-2 border-bottom d-flex align-items-center justify-content-between font-mono" style="font-size: 11px; background-color: #f8fafc; color: #475569;">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-info-circle text-secondary"></i>
+                    <span>Container is currently <strong id="execContainerStateText" class="text-dark">@c.State</strong>. Execution requires the container to be running.</span>
+                </div>
+                <button type="button" class="btn btn-sm font-mono text-white py-0 px-2" style="font-size: 11px; height: 24px; background-color: var(--accent-navy);" onclick="executeDetailsAction('@c.Id', 'start', this)">
+                    <i class="bi bi-play-fill"></i> Start Container
+                </button>
+            </div>
+
+            <!-- Interactive Terminal Console Viewport (Compact idle state) -->
+            <div id="execTerminalViewport" class="exec-terminal-idle">
+                <div class="text-muted font-mono mb-2 pb-1.5 border-bottom border-secondary border-opacity-20 d-flex align-items-center justify-content-between" style="font-size: 10px; color: #64748b !important;">
+                    <div>
+                        <span>target: <strong style="color: #cbd5e1;">@c.Name</strong> (@c.ShortId)</span>
+                        <span class="mx-1.5 opacity-50">&bull;</span>
+                        <span>image: <strong style="color: #cbd5e1;">@c.Image</strong></span>
+                    </div>
+                    <div class="d-none d-md-block opacity-75">
+                        <kbd class="bg-dark text-muted px-1 border border-secondary border-opacity-25" style="font-size: 9px;">Enter</kbd> run &bull; <kbd class="bg-dark text-muted px-1 border border-secondary border-opacity-25" style="font-size: 9px;">&uarr;</kbd> <kbd class="bg-dark text-muted px-1 border border-secondary border-opacity-25" style="font-size: 9px;">&darr;</kbd> history
+                    </div>
+                </div>
+                <div id="execTerminalEntries">
+                    <div class="font-mono" id="execTerminalPlaceholder" style="font-size: 11px; color: #64748b; font-style: italic;">
+                        Terminal session ready. Select a preset above or type a command below.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Command Input Bar: Navy/neutral accent & Highlighted Input Field -->
+            <div class="p-2 border-top exec-input-bar">
+                <form id="execCommandForm" onsubmit="handleExecSubmit(event)" class="d-flex align-items-center gap-2 m-0">
+                    <div class="exec-input-group d-flex align-items-center flex-grow-1" onclick="document.getElementById('execCommandInput')?.focus()">
+                        <span class="exec-prompt-prefix font-mono" id="execPromptPrefix">
+                            root@@@(c.ShortId):/#
+                        </span>
+                        <input type="text" id="execCommandInput" class="exec-command-input font-mono" placeholder="Enter shell command (e.g. ls -la, ps aux, env, whoami)..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                    </div>
+                    <button type="submit" id="btnExecRun" class="btn exec-run-btn font-mono d-inline-flex align-items-center gap-1 px-3">
+                        <i class="bi bi-play-fill" id="execRunIcon"></i>
+                        <span id="execRunBtnText">Run</span>
+                        <span id="execRunSpinner" class="spinner-border spinner-border-sm d-none" style="width: 10px; height: 10px;" role="status"></span>
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -446,32 +555,13 @@
     <!-- TAB 6: FILES (Container Filesystem Browser) -->
     <div id="tabFiles" class="tab-pane-content d-none">
         <div class="bg-white border rounded overflow-hidden">
-            <!-- Top Toolbar & Breadcrumb Strip -->
-            <div class="d-flex flex-wrap align-items-center justify-content-between p-2 border-bottom bg-light gap-2">
-                <div class="d-flex align-items-center gap-1 font-mono overflow-x-auto" style="font-size: 11px;" id="filesBreadcrumbs">
-                    <button class="btn btn-sm btn-light border py-0 px-2 font-mono" style="font-size: 11px;" onclick="navigateFiles('/')" title="Root Directory">
-                        <i class="bi bi-hdd-network me-1"></i>/
-                    </button>
-                </div>
-
-                <div class="d-flex align-items-center gap-2">
-                    <div class="position-relative" style="width: 220px;">
-                        <i class="bi bi-search position-absolute text-muted" style="left: 8px; top: 50%; transform: translateY(-50%); font-size: 11px;"></i>
-                        <input type="text" id="filesSearchInput" class="form-control form-control-sm ps-4 py-0 font-mono" placeholder="Filter in this folder..." style="font-size: 11px; height: 26px;" oninput="filterFileTable(this.value)">
-                    </div>
-                    <button class="btn btn-sm btn-light border py-0 px-2 font-mono text-dark d-inline-flex align-items-center gap-1" style="font-size: 11px; height: 26px;" onclick="refreshCurrentFolder()" title="Refresh directory">
-                        <i class="bi bi-arrow-clockwise"></i> Refresh
-                    </button>
-                </div>
-            </div>
-
-            <!-- Main Dual-Pane Browser: Left Tree + Right Data Table -->
-            <div class="row g-0">
-                <!-- Left: Navigable Directory Tree -->
-                <div class="col-12 col-md-4 col-xl-3 border-end bg-light-subtle" style="max-height: 520px; overflow-y: auto;">
-                    <div class="p-2 border-bottom text-muted fw-semibold font-mono d-flex align-items-center justify-content-between" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em;">
+            <!-- Main Dual-Pane Browser: Left Tree (210px) + Right Data Table (Reclaimed Space) -->
+            <div class="d-flex flex-column flex-md-row g-0">
+                <!-- Left: Navigable Directory Tree (fixed 210px) -->
+                <div class="border-end bg-light-subtle flex-shrink-0" style="width: 210px; max-height: 520px; overflow-y: auto;">
+                    <div class="p-2 border-bottom text-muted fw-semibold font-mono d-flex align-items-center justify-content-between" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; height: 42px;">
                         <span>Directory Tree</span>
-                        <span id="filesTreeStatus" class="text-muted fw-normal font-mono" style="font-size: 10px;">/</span>
+                        <i class="bi bi-diagram-2 text-secondary" style="font-size: 11px;"></i>
                     </div>
                     <div id="filesTreeRoot" class="p-1 font-mono" style="font-size: 11px;">
                         <div class="p-2 text-muted font-mono text-center">
@@ -481,13 +571,25 @@
                 </div>
 
                 <!-- Right: Selected Directory File Table -->
-                <div class="col-12 col-md-8 col-xl-9 bg-white" style="max-height: 520px; overflow-y: auto;">
-                    <div class="p-2 border-bottom d-flex align-items-center justify-content-between bg-light" style="font-size: 11px;">
-                        <div class="font-mono text-secondary">
-                            <span class="text-muted">Current Path:</span> <span id="filesCurrentPathDisplay" class="fw-bold text-dark font-mono">/</span>
+                <div class="flex-grow-1 bg-white" style="min-width: 0; max-height: 520px; overflow-y: auto;">
+                    <!-- Content Pane Header: Single Source of Truth for Current Location -->
+                    <div class="p-2 border-bottom d-flex flex-wrap align-items-center justify-content-between bg-light gap-2" style="font-size: 11px; min-height: 42px;">
+                        <div class="font-mono text-secondary d-flex align-items-center gap-2 overflow-hidden">
+                            <span class="text-muted flex-shrink-0">Current Path:</span>
+                            <span id="filesCurrentPathDisplay" class="fw-bold text-dark font-mono bg-white px-2 py-0 border rounded text-truncate" style="max-width: 340px;">/</span>
+                            <span class="font-mono text-muted flex-shrink-0" id="filesItemCountDisplay" style="font-size: 10px;">
+                                0 items
+                            </span>
                         </div>
-                        <div class="font-mono text-muted" id="filesItemCountDisplay" style="font-size: 10px;">
-                            0 items
+
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="position-relative" style="width: 190px;">
+                                <i class="bi bi-search position-absolute text-muted" style="left: 8px; top: 50%; transform: translateY(-50%); font-size: 11px;"></i>
+                                <input type="text" id="filesSearchInput" class="form-control form-control-sm ps-4 py-0 font-mono" placeholder="Filter in folder..." style="font-size: 11px; height: 26px;" oninput="filterFileTable(this.value)">
+                            </div>
+                            <button class="btn btn-sm btn-light border py-0 px-2 font-mono text-dark d-inline-flex align-items-center gap-1" style="font-size: 11px; height: 26px;" onclick="refreshCurrentFolder()" title="Refresh directory">
+                                <i class="bi bi-arrow-clockwise"></i> Refresh
+                            </button>
                         </div>
                     </div>
 
@@ -500,16 +602,65 @@
                                     <th style="width: 90px; text-align: right;">Size</th>
                                     <th style="width: 90px;">Mode</th>
                                     <th style="width: 140px;">Modified</th>
+                                    <th style="width: 80px; text-align: right;">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="filesTableBody">
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted font-mono py-4">
+                                    <td colspan="6" class="text-center text-muted font-mono py-4">
                                         <span class="spinner-border spinner-border-sm me-1" style="width: 12px; height: 12px;"></span> Loading filesystem entries...
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- File Preview & Download Modal -->
+        <div class="modal fade" id="filePreviewModal" tabindex="-1" aria-labelledby="filePreviewModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content border shadow-sm">
+                    <div class="modal-header py-2 px-3 bg-light border-bottom d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2 overflow-hidden">
+                            <i class="bi bi-file-earmark-text text-primary fs-6"></i>
+                            <span class="modal-title font-mono fw-bold text-dark text-truncate" id="filePreviewModalLabel" style="font-size: 12px;">/path/to/file</span>
+                            <span id="filePreviewSizeBadge" class="badge bg-white text-secondary border font-mono" style="font-size: 10px;">0 B</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn btn-sm btn-light border py-0 px-2 font-mono text-dark d-inline-flex align-items-center gap-1" id="btnCopyFileContent" style="font-size: 11px; height: 24px;" onclick="copyCurrentFileContent()">
+                                <i class="bi bi-clipboard"></i> Copy
+                            </button>
+                            <a id="btnDownloadFileLink" href="#" class="btn btn-sm btn-light border py-0 px-2 font-mono text-dark d-inline-flex align-items-center gap-1" style="font-size: 11px; height: 24px;">
+                                <i class="bi bi-download"></i> Download
+                            </a>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 10px;"></button>
+                        </div>
+                    </div>
+                    <div class="modal-body p-0 bg-dark" id="filePreviewModalBody">
+                        <div id="filePreviewLoading" class="p-4 text-center text-muted font-mono" style="font-size: 12px;">
+                            <span class="spinner-border spinner-border-sm me-2" style="width: 14px; height: 14px;"></span>
+                            Fetching file archive from container engine...
+                        </div>
+                        <div id="filePreviewContentContainer" class="d-none">
+                            <pre id="filePreviewPre" class="m-0 p-3 font-mono text-light" style="font-size: 11px; line-height: 1.45; max-height: 500px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;"></pre>
+                        </div>
+                        <div id="filePreviewBinaryContainer" class="d-none p-4 text-center font-mono">
+                            <i class="bi bi-file-earmark-binary text-secondary fs-1 d-block mb-2"></i>
+                            <div class="text-light fw-bold mb-1">Binary File</div>
+                            <div class="text-muted mb-3" style="font-size: 11px;">This file contains binary data and cannot be displayed in text preview.</div>
+                            <a id="btnDownloadBinaryLink" href="#" class="btn btn-sm text-white font-mono" style="background-color: var(--accent-navy); font-size: 11px; padding: 4px 14px;">
+                                <i class="bi bi-download me-1"></i> Download File
+                            </a>
+                        </div>
+                        <div id="filePreviewErrorContainer" class="d-none p-3 text-danger font-mono" style="font-size: 11px;">
+                            <i class="bi bi-exclamation-octagon me-1"></i> <span id="filePreviewErrorText">Failed to load file.</span>
+                        </div>
+                    </div>
+                    <div class="modal-footer py-1 px-3 bg-light border-top d-flex align-items-center justify-content-between font-mono" style="font-size: 10px;">
+                        <span class="text-muted">Extracted via Docker <code>GetArchiveFromContainerAsync</code></span>
+                        <button type="button" class="btn btn-sm btn-secondary py-0 px-2 font-mono" style="font-size: 11px;" data-bs-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>
@@ -559,6 +710,65 @@
                         <i class="bi bi-camera"></i> Capture New Snapshot
                     </button>
                 </form>
+            </div>
+
+            <!-- Automated Protection Panel -->
+            <div class="fleptix-panel p-3 mb-3" id="panelContainerAutomatedProtection">
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 pb-2.5 border-bottom">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-shield-check fs-5" id="iconProtectionStatus" style="color: var(--accent-navy);"></i>
+                        <div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fw-bold text-dark font-mono" style="font-size: 12.5px;">Automated Protection</span>
+                                <span id="badgeEffectiveStatus" class="status-pill running"><span class="pill-dot"></span><span class="pill-text">Active</span></span>
+                            </div>
+                            <div id="textEffectivePolicy" class="text-muted font-mono" style="font-size: 11px;">
+                                Loading effective policy...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3-option control for the override (Use global default / Always on / Always off) -->
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted font-mono" style="font-size: 11px;">Override:</span>
+                        <div class="btn-group btn-group-sm segmented-control" role="group" aria-label="Container auto-snapshot override">
+                            <input type="radio" class="btn-check" name="radioContainerOverride" id="overrideUseGlobal" value="UseGlobalDefault" autocomplete="off">
+                            <label class="btn btn-outline-secondary font-mono" for="overrideUseGlobal" style="font-size: 11px;">Use global default</label>
+
+                            <input type="radio" class="btn-check" name="radioContainerOverride" id="overrideAlwaysOn" value="AlwaysOn" autocomplete="off">
+                            <label class="btn btn-outline-secondary font-mono" for="overrideAlwaysOn" style="font-size: 11px;">Always on</label>
+
+                            <input type="radio" class="btn-check" name="radioContainerOverride" id="overrideAlwaysOff" value="AlwaysOff" autocomplete="off">
+                            <label class="btn btn-outline-secondary font-mono" for="overrideAlwaysOff" style="font-size: 11px;">Always off</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 pt-2.5">
+                    <div class="d-flex flex-wrap align-items-center gap-3 font-mono" style="font-size: 11.5px;">
+                        <div class="d-flex align-items-center gap-1.5">
+                            <span class="text-muted">Total Storage:</span>
+                            <span id="statTotalStorage" class="fw-bold text-dark">—</span>
+                        </div>
+                        <span class="text-muted">&bull;</span>
+                        <div class="d-flex align-items-center gap-1.5">
+                            <span class="text-muted">Snapshots:</span>
+                            <span id="statSnapshotCount" class="fw-bold text-dark">—</span>
+                        </div>
+                        <span class="text-muted">&bull;</span>
+                        <div class="d-flex align-items-center gap-1.5">
+                            <span class="text-muted" id="statLastAutoSnapshot">Last auto-snapshot: —</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" id="btnPruneNow" class="btn btn-sm btn-outline-secondary font-mono d-inline-flex align-items-center gap-1.5 px-2.5 py-1" style="font-size: 11px;" title="Prune snapshots exceeding retention count or safety storage cap">
+                            <i class="bi bi-scissors" id="iconPruneNow"></i>
+                            <span id="textPruneNow">Prune now</span>
+                            <span id="spinnerPruneNow" class="spinner-border spinner-border-sm d-none" style="width: 10px; height: 10px;" role="status"></span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div class="fleptix-table-container">
@@ -631,6 +841,8 @@
 @section Scripts {
     <script>
         window.CURRENT_CONTAINER_ID = '@c.Id';
+        window.CURRENT_CONTAINER_SHORT_ID = '@c.ShortId';
+        window.CURRENT_CONTAINER_STATE = '@c.State';
 
         async function handleSnapshotClick(e, containerId) {
             e.preventDefault();

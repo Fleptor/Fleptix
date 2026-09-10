@@ -180,24 +180,90 @@ public class ContainerServiceManager : IContainerService
         return await _demoService.GetLogsAsync(containerId, tailLines, cancellationToken);
     }
 
+    private async Task<bool> IsRealDockerContainerAsync(string containerId, CancellationToken cancellationToken)
+    {
+        if (_forceDemoMode) return false;
+        try
+        {
+            if (await _dockerService.CheckConnectivityAsync(cancellationToken))
+            {
+                var details = await _dockerService.GetContainerDetailsAsync(containerId, cancellationToken);
+                return details != null;
+            }
+        }
+        catch
+        {
+            // Fall back
+        }
+        return false;
+    }
+
     public async Task<IReadOnlyList<ContainerFileSystemItem>> GetContainerFilesAsync(string containerId, string path = "/", CancellationToken cancellationToken = default)
     {
-        if (!_forceDemoMode)
+        if (await IsRealDockerContainerAsync(containerId, cancellationToken))
         {
             try
             {
-                if (await _dockerService.CheckConnectivityAsync(cancellationToken))
-                {
-                    return await _dockerService.GetContainerFilesAsync(containerId, path, cancellationToken);
-                }
+                return await _dockerService.GetContainerFilesAsync(containerId, path, cancellationToken);
             }
             catch
             {
-                // Fallback to DemoContainerService on Docker connection failure
+                // Fallback to DemoContainerService on failure
             }
         }
 
         return await _demoService.GetContainerFilesAsync(containerId, path, cancellationToken);
+    }
+
+    public async Task<ContainerExecResult> ExecCommandAsync(string containerId, ContainerExecRequest request, CancellationToken cancellationToken = default)
+    {
+        if (await IsRealDockerContainerAsync(containerId, cancellationToken))
+        {
+            try
+            {
+                return await _dockerService.ExecCommandAsync(containerId, request, cancellationToken);
+            }
+            catch
+            {
+                // Fallback to DemoContainerService on failure
+            }
+        }
+
+        return await _demoService.ExecCommandAsync(containerId, request, cancellationToken);
+    }
+
+    public async Task<ContainerFileContentResult> GetFileContentAsync(string containerId, string path, CancellationToken cancellationToken = default)
+    {
+        if (await IsRealDockerContainerAsync(containerId, cancellationToken))
+        {
+            try
+            {
+                return await _dockerService.GetFileContentAsync(containerId, path, cancellationToken);
+            }
+            catch
+            {
+                // Fallback to DemoContainerService on failure
+            }
+        }
+
+        return await _demoService.GetFileContentAsync(containerId, path, cancellationToken);
+    }
+
+    public async Task<(Stream? Stream, string FileName, long Size)> GetFileArchiveStreamAsync(string containerId, string path, CancellationToken cancellationToken = default)
+    {
+        if (await IsRealDockerContainerAsync(containerId, cancellationToken))
+        {
+            try
+            {
+                return await _dockerService.GetFileArchiveStreamAsync(containerId, path, cancellationToken);
+            }
+            catch
+            {
+                // Fallback to DemoContainerService on failure
+            }
+        }
+
+        return await _demoService.GetFileArchiveStreamAsync(containerId, path, cancellationToken);
     }
 }
 

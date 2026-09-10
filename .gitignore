@@ -3,6 +3,10 @@
 ##
 ## Get latest from `dotnet new gitignore`
 
+## Commercial proprietary modules (maintained in private repositories)
+src/Fleptix.TimeMachine/
+scratch/
+
 # dotenv files
 .env
 

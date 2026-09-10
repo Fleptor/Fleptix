@@ -4,97 +4,303 @@
     ViewData["Title"] = "Settings";
 }
 
-<div class="container-fluid p-0">
-    <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
+<div class="container-fluid p-0 pb-5">
+    <!-- Page Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
         <div>
-            <h1 class="h6 fw-bold mb-0 text-dark">Runtime Configuration</h1>
-            <span class="text-muted" style="font-size: 11px;">Active environment parameters and operational telemetry settings</span>
-        </div>
-
-        <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" id="btnSettingsToggleMode" style="font-size: 11px;">
-            <i class="bi bi-arrow-repeat"></i> Switch Engine Mode
-        </button>
-    </div>
-
-    <!-- Engine & IPC Configuration -->
-    <div class="mb-4">
-        <h2 class="h6 text-muted text-uppercase fw-bold mb-2" style="font-size: 11px; letter-spacing: 0.5px;">Engine &amp; IPC Transport</h2>
-        <div class="fleptix-table-container">
-            <table class="fleptix-table">
-                <thead>
-                    <tr>
-                        <th style="width: 30%;">Parameter</th>
-                        <th style="width: 40%;">Value</th>
-                        <th>Status / Note</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="font-mono text-dark fw-bold">Runtime Engine</td>
-                        <td class="font-mono" id="settingsEngineDesc">@Model.EngineDescription</td>
-                        <td>
-                            @if (Model.IsConnectedToDocker)
-                            {
-                                <span class="status-pill running"><span class="pill-dot"></span><span class="pill-text">Connected</span></span>
-                            }
-                            else
-                            {
-                                <span class="status-pill restarting"><span class="pill-dot"></span><span class="pill-text">Simulated</span></span>
-                            }
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="font-mono text-dark fw-bold">Daemon Socket / Pipe</td>
-                        <td class="font-mono text-muted">@Model.DaemonEndpoint</td>
-                        <td class="text-muted" style="font-size: 11px;">Auto-probed on background loop</td>
-                    </tr>
-                    <tr>
-                        <td class="font-mono text-dark fw-bold">Telemetry Stream Tick</td>
-                        <td class="font-mono text-muted">@Model.TelemetryIntervalMs ms</td>
-                        <td class="text-muted" style="font-size: 11px;">SignalR WebSocket broadcast rate</td>
-                    </tr>
-                    <tr>
-                        <td class="font-mono text-dark fw-bold">SignalR Hub Route</td>
-                        <td class="font-mono text-muted">/hubs/containers</td>
-                        <td>
-                            <span class="status-pill running"><span class="pill-dot"></span><span class="pill-text">Live</span></span>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <h1 class="h6 fw-bold mb-0 text-dark">Settings</h1>
+            <span class="text-muted" style="font-size: 11px;">Runtime configuration, engine connectivity, and automated operational policies</span>
         </div>
     </div>
 
-    <!-- Application & Environment Info -->
-    <div class="mb-4">
-        <h2 class="h6 text-muted text-uppercase fw-bold mb-2" style="font-size: 11px; letter-spacing: 0.5px;">Application Environment</h2>
-        <div class="fleptix-table-container">
-            <table class="fleptix-table">
-                <thead>
-                    <tr>
-                        <th style="width: 30%;">Setting</th>
-                        <th style="width: 40%;">Value</th>
-                        <th>Scope</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="font-mono text-dark fw-bold">Environment</td>
-                        <td class="font-mono text-muted">@Model.EnvironmentName</td>
-                        <td class="text-muted" style="font-size: 11px;">ASP.NET Core Host</td>
-                    </tr>
-                    <tr>
-                        <td class="font-mono text-dark fw-bold">Framework Target</td>
-                        <td class="font-mono text-muted">.NET 10.0 (net10.0)</td>
-                        <td class="text-muted" style="font-size: 11px;">C# 13</td>
-                    </tr>
-                    <tr>
-                        <td class="font-mono text-dark fw-bold">Tier / Edition</td>
-                        <td class="font-mono text-muted">@Model.LicenseTier</td>
-                        <td class="text-muted" style="font-size: 11px;">Single-operator tool</td>
-                    </tr>
-                </tbody>
-            </table>
+    <!-- Section 1: Engine & IPC Transport -->
+    <div class="settings-section mb-4">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <h2 class="settings-section-title">
+                <i class="bi bi-hdd-network me-2" style="color: var(--accent-navy);"></i> Engine &amp; IPC Transport
+            </h2>
+            <span class="text-muted font-mono" style="font-size: 10.5px;">Auto-supervised</span>
+        </div>
+
+        <div class="settings-panel">
+            <!-- Row 1: Runtime Engine -->
+            <div class="settings-row">
+                <div class="settings-label-col">
+                    <span class="settings-label">Runtime Engine</span>
+                    <span class="settings-desc">Active container virtualization engine and daemon IPC transport</span>
+                </div>
+                <div class="settings-control-col">
+                    <span class="settings-value-mono fw-bold" id="settingsEngineDesc">@Model.EngineDescription</span>
+                    @if (Model.IsConnectedToDocker)
+                    {
+                        <span class="status-pill running"><span class="pill-dot"></span><span class="pill-text">Connected</span></span>
+                    }
+                    else
+                    {
+                        <span class="status-pill restarting"><span class="pill-dot"></span><span class="pill-text">Simulated</span></span>
+                    }
+                    <button class="btn btn-sm btn-outline-secondary font-mono d-inline-flex align-items-center gap-1 py-1 px-2 ms-2" id="btnSettingsToggleMode" style="font-size: 11px;">
+                        <i class="bi bi-arrow-repeat"></i> Switch Engine Mode
+                    </button>
+                </div>
+            </div>
+
+            <!-- Row 2: Daemon Socket / Pipe -->
+            <div class="settings-row">
+                <div class="settings-label-col">
+                    <span class="settings-label">Daemon Socket / Pipe</span>
+                    <span class="settings-desc">Local UNIX domain socket or named pipe endpoint probed on background loop</span>
+                </div>
+                <div class="settings-control-col">
+                    <span class="settings-value-mono text-muted">@Model.DaemonEndpoint</span>
+                </div>
+            </div>
+
+            <!-- Row 3: Telemetry Stream Tick -->
+            <div class="settings-row">
+                <div class="settings-label-col">
+                    <span class="settings-label">Telemetry Stream Tick</span>
+                    <span class="settings-desc">SignalR WebSocket metric broadcast rate and live utilization interval</span>
+                </div>
+                <div class="settings-control-col">
+                    <span class="settings-value-mono text-muted">@Model.TelemetryIntervalMs ms</span>
+                </div>
+            </div>
+
+            <!-- Row 4: SignalR Hub Route -->
+            <div class="settings-row">
+                <div class="settings-label-col">
+                    <span class="settings-label">SignalR Hub Route</span>
+                    <span class="settings-desc">Real-time bi-directional telemetry and container state broadcast channel</span>
+                </div>
+                <div class="settings-control-col">
+                    <span class="settings-value-mono text-muted">/hubs/containers</span>
+                    <span class="status-pill running"><span class="pill-dot"></span><span class="pill-text">Live</span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Automated Protection (Time Machine) -->
+    <div class="settings-section mb-4" id="panelAutomatedProtection">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <h2 class="settings-section-title">
+                <i class="bi bi-shield-check me-2" style="color: var(--accent-navy);"></i> Automated Protection (Time Machine)
+            </h2>
+            @if (Model.IsTimeMachineEnabled)
+            {
+                <span id="protectionSaveStatus" class="text-muted font-mono" style="font-size: 11px;"></span>
+            }
+            else
+            {
+                <span class="badge font-mono" style="background-color: #fef3c7; color: #b45309; font-size: 9px; padding: 2px 6px; border: 1px solid #fde68a;">LOCKED</span>
+            }
+        </div>
+
+        <div class="settings-panel">
+            @if (!Model.IsTimeMachineEnabled)
+            {
+                <div class="p-3 font-mono" style="border-left: 3px solid #d97706; background-color: #fafbfc;">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-lock-fill" style="color: #d97706; font-size: 13px;"></i>
+                            <span class="fw-bold text-dark" style="font-size: 12px;">Time Machine Protection &bull; Fleptix Pro Feature</span>
+                            <span class="badge font-mono" style="background-color: #fef3c7; color: #b45309; font-size: 9px; padding: 2px 6px; border: 1px solid #fde68a;">INACCESSIBLE &bull; OBSERVER-ONLY</span>
+                        </div>
+                        <span class="text-muted" style="font-size: 10.5px;">Tier: @Model.LicenseTierName</span>
+                    </div>
+                    <p class="text-muted mb-2" style="font-size: 11.5px; font-family: system-ui, -apple-system, sans-serif; line-height: 1.5;">
+                        Automated snapshot scheduling, periodic filesystem state freezing, and volume retention policies are not accessible in observer-only mode. To configure Time Machine automated protection, run Fleptix with <code class="px-1 bg-light border rounded text-dark">TIMEMACHINE_ENABLED=true</code> or update <code class="px-1 bg-light border rounded text-dark">TimeMachine:Enabled</code> in configuration.
+                    </p>
+                    <div class="d-flex align-items-center justify-content-between pt-2 border-top" style="font-size: 11px;">
+                        <span class="text-muted">Feature key: <code>TimeMachine:Enabled</code> (Disabled)</span>
+                        <span class="badge font-mono bg-light text-muted border" style="font-size: 9px; padding: 2px 6px;">READ-ONLY OBSERVER</span>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <form id="formAutomatedProtection" onsubmit="handleProtectionSubmit(event)">
+                    <!-- Option 1: Automated Snapshots -->
+                    <div class="settings-row">
+                        <div class="settings-label-col">
+                            <label class="settings-label mb-0" for="toggleAutoSnapshot" style="cursor: pointer;">
+                                Automated Snapshots
+                            </label>
+                            <span class="settings-desc">
+                                Periodically freeze container filesystem state and archive mounted volume data in the background
+                            </span>
+                        </div>
+                        <div class="settings-control-col">
+                            <div class="form-check form-switch m-0 fs-5">
+                                <input class="form-check-input" type="checkbox" role="switch" id="toggleAutoSnapshot" style="cursor: pointer;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Option 2: Snapshot Frequency -->
+                    <div class="settings-row">
+                        <div class="settings-label-col">
+                            <label class="settings-label mb-0" for="inputIntervalHours">
+                                Snapshot Frequency
+                            </label>
+                            <span class="settings-desc">
+                                Execution interval in hours between automated background snapshot cycles
+                            </span>
+                        </div>
+                        <div class="settings-control-col">
+                            <div class="input-group input-group-sm settings-input-group">
+                                <input type="number" id="inputIntervalHours" min="1" max="720" class="form-control font-mono text-end" value="24" disabled>
+                                <span class="input-group-text font-mono text-muted">hours</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Option 3: Retention Policy -->
+                    <div class="settings-row flex-column flex-sm-row align-items-start align-items-sm-center">
+                        <div class="settings-label-col">
+                            <span class="settings-label">
+                                Retention Policy
+                            </span>
+                            <span class="settings-desc">
+                                Manage historical snapshot lifetime and maximum retention count limits
+                            </span>
+                        </div>
+                        <div class="settings-control-col flex-column flex-sm-row align-items-start align-items-sm-center mt-2 mt-sm-0 gap-2">
+                            <!-- Segmented Control -->
+                            <div class="btn-group btn-group-sm segmented-control" role="group" aria-label="Retention policy">
+                                <input type="radio" class="btn-check" name="radioRetentionMode" id="radioKeepAll" autocomplete="off">
+                                <label class="btn btn-outline-secondary font-mono" for="radioKeepAll">Keep all snapshots</label>
+
+                                <input type="radio" class="btn-check" name="radioRetentionMode" id="radioKeepCount" autocomplete="off">
+                                <label class="btn btn-outline-secondary font-mono" for="radioKeepCount">Keep last [N] snapshots</label>
+                            </div>
+
+                            <!-- Number input for [N] (only appears for the second option) -->
+                            <div id="keepCountContainer" class="d-none">
+                                <div class="input-group input-group-sm settings-input-group">
+                                    <input type="number" id="inputMaxSnapshotCount" min="1" max="500" class="form-control font-mono text-end" value="10">
+                                    <span class="input-group-text font-mono text-muted">snaps</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Option 4: Storage Safety Cap -->
+                    <div class="settings-row">
+                        <div class="settings-label-col">
+                            <div class="d-flex align-items-center gap-2">
+                                <input class="form-check-input mt-0" type="checkbox" id="checkEnableStorageCap" style="cursor: pointer;">
+                                <label class="settings-label mb-0" for="checkEnableStorageCap" style="cursor: pointer;">
+                                    Enforce Total Storage Safety Cap
+                                </label>
+                            </div>
+                            <div class="settings-desc mt-1" id="storageCapCaption">
+                                This cap always applies, even if 'Keep all snapshots' is selected, to prevent disk exhaustion.
+                            </div>
+                        </div>
+                        <div class="settings-control-col">
+                            <div class="input-group input-group-sm settings-input-group">
+                                <input type="number" id="inputMaxTotalStorageMB" min="10" max="1048576" class="form-control font-mono text-end" value="1024" disabled>
+                                <span class="input-group-text font-mono text-muted">MB</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel Footer / Save Button -->
+                    <div class="settings-panel-footer">
+                        <span class="text-muted font-mono" style="font-size: 11px;">
+                            <i class="bi bi-info-circle me-1"></i> Changes take effect immediately on next cycle
+                        </span>
+                        <button type="submit" id="btnSaveProtectionSettings" class="btn btn-sm text-white font-mono d-inline-flex align-items-center gap-1.5 px-3" style="background-color: var(--accent-navy); border-color: var(--accent-navy); font-size: 11px; height: 28px;">
+                            <i class="bi bi-shield-check" id="iconSaveProtection"></i>
+                            <span id="textSaveProtection">Save Protection Settings</span>
+                            <span id="spinnerSaveProtection" class="spinner-border spinner-border-sm d-none" style="width: 10px; height: 10px;" role="status"></span>
+                        </button>
+                    </div>
+                </form>
+            }
+        </div>
+    </div>
+
+    <!-- Section 3: Application Environment -->
+    <div class="settings-section mb-4">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <h2 class="settings-section-title">
+                <i class="bi bi-cpu me-2" style="color: var(--accent-navy);"></i> Application Environment
+            </h2>
+            <span class="text-muted font-mono" style="font-size: 10.5px;">Host Metadata</span>
+        </div>
+
+        <div class="settings-panel">
+            <!-- Row 1: Environment -->
+            <div class="settings-row">
+                <div class="settings-label-col">
+                    <span class="settings-label">Host Environment</span>
+                    <span class="settings-desc">ASP.NET Core runtime hosting environment profile</span>
+                </div>
+                <div class="settings-control-col">
+                    <span class="settings-value-mono text-dark fw-bold">@Model.EnvironmentName</span>
+                    <span class="badge font-mono bg-light text-muted border" style="font-size: 10px;">Development</span>
+                </div>
+            </div>
+
+            <!-- Row 2: Framework Target -->
+            <div class="settings-row">
+                <div class="settings-label-col">
+                    <span class="settings-label">Framework Target</span>
+                    <span class="settings-desc">Underlying Common Language Runtime (.NET CLR) compilation target</span>
+                </div>
+                <div class="settings-control-col">
+                    <span class="settings-value-mono text-muted">.NET 10.0 (net10.0) · C# 13</span>
+                </div>
+            </div>
+
+            <!-- Row 3: Tier / Edition -->
+            <div class="settings-row">
+                <div class="settings-label-col">
+                    <span class="settings-label">Tier / Edition</span>
+                    <span class="settings-desc">Observer runtime operational tier and active capability set</span>
+                </div>
+                <div class="settings-control-col">
+                    <span class="settings-value-mono text-muted">@Model.LicenseTierName</span>
+                    @if (Model.LicenseTier == Fleptix.Core.Interfaces.LicenseTier.Commercial)
+                    {
+                        <span class="badge font-mono" style="background-color: #dcfce7; color: #166534; font-size: 9px; padding: 2px 6px; border: 1px solid #bbf7d0;">COMMERCIAL PRO</span>
+                    }
+                    else if (Model.LicenseTier == Fleptix.Core.Interfaces.LicenseTier.Personal)
+                    {
+                        <span class="badge font-mono" style="background-color: #cadcfc; color: #1e2761; font-size: 9px; padding: 2px 6px; border: 1px solid #94b8fa;">PERSONAL HOMELAB</span>
+                    }
+                    else if (Model.LicenseTier == Fleptix.Core.Interfaces.LicenseTier.Evaluation)
+                    {
+                        <span class="badge font-mono" style="background-color: #fef3c7; color: #b45309; font-size: 9px; padding: 2px 6px; border: 1px solid #fde68a;">DEV EVALUATION</span>
+                    }
+                    else
+                    {
+                        <span class="badge font-mono bg-light text-muted border" style="font-size: 9px; padding: 2px 6px;">COMMUNITY (OPEN-CORE)</span>
+                    }
+                </div>
+            </div>
+
+            <!-- Row 4: Node Quota -->
+            <div class="settings-row">
+                <div class="settings-label-col">
+                    <span class="settings-label">Node Quota</span>
+                    <span class="settings-desc">Authorized concurrent Docker engine host instances</span>
+                </div>
+                <div class="settings-control-col">
+                    <span class="settings-value-mono fw-bold">1 / @Model.MaxAllowedNodes Node(s)</span>
+                    @if (Model.LicenseTier == Fleptix.Core.Interfaces.LicenseTier.Commercial)
+                    {
+                        <span class="badge font-mono bg-light text-success border" style="font-size: 9px; padding: 2px 6px;">MULTI-HOST READY</span>
+                    }
+                    else
+                    {
+                        <span class="badge font-mono bg-light text-muted border" style="font-size: 9px; padding: 2px 6px;">SINGLE HOST</span>
+                    }
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -111,6 +317,160 @@
                 }
             } catch (err) {
                 window.showToast('Failed to switch engine mode', true);
+            }
+        });
+
+        // ==========================================
+        // Automated Protection (Time Machine) Script
+        // ==========================================
+        async function loadProtectionSettings() {
+            try {
+                const res = await fetch('/api/settings/retention');
+                if (!res.ok) return;
+                const data = await res.json();
+
+                // 1. AutoSnapshotEnabled & IntervalHours
+                const toggle = document.getElementById('toggleAutoSnapshot');
+                const intervalInput = document.getElementById('inputIntervalHours');
+                if (toggle) toggle.checked = !!data.autoSnapshotEnabled;
+                if (intervalInput) {
+                    intervalInput.value = data.intervalHours || 24;
+                    intervalInput.disabled = !toggle.checked;
+                }
+
+                // 2. Retention Policy: NeverDeleteOldSnapshots vs MaxSnapshotCount
+                const radioKeepAll = document.getElementById('radioKeepAll');
+                const radioKeepCount = document.getElementById('radioKeepCount');
+                const keepCountContainer = document.getElementById('keepCountContainer');
+                const countInput = document.getElementById('inputMaxSnapshotCount');
+
+                if (data.neverDeleteOldSnapshots) {
+                    if (radioKeepAll) radioKeepAll.checked = true;
+                    if (keepCountContainer) keepCountContainer.classList.add('d-none');
+                } else {
+                    if (radioKeepCount) radioKeepCount.checked = true;
+                    if (keepCountContainer) keepCountContainer.classList.remove('d-none');
+                }
+
+                if (countInput) {
+                    countInput.value = (data.maxSnapshotCount != null) ? data.maxSnapshotCount : 10;
+                }
+
+                // 3. Storage Safety Cap: MaxTotalStorageMB
+                const checkStorage = document.getElementById('checkEnableStorageCap');
+                const storageInput = document.getElementById('inputMaxTotalStorageMB');
+
+                if (data.maxTotalStorageMB != null && data.maxTotalStorageMB > 0) {
+                    if (checkStorage) checkStorage.checked = true;
+                    if (storageInput) {
+                        storageInput.value = data.maxTotalStorageMB;
+                        storageInput.disabled = false;
+                    }
+                } else {
+                    if (checkStorage) checkStorage.checked = false;
+                    if (storageInput) {
+                        storageInput.value = 1024;
+                        storageInput.disabled = true;
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load protection settings:', err);
+            }
+        }
+
+        // Toggle enables/disables IntervalHours input
+        document.getElementById('toggleAutoSnapshot')?.addEventListener('change', (e) => {
+            const intervalInput = document.getElementById('inputIntervalHours');
+            if (intervalInput) intervalInput.disabled = !e.target.checked;
+        });
+
+        // Segmented control toggles count input container appearance
+        document.getElementById('radioKeepAll')?.addEventListener('change', () => {
+            document.getElementById('keepCountContainer')?.classList.add('d-none');
+        });
+        document.getElementById('radioKeepCount')?.addEventListener('change', () => {
+            const container = document.getElementById('keepCountContainer');
+            if (container) {
+                container.classList.remove('d-none');
+                document.getElementById('inputMaxSnapshotCount')?.focus();
+            }
+        });
+
+        // Checkbox enables/disables storage cap input
+        document.getElementById('checkEnableStorageCap')?.addEventListener('change', (e) => {
+            const storageInput = document.getElementById('inputMaxTotalStorageMB');
+            if (storageInput) {
+                storageInput.disabled = !e.target.checked;
+                if (e.target.checked) storageInput.focus();
+            }
+        });
+
+        // Save Protection Settings
+        async function handleProtectionSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSaveProtectionSettings');
+            const text = document.getElementById('textSaveProtection');
+            const spinner = document.getElementById('spinnerSaveProtection');
+            const status = document.getElementById('protectionSaveStatus');
+
+            if (btn) btn.disabled = true;
+            if (spinner) spinner.classList.remove('d-none');
+            if (text) text.textContent = 'Saving...';
+
+            const isAutoEnabled = document.getElementById('toggleAutoSnapshot')?.checked ?? false;
+            const intervalHours = parseInt(document.getElementById('inputIntervalHours')?.value || '24', 10);
+            const neverDelete = document.getElementById('radioKeepAll')?.checked ?? false;
+
+            let maxSnapshotCount = null;
+            if (!neverDelete) {
+                maxSnapshotCount = parseInt(document.getElementById('inputMaxSnapshotCount')?.value || '10', 10);
+            }
+
+            let maxTotalStorageMB = null;
+            if (document.getElementById('checkEnableStorageCap')?.checked) {
+                maxTotalStorageMB = parseInt(document.getElementById('inputMaxTotalStorageMB')?.value || '1024', 10);
+            }
+
+            const payload = {
+                autoSnapshotEnabled: isAutoEnabled,
+                intervalHours: isNaN(intervalHours) ? 24 : intervalHours,
+                neverDeleteOldSnapshots: neverDelete,
+                maxSnapshotCount: isNaN(maxSnapshotCount) ? null : maxSnapshotCount,
+                maxTotalStorageMB: isNaN(maxTotalStorageMB) ? null : maxTotalStorageMB
+            };
+
+            try {
+                const res = await fetch('/api/settings/retention', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    if (status) {
+                        status.textContent = 'Saved at ' + new Date().toLocaleTimeString();
+                        setTimeout(() => { if (status) status.textContent = ''; }, 4000);
+                    }
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('Automated protection settings updated.');
+                    }
+                } else {
+                    throw new Error('Server returned ' + res.status);
+                }
+            } catch (err) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('Failed to save protection settings', true);
+                }
+            } finally {
+                if (btn) btn.disabled = false;
+                if (spinner) spinner.classList.add('d-none');
+                if (text) text.textContent = 'Save Protection Settings';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (document.getElementById('formAutomatedProtection')) {
+                loadProtectionSettings();
             }
         });
     </script>

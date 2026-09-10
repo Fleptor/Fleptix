@@ -1,6 +1,7 @@
 namespace Fleptix.Observer.Services;
 
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Fleptix.Core.Interfaces;
 using Fleptix.Core.Models;
@@ -773,6 +774,297 @@ public class DemoContainerService : IContainerService
             .ToList();
 
         return Task.FromResult<IReadOnlyList<ContainerFileSystemItem>>(sorted);
+    }
+
+    /// <summary>
+    /// Simulates shell command execution for demo/mock containers.
+    /// </summary>
+    public async Task<ContainerExecResult> ExecCommandAsync(
+        string containerId,
+        ContainerExecRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var sw = Stopwatch.StartNew();
+
+        if (string.IsNullOrWhiteSpace(containerId) || !_containers.TryGetValue(containerId, out var container))
+        {
+            return new ContainerExecResult
+            {
+                Success = false,
+                ExitCode = -1,
+                ErrorMessage = $"Container '{containerId}' not found in simulation engine."
+            };
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Command))
+        {
+            return new ContainerExecResult
+            {
+                Success = false,
+                ExitCode = -1,
+                ErrorMessage = "Command cannot be empty."
+            };
+        }
+
+        if (container.Summary.State != "running")
+        {
+            return new ContainerExecResult
+            {
+                Success = false,
+                ExitCode = 1,
+                Stderr = $"Error response from daemon: Container {container.Summary.Id} is not running: {container.Summary.State}",
+                ErrorMessage = $"Container '{container.Summary.Name}' is not running (state: {container.Summary.State}).",
+                DurationMs = 15
+            };
+        }
+
+        // Small simulated processing latency
+        await Task.Delay(Random.Shared.Next(25, 60), cancellationToken);
+
+        string raw = request.Command.Trim();
+        string lower = raw.ToLowerInvariant();
+        string user = string.IsNullOrWhiteSpace(request.User) ? "root" : request.User.Trim();
+        string workDir = string.IsNullOrWhiteSpace(request.WorkingDir) ? "/" : request.WorkingDir.Trim();
+        if (!workDir.StartsWith('/')) workDir = "/" + workDir;
+
+        string stdout = string.Empty;
+        string stderr = string.Empty;
+        int exitCode = 0;
+
+        if (lower == "pwd")
+        {
+            stdout = workDir;
+        }
+        else if (lower == "whoami")
+        {
+            stdout = user;
+        }
+        else if (lower == "id")
+        {
+            stdout = $"uid=0({user}) gid=0({user}) groups=0({user})";
+        }
+        else if (lower.StartsWith("uname"))
+        {
+            stdout = "Linux fleptix-node 6.8.0-49-generic #49-Ubuntu SMP PREEMPT_DYNAMIC x86_64 Linux";
+        }
+        else if (lower == "hostname")
+        {
+            stdout = container.Summary.ShortId;
+        }
+        else if (lower == "env" || lower == "printenv")
+        {
+            var lines = container.Details.EnvironmentVariables
+                .Select(kv => $"{kv.Key}={kv.Value}")
+                .ToList();
+            if (!lines.Any(l => l.StartsWith("PATH=")))
+            {
+                lines.Insert(0, "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin");
+            }
+            if (!lines.Any(l => l.StartsWith("HOSTNAME=")))
+            {
+                lines.Insert(1, $"HOSTNAME={container.Summary.ShortId}");
+            }
+            if (!lines.Any(l => l.StartsWith("HOME=")))
+            {
+                lines.Add($"HOME=/{user}");
+            }
+            stdout = string.Join("\n", lines);
+        }
+        else if (lower.StartsWith("cat /etc/os-release") || lower.StartsWith("cat /etc/issue"))
+        {
+            bool isAlpine = container.Summary.Image.Contains("alpine", StringComparison.OrdinalIgnoreCase);
+            stdout = isAlpine
+                ? "NAME=\"Alpine Linux\"\nID=alpine\nVERSION_ID=3.20.1\nPRETTY_NAME=\"Alpine Linux v3.20\"\nHOME_URL=\"https://alpinelinux.org/\""
+                : "PRETTY_NAME=\"Debian GNU/Linux 12 (bookworm)\"\nNAME=\"Debian GNU/Linux\"\nVERSION_ID=\"12\"\nVERSION=\"12 (bookworm)\"\nVERSION_CODENAME=bookworm\nID=debian";
+        }
+        else if (lower.StartsWith("ps") || lower == "top -b -n 1")
+        {
+            string img = container.Summary.Image.ToLowerInvariant();
+            if (img.Contains("nginx"))
+            {
+                stdout = "PID   USER     TIME  COMMAND\n" +
+                         "    1 root      0:00 nginx: master process nginx -g daemon off;\n" +
+                         "   29 101       0:03 nginx: worker process\n" +
+                         "   30 101       0:02 nginx: worker process\n" +
+                         $"   84 {user}      0:00 {raw}";
+            }
+            else if (img.Contains("postgres") || img.Contains("pgsql"))
+            {
+                stdout = "PID   USER     TIME  COMMAND\n" +
+                         "    1 postgres  0:04 postgres\n" +
+                         "   24 postgres  0:01 postgres: checkpointer\n" +
+                         "   25 postgres  0:02 postgres: background writer\n" +
+                         "   26 postgres  0:00 postgres: walwriter\n" +
+                         "   27 postgres  0:01 postgres: autovacuum launcher\n" +
+                         $"   72 {user}      0:00 {raw}";
+            }
+            else if (img.Contains("redis"))
+            {
+                stdout = "PID   USER     TIME  COMMAND\n" +
+                         "    1 redis     0:08 redis-server *:6379\n" +
+                         $"   45 {user}      0:00 {raw}";
+            }
+            else
+            {
+                stdout = "PID   USER     TIME  COMMAND\n" +
+                         "    1 root      0:18 dotnet /app/Fleptix.Observer.dll\n" +
+                         $"   51 {user}      0:00 {raw}";
+            }
+        }
+        else if (lower.StartsWith("df"))
+        {
+            stdout = "Filesystem                Size      Used Available Use% Mounted on\n" +
+                     "overlay                  98.4G     24.2G     69.2G  26% /\n" +
+                     "tmpfs                    64.0M         0     64.0M   0% /dev\n" +
+                     "shm                      64.0M         0     64.0M   0% /dev/shm\n" +
+                     "/dev/root                98.4G     24.2G     69.2G  26% /etc/hosts";
+        }
+        else if (lower.StartsWith("free"))
+        {
+            stdout = "               total        used        free      shared  buff/cache   available\n" +
+                     "Mem:            4096        1280        2120          64         696        2680\n" +
+                     "Swap:           2048           0        2048";
+        }
+        else if (lower == "uptime")
+        {
+            stdout = $" {DateTime.UtcNow:HH:mm:ss} up 3 days, 14:22,  0 users,  load average: {container.BaseCpu / 25.0:F2}, {container.BaseCpu / 30.0:F2}, {container.BaseCpu / 35.0:F2}";
+        }
+        else if (lower == "date")
+        {
+            stdout = DateTime.UtcNow.ToString("ddd MMM dd HH:mm:ss UTC yyyy");
+        }
+        else if (lower.StartsWith("echo "))
+        {
+            string arg = raw[5..].Trim();
+            if ((arg.StartsWith('"') && arg.EndsWith('"')) || (arg.StartsWith('\'') && arg.EndsWith('\'')))
+            {
+                arg = arg[1..^1];
+            }
+            stdout = arg;
+        }
+        else if (lower.StartsWith("ls") || lower == "dir")
+        {
+            var files = await GetContainerFilesAsync(containerId, workDir, cancellationToken);
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"total {files.Count * 4}");
+            sb.AppendLine("drwxr-xr-x    1 root     root          4096 Sep 10 01:00 .");
+            sb.AppendLine("drwxr-xr-x    1 root     root          4096 Sep 10 01:00 ..");
+            foreach (var file in files)
+            {
+                string mode = file.Mode ?? (file.IsDirectory ? "drwxr-xr-x" : "-rw-r--r--");
+                string size = file.Size.ToString().PadLeft(12);
+                string mod = file.ModifiedTime?.ToString("MMM dd HH:mm") ?? "Sep 10 01:00";
+                string name = file.Name + (!string.IsNullOrEmpty(file.LinkTarget) ? $" -> {file.LinkTarget}" : "");
+                sb.AppendLine($"{mode}    1 root     root  {size} {mod} {name}");
+            }
+            stdout = sb.ToString().TrimEnd();
+        }
+        else if (lower.StartsWith("cat "))
+        {
+            string targetPath = raw[4..].Trim();
+            if (targetPath.EndsWith(".conf") || targetPath.EndsWith(".json") || targetPath.EndsWith(".yml"))
+            {
+                stdout = $"# Fleptix Simulated Config: {targetPath}\nserver_name = {container.Summary.Name};\nport = {container.Summary.Ports.FirstOrDefault() ?? "80"};\nstate = active;";
+            }
+            else
+            {
+                stdout = $"Simulated content of {targetPath}\nStatus: OK";
+            }
+        }
+        else if (lower.StartsWith("which ") || lower.StartsWith("whereis "))
+        {
+            string target = raw.Split(' ', StringSplitOptions.RemoveEmptyEntries).Last();
+            stdout = $"/bin/{target}";
+        }
+        else if (lower == "false" || lower == "exit 1")
+        {
+            exitCode = 1;
+            stderr = "Command failed with status 1";
+        }
+        else
+        {
+            stdout = $"[fleptix-exec] Simulated execution of: '{raw}'\nExit code 0";
+        }
+
+        sw.Stop();
+        return new ContainerExecResult
+        {
+            Success = exitCode == 0,
+            ExitCode = exitCode,
+            Stdout = stdout,
+            Stderr = stderr,
+            DurationMs = sw.ElapsedMilliseconds
+        };
+    }
+
+    public Task<ContainerFileContentResult> GetFileContentAsync(
+        string containerId,
+        string path,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(containerId) || !_containers.TryGetValue(containerId, out var container))
+        {
+            return Task.FromResult(new ContainerFileContentResult
+            {
+                Success = false,
+                ErrorMessage = $"Container '{containerId}' not found."
+            });
+        }
+
+        path = (path ?? "/").Trim();
+        if (!path.StartsWith('/')) path = "/" + path;
+        string fileName = Path.GetFileName(path);
+
+        string text;
+        if (path.EndsWith("nginx.conf"))
+        {
+            text = "user nginx;\nworker_processes auto;\nerror_log /var/log/nginx/error.log warn;\npid /var/run/nginx.pid;\n\nevents {\n    worker_connections 1024;\n}\n\nhttp {\n    include /etc/nginx/mime.types;\n    default_type application/octet-stream;\n    sendfile on;\n    keepalive_timeout 65;\n    server {\n        listen 80;\n        location / {\n            root /usr/share/nginx/html;\n            index index.html;\n        }\n    }\n}";
+        }
+        else if (path.EndsWith("os-release"))
+        {
+            text = container.Summary.Image.Contains("alpine", StringComparison.OrdinalIgnoreCase)
+                ? "NAME=\"Alpine Linux\"\nID=alpine\nVERSION_ID=3.20.1\nPRETTY_NAME=\"Alpine Linux v3.20\"\nHOME_URL=\"https://alpinelinux.org/\""
+                : "PRETTY_NAME=\"Debian GNU/Linux 12 (bookworm)\"\nNAME=\"Debian GNU/Linux\"\nVERSION_ID=\"12\"\nVERSION=\"12 (bookworm)\"\nID=debian";
+        }
+        else if (path.EndsWith(".json"))
+        {
+            text = "{\n  \"Logging\": {\n    \"LogLevel\": {\n      \"Default\": \"Information\"\n    }\n  },\n  \"AllowedHosts\": \"*\"\n}";
+        }
+        else if (path.EndsWith(".log"))
+        {
+            text = string.Join("\n", container.Logs.TakeLast(30));
+        }
+        else
+        {
+            text = $"# Configuration file: {fileName}\n# Container: {container.Summary.Name}\n# Generated: {DateTime.UtcNow:u}\n\nENABLED=true\nPORT={container.Summary.Ports.FirstOrDefault() ?? "8080"}\nMODE=production\n";
+        }
+
+        return Task.FromResult(new ContainerFileContentResult
+        {
+            Success = true,
+            ContainerId = containerId,
+            Path = path,
+            Name = fileName,
+            Size = System.Text.Encoding.UTF8.GetByteCount(text),
+            IsText = true,
+            ContentText = text
+        });
+    }
+
+    public Task<(Stream? Stream, string FileName, long Size)> GetFileArchiveStreamAsync(
+        string containerId,
+        string path,
+        CancellationToken cancellationToken = default)
+    {
+        path = (path ?? "/").Trim();
+        if (!path.StartsWith('/')) path = "/" + path;
+        string fileName = Path.GetFileName(path);
+
+        string content = $"# Fleptix Simulated File Archive: {fileName}\n# Downloaded: {DateTime.UtcNow:u}\n";
+        byte[] bytes = System.Text.Encoding.UTF8.GetBytes(content);
+        var ms = new MemoryStream(bytes);
+
+        return Task.FromResult<(Stream? Stream, string FileName, long Size)>((ms, fileName, bytes.Length));
     }
 }
 

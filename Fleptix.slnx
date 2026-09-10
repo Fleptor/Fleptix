@@ -2,6 +2,5 @@
   <Folder Name="/src/">
     <Project Path="src/Fleptix.Core/Fleptix.Core.csproj" />
     <Project Path="src/Fleptix.Observer/Fleptix.Observer.csproj" />
-    <Project Path="src/Fleptix.TimeMachine/Fleptix.TimeMachine.csproj" />
   </Folder>
 </Solution>

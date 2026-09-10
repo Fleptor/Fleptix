@@ -2,8 +2,6 @@ namespace Fleptix.Observer.Pages;
 
 using Fleptix.Core.Interfaces;
 using Fleptix.Core.Models;
-using Fleptix.TimeMachine.Interfaces;
-using Fleptix.TimeMachine.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 

@@ -1,6 +1,6 @@
-namespace Fleptix.TimeMachine.Interfaces;
+namespace Fleptix.Core.Interfaces;
 
-using Fleptix.TimeMachine.Models;
+using Fleptix.Core.Models;
 
 /// <summary>
 /// Domain contract for Time Machine container state and volume snapshot operations.
@@ -10,6 +10,7 @@ public interface ISnapshotService
     /// <summary>
     /// Executes the full snapshot workflow: pauses the container, tar-archives mounted volumes,
     /// writes the image hash and container configuration as a JSON sidecar file, and restarts the container.
+    /// Automatically applies retention rules for the container after creation.
     /// </summary>
     Task<SnapshotResult> CreateSnapshotAsync(
         string containerId, 
@@ -31,5 +32,27 @@ public interface ISnapshotService
     /// </summary>
     Task<IReadOnlyList<SnapshotResult>> GetSnapshotsAsync(
         string? containerId = null, 
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Computes total storage in bytes consumed by all snapshots for a specific container.
+    /// </summary>
+    Task<long> GetContainerSnapshotStorageBytesAsync(
+        string containerId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes a specific snapshot and removes its tar volume archive and JSON metadata sidecar from disk.
+    /// </summary>
+    Task<bool> DeleteSnapshotAsync(
+        string snapshotId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Enforces retention rules and prunes surplus snapshots for a container or fleet-wide on demand.
+    /// </summary>
+    Task<PruneResult> PruneSnapshotsAsync(
+        string? containerId = null,
+        TimeMachineRetentionSettings? customSettings = null,
         CancellationToken cancellationToken = default);
 }

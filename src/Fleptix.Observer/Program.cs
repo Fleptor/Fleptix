@@ -1,8 +1,6 @@
 using Fleptix.Core.Interfaces;
 using Fleptix.Observer.Hubs;
 using Fleptix.Observer.Services;
-using Fleptix.TimeMachine.Interfaces;
-using Fleptix.TimeMachine.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,8 +14,8 @@ builder.Services.AddSignalR();
 // Register Licensing and Feature Services
 builder.Services.AddSingleton<ILicenseService, LicenseService>();
 
-// Register Time Machine Snapshot Services
-builder.Services.AddSingleton<ISnapshotService, SnapshotService>();
+// Register Time Machine Snapshot & Retention Services (Dynamic plugin with Community fallback)
+builder.Services.AddFleptixTimeMachine(builder.Configuration);
 
 // Register Container Services
 builder.Services.AddSingleton<DockerContainerService>();

@@ -1,4 +1,4 @@
-namespace Fleptix.TimeMachine.Models;
+namespace Fleptix.Core.Models;
 
 /// <summary>
 /// Result of a Time Machine container restore operation.

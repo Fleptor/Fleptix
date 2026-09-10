@@ -38,6 +38,9 @@ window.executeDetailsAction = async function(containerId, action, buttonEl) {
                     statusText.textContent = data.newState;
                 }
                 updateDetailsActionButtons(containerId, data.newState);
+                if (typeof window.updateExecContainerState === 'function') {
+                    window.updateExecContainerState(data.newState);
+                }
             }
         } else {
             window.showToast(data.message || 'Action failed.', true);
@@ -87,6 +90,14 @@ function setupTabs() {
 
         if (targetId === 'tabFiles' && typeof window.initFileBrowser === 'function') {
             window.initFileBrowser();
+        }
+        if (targetId === 'tabExec' && typeof window.initExecConsole === 'function') {
+            window.initExecConsole();
+            const input = document.getElementById('execCommandInput');
+            if (input) setTimeout(() => input.focus(), 50);
+        }
+        if (targetId === 'tabSnapshots' && typeof window.initContainerAutomatedProtection === 'function') {
+            window.initContainerAutomatedProtection();
         }
     }
 
@@ -186,6 +197,12 @@ document.addEventListener('DOMContentLoaded', () => {
     setupTabs();
     setupLogControls();
     setupDetailsSignalR();
+    if (typeof window.initExecConsole === 'function') {
+        window.initExecConsole();
+    }
+    if (typeof window.initContainerAutomatedProtection === 'function') {
+        window.initContainerAutomatedProtection();
+    }
 });
 
 // ==========================================
@@ -240,21 +257,19 @@ async function loadDirectory(path, options = {}) {
 
     currentDirectoryPath = path;
 
-    // Update UI headers & breadcrumbs
+    // Update UI headers — Current Path is the single source of truth
     const pathDisplay = document.getElementById('filesCurrentPathDisplay');
-    if (pathDisplay) pathDisplay.textContent = path;
-
-    const treeStatus = document.getElementById('filesTreeStatus');
-    if (treeStatus) treeStatus.textContent = path;
-
-    updateBreadcrumbs(path);
+    if (pathDisplay) {
+        pathDisplay.textContent = path;
+        pathDisplay.title = path;
+    }
 
     // Show loading in table
     const tableBody = document.getElementById('filesTableBody');
     if (tableBody) {
         tableBody.innerHTML = `
             <tr>
-                <td colspan="5" class="text-center text-muted font-mono py-4">
+                <td colspan="6" class="text-center text-muted font-mono py-4">
                     <span class="spinner-border spinner-border-sm me-1" style="width: 12px; height: 12px;"></span> Loading entries for <code class="text-dark">${escapeHtml(path)}</code>...
                 </td>
             </tr>`;
@@ -284,7 +299,7 @@ async function loadDirectory(path, options = {}) {
         if (tableBody) {
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-danger font-mono p-3 text-center">
+                    <td colspan="6" class="text-danger font-mono p-3 text-center">
                         <i class="bi bi-exclamation-octagon me-1"></i> Error loading directory: ${escapeHtml(err.message)}
                     </td>
                 </tr>`;
@@ -292,35 +307,10 @@ async function loadDirectory(path, options = {}) {
     }
 }
 
-function updateBreadcrumbs(path) {
-    const container = document.getElementById('filesBreadcrumbs');
-    if (!container) return;
-
-    let html = `
-        <button class="btn btn-sm ${path === '/' ? 'btn-secondary text-white' : 'btn-light border'} py-0 px-2 font-mono" style="font-size: 11px;" onclick="navigateFiles('/')" title="Root Directory">
-            <i class="bi bi-hdd-network me-1"></i>/
-        </button>`;
-
-    if (path !== '/') {
-        const parts = path.split('/').filter(p => p.length > 0);
-        let accumulated = '';
-        parts.forEach((p, idx) => {
-            accumulated += '/' + p;
-            const isLast = idx === parts.length - 1;
-            html += `
-                <span class="text-muted">/</span>
-                <button class="btn btn-sm ${isLast ? 'btn-secondary text-white fw-bold' : 'btn-light border'} py-0 px-2 font-mono" style="font-size: 11px;" onclick="navigateFiles('${escapeAttr(accumulated)}')">
-                    ${escapeHtml(p)}
-                </button>`;
-        });
-    }
-
-    container.innerHTML = html;
-}
-
 function renderFileTableRows(items) {
     const tableBody = document.getElementById('filesTableBody');
     if (!tableBody) return;
+    const cid = window.CURRENT_CONTAINER_ID || '';
 
     let html = '';
 
@@ -329,7 +319,7 @@ function renderFileTableRows(items) {
         const parentPath = getParentPath(currentDirectoryPath);
         html += `
             <tr class="file-row-dir" onclick="navigateFiles('${escapeAttr(parentPath)}')">
-                <td class="font-mono fw-semibold text-primary" colspan="5">
+                <td class="font-mono fw-semibold text-primary" colspan="6">
                     <i class="bi bi-arrow-90deg-up me-2 text-secondary"></i>.. <span class="text-muted fw-normal font-sans" style="font-size: 11px;">(Up to parent directory)</span>
                 </td>
             </tr>`;
@@ -338,7 +328,7 @@ function renderFileTableRows(items) {
     if (!items || items.length === 0) {
         html += `
             <tr>
-                <td colspan="5" class="text-muted font-mono text-center py-4">
+                <td colspan="6" class="text-muted font-mono text-center py-4">
                     <i class="bi bi-folder2-open d-block fs-3 mb-1 text-secondary"></i>
                     Directory is empty.
                 </td>
@@ -365,19 +355,32 @@ function renderFileTableRows(items) {
                     <td style="text-align: right;">${formattedSize}</td>
                     <td>${modeStr}</td>
                     <td class="font-mono text-muted" style="font-size: 11px;">${dateStr}</td>
+                    <td class="text-end font-mono" style="font-size: 11px;">
+                        <button type="button" class="btn btn-xs btn-light border py-0 px-1 font-mono text-muted" style="font-size: 10px;" title="Open folder" onclick="navigateFiles('${escapeAttr(item.path)}')">
+                            <i class="bi bi-folder2-open"></i>
+                        </button>
+                    </td>
                 </tr>`;
         } else {
             const symlinkInfo = item.linkTarget ? ` <span class="text-muted font-mono" style="font-size: 10px;">&rarr; ${escapeHtml(item.linkTarget)}</span>` : '';
             html += `
-                <tr>
+                <tr class="file-row-item" onclick="openFilePreview('${escapeAttr(item.path)}')">
                     <td class="font-mono text-dark d-flex align-items-center gap-2">
                         ${icon}
-                        <span>${escapeHtml(item.name)}</span>${symlinkInfo}
+                        <span class="text-decoration-underline text-dark fw-medium">${escapeHtml(item.name)}</span>${symlinkInfo}
                     </td>
                     <td class="font-mono text-muted" style="font-size: 11px;">${escapeHtml(item.type || 'file')}</td>
                     <td style="text-align: right;">${formattedSize}</td>
                     <td>${modeStr}</td>
                     <td class="font-mono text-muted" style="font-size: 11px;">${dateStr}</td>
+                    <td class="text-end font-mono" style="font-size: 11px;">
+                        <button type="button" class="btn btn-xs btn-light border py-0 px-1 font-mono text-dark" title="View file contents" onclick="event.stopPropagation(); openFilePreview('${escapeAttr(item.path)}')">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <a class="btn btn-xs btn-light border py-0 px-1 font-mono text-dark ms-1" title="Download file" href="/api/containers/${encodeURIComponent(cid)}/file/download?path=${encodeURIComponent(item.path)}" download onclick="event.stopPropagation();">
+                            <i class="bi bi-download"></i>
+                        </a>
+                    </td>
                 </tr>`;
         }
     });
@@ -486,12 +489,12 @@ function ensureTreeNode(path, currentItems) {
 function createTreeNodeHtml(path, name) {
     return `
         <div class="file-tree-node" data-path="${escapeHtml(path)}">
-            <div class="file-tree-row" onclick="handleTreeNodeClick('${escapeAttr(path)}', event)">
+            <div class="file-tree-row" onclick="handleTreeNodeClick('${escapeAttr(path)}', event)" title="${escapeAttr(name)}">
                 <span class="file-tree-toggle" onclick="handleTreeToggleClick('${escapeAttr(path)}', event)">
                     <i class="bi bi-chevron-right"></i>
                 </span>
-                <i class="bi bi-folder-fill text-warning"></i>
-                <span>${escapeHtml(name)}</span>
+                <i class="bi bi-folder-fill text-warning flex-shrink-0"></i>
+                <span class="text-truncate">${escapeHtml(name)}</span>
             </div>
             <div class="file-tree-children d-none" data-loaded="false"></div>
         </div>`;
@@ -546,3 +549,692 @@ function highlightActiveTreeNode(path) {
         if (row) row.classList.add('active');
     }
 }
+
+// ==========================================
+// File Viewer & Download Modal Controller
+// ==========================================
+window.openFilePreview = async function(filePath) {
+    const cid = window.CURRENT_CONTAINER_ID;
+    if (!cid || !filePath) return;
+
+    const modalEl = document.getElementById('filePreviewModal');
+    if (!modalEl) return;
+
+    const label = document.getElementById('filePreviewModalLabel');
+    const sizeBadge = document.getElementById('filePreviewSizeBadge');
+    const downloadLink = document.getElementById('btnDownloadFileLink');
+    const binaryDownloadLink = document.getElementById('btnDownloadBinaryLink');
+    const loading = document.getElementById('filePreviewLoading');
+    const contentBox = document.getElementById('filePreviewContentContainer');
+    const binaryBox = document.getElementById('filePreviewBinaryContainer');
+    const errorBox = document.getElementById('filePreviewErrorContainer');
+    const pre = document.getElementById('filePreviewPre');
+
+    if (label) label.textContent = filePath;
+    if (sizeBadge) sizeBadge.textContent = 'loading...';
+
+    const downloadUrl = `/api/containers/${encodeURIComponent(cid)}/file/download?path=${encodeURIComponent(filePath)}`;
+    if (downloadLink) downloadLink.href = downloadUrl;
+    if (binaryDownloadLink) binaryDownloadLink.href = downloadUrl;
+
+    if (loading) loading.classList.remove('d-none');
+    if (contentBox) contentBox.classList.add('d-none');
+    if (binaryBox) binaryBox.classList.add('d-none');
+    if (errorBox) errorBox.classList.add('d-none');
+
+    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        const bsModal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        bsModal.show();
+    }
+
+    try {
+        const res = await fetch(`/api/containers/${encodeURIComponent(cid)}/file/content?path=${encodeURIComponent(filePath)}`);
+        const data = await res.json();
+
+        if (loading) loading.classList.add('d-none');
+
+        if (!res.ok || !data.success) {
+            if (errorBox) {
+                const errText = document.getElementById('filePreviewErrorText');
+                if (errText) errText.textContent = data.errorMessage || `HTTP Error ${res.status}`;
+                errorBox.classList.remove('d-none');
+            }
+            if (sizeBadge) sizeBadge.textContent = 'error';
+            return;
+        }
+
+        if (sizeBadge) sizeBadge.textContent = formatFileSize(data.size);
+
+        if (data.isText) {
+            if (pre) pre.textContent = data.contentText || '(empty file)';
+            if (contentBox) contentBox.classList.remove('d-none');
+        } else {
+            if (binaryBox) binaryBox.classList.remove('d-none');
+        }
+    } catch (err) {
+        if (loading) loading.classList.add('d-none');
+        if (errorBox) {
+            const errText = document.getElementById('filePreviewErrorText');
+            if (errText) errText.textContent = err.message;
+            errorBox.classList.remove('d-none');
+        }
+    }
+};
+
+window.copyCurrentFileContent = function() {
+    const pre = document.getElementById('filePreviewPre');
+    if (!pre) return;
+    const text = pre.textContent || '';
+    if (!text) {
+        window.showToast("No content to copy.", true);
+        return;
+    }
+    navigator.clipboard.writeText(text)
+        .then(() => window.showToast("File content copied to clipboard!"))
+        .catch(() => {
+            copyFallback(text);
+        });
+};
+
+// ==========================================
+// Container Exec & Interactive Console Controller
+// ==========================================
+let execHistory = [];
+let execHistoryIndex = -1;
+let execCurrentDraft = '';
+let isExecRunning = false;
+let execConsoleInitialized = false;
+
+window.initExecConsole = function() {
+    if (execConsoleInitialized) return;
+    execConsoleInitialized = true;
+
+    const cmdInput = document.getElementById('execCommandInput');
+    const workDirInput = document.getElementById('execWorkDirInput');
+    const userInput = document.getElementById('execUserInput');
+
+    if (workDirInput) {
+        workDirInput.addEventListener('input', updateExecPromptPrefix);
+    }
+    if (userInput) {
+        userInput.addEventListener('input', updateExecPromptPrefix);
+    }
+
+    if (cmdInput) {
+        cmdInput.addEventListener('keydown', handleExecKeyDown);
+    }
+
+    updateExecPromptPrefix();
+};
+
+function updateExecPromptPrefix() {
+    const prefixEl = document.getElementById('execPromptPrefix');
+    if (!prefixEl) return;
+
+    const user = (document.getElementById('execUserInput')?.value || 'root').trim() || 'root';
+    const shortId = window.CURRENT_CONTAINER_SHORT_ID || (window.CURRENT_CONTAINER_ID ? window.CURRENT_CONTAINER_ID.substring(0, 12) : 'container');
+    let dir = (document.getElementById('execWorkDirInput')?.value || '/').trim() || '/';
+    if (!dir.startsWith('/')) dir = '/' + dir;
+
+    prefixEl.textContent = `${user}@${shortId}:${dir}#`;
+}
+
+window.updateExecContainerState = function(state) {
+    const alertEl = document.getElementById('execStateAlert');
+    const stateText = document.getElementById('execContainerStateText');
+    if (stateText) stateText.textContent = state;
+    if (alertEl) {
+        if (state === 'running') {
+            alertEl.classList.add('d-none');
+        } else {
+            alertEl.classList.remove('d-none');
+        }
+    }
+    window.CURRENT_CONTAINER_STATE = state;
+};
+
+function handleExecKeyDown(e) {
+    const input = e.target;
+
+    // Up Arrow: History backward
+    if (e.key === 'ArrowUp') {
+        if (execHistory.length === 0) return;
+        e.preventDefault();
+
+        if (execHistoryIndex === -1) {
+            execCurrentDraft = input.value;
+        }
+
+        if (execHistoryIndex < execHistory.length - 1) {
+            execHistoryIndex++;
+            input.value = execHistory[execHistory.length - 1 - execHistoryIndex];
+        }
+    }
+    // Down Arrow: History forward
+    else if (e.key === 'ArrowDown') {
+        if (execHistoryIndex === -1) return;
+        e.preventDefault();
+
+        if (execHistoryIndex > 0) {
+            execHistoryIndex--;
+            input.value = execHistory[execHistory.length - 1 - execHistoryIndex];
+        } else {
+            execHistoryIndex = -1;
+            input.value = execCurrentDraft;
+        }
+    }
+    // Ctrl + L: Clear console
+    else if ((e.ctrlKey || e.metaKey) && e.key === 'l') {
+        e.preventDefault();
+        window.clearExecTerminal();
+    }
+}
+
+window.insertExecPreset = function(command) {
+    const input = document.getElementById('execCommandInput');
+    if (input) {
+        input.value = command;
+        input.focus();
+    }
+    window.executeContainerCommand(command);
+};
+
+window.handleExecSubmit = function(event) {
+    if (event) event.preventDefault();
+
+    const input = document.getElementById('execCommandInput');
+    if (!input) return;
+
+    const cmd = input.value.trim();
+    if (!cmd) return;
+
+    // Save to history (avoid duplicates at top)
+    if (execHistory.length === 0 || execHistory[execHistory.length - 1] !== cmd) {
+        execHistory.push(cmd);
+        if (execHistory.length > 50) execHistory.shift();
+    }
+    execHistoryIndex = -1;
+    execCurrentDraft = '';
+
+    input.value = '';
+    window.executeContainerCommand(cmd);
+};
+
+window.executeContainerCommand = async function(cmd) {
+    const cid = window.CURRENT_CONTAINER_ID;
+    if (!cid || !cmd) return;
+
+    if (isExecRunning) {
+        window.showToast("Another command is currently executing in this container.", true);
+        return;
+    }
+
+    const entriesContainer = document.getElementById('execTerminalEntries');
+    const placeholder = document.getElementById('execTerminalPlaceholder');
+    if (placeholder) placeholder.remove();
+
+    const shell = document.getElementById('execShellSelect')?.value || '/bin/sh';
+    const workingDir = document.getElementById('execWorkDirInput')?.value?.trim() || '/';
+    const user = document.getElementById('execUserInput')?.value?.trim() || 'root';
+    const shortId = window.CURRENT_CONTAINER_SHORT_ID || cid.substring(0, 12);
+    const autoScroll = document.getElementById('execAutoScrollSwitch')?.checked;
+
+    // Expand viewport from compact idle to active
+    const viewport = document.getElementById('execTerminalViewport');
+    if (viewport) {
+        viewport.classList.remove('exec-terminal-idle');
+        viewport.classList.add('exec-terminal-active');
+    }
+
+    // Create execution block in viewport
+    const execId = 'exec-' + Date.now();
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+
+    const entryDiv = document.createElement('div');
+    entryDiv.className = 'exec-entry mb-2 pb-2 border-bottom border-secondary border-opacity-10';
+    entryDiv.id = execId;
+    entryDiv.innerHTML = `
+        <div class="d-flex align-items-center justify-content-between font-mono mb-1" style="font-size: 11px;">
+            <div class="d-flex align-items-center gap-1.5 overflow-x-auto text-truncate">
+                <span style="color: #94a3b8;">${escapeHtml(user)}@${escapeHtml(shortId)}:${escapeHtml(workingDir)}#</span>
+                <span style="color: #f8fafc; font-weight: 600;">${escapeHtml(cmd)}</span>
+            </div>
+            <div class="d-flex align-items-center gap-1.5 ms-2 flex-shrink-0" style="font-size: 10px;">
+                <span style="color: #64748b;">${timeStr}</span>
+                <span id="badge-${execId}" class="badge font-mono d-inline-flex align-items-center gap-1" style="background-color: #1e293b; color: #94a3b8; border: 1px solid #334155; font-size: 9px; padding: 1px 5px;">
+                    <span class="spinner-border spinner-border-sm" style="width: 7px; height: 7px;" role="status"></span>
+                    <span>running</span>
+                </span>
+            </div>
+        </div>
+        <div id="out-${execId}" class="exec-output font-mono ps-1" style="font-size: 11px; line-height: 1.45;">
+            <span style="color: #64748b; font-style: italic; font-size: 10px;">Executing via ${escapeHtml(shell)}...</span>
+        </div>
+    `;
+
+    if (entriesContainer) {
+        entriesContainer.appendChild(entryDiv);
+    }
+
+    if (autoScroll) {
+        if (viewport) viewport.scrollTop = viewport.scrollHeight;
+    }
+
+    // Toggle running state
+    setExecRunningState(true);
+
+    try {
+        const response = await fetch(`/api/containers/${encodeURIComponent(cid)}/exec`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                command: cmd,
+                shell: shell,
+                workingDir: workingDir,
+                user: user
+            })
+        });
+
+        const outContainer = document.getElementById(`out-${execId}`);
+        const badge = document.getElementById(`badge-${execId}`);
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            const msg = errData.errorMessage || `HTTP Error ${response.status}`;
+            if (badge) {
+                badge.className = 'badge font-mono';
+                badge.style.cssText = 'background-color: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; font-size: 9px; padding: 1px 5px;';
+                badge.textContent = `error`;
+            }
+            if (outContainer) {
+                outContainer.innerHTML = `<div style="color: #f87171; font-size: 11px;">${escapeHtml(msg)}</div>`;
+            }
+            return;
+        }
+
+        const data = await response.json();
+
+        // Update badge with exit status and duration (green for 0, red for nonzero)
+        if (badge) {
+            badge.className = 'badge font-mono';
+            if (data.exitCode === 0) {
+                badge.style.cssText = 'background-color: #14532d; color: #86efac; border: 1px solid #166534; font-size: 9px; padding: 1px 5px;';
+                badge.textContent = `exit 0 • ${data.durationMs}ms`;
+            } else {
+                badge.style.cssText = 'background-color: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; font-size: 9px; padding: 1px 5px;';
+                badge.textContent = `exit ${data.exitCode} • ${data.durationMs}ms`;
+            }
+        }
+
+        // Render stdout and stderr using exactly the 3 purposeful colors
+        if (outContainer) {
+            let html = '';
+            if (data.stdout && data.stdout.length > 0) {
+                html += `<pre class="m-0 font-mono" style="font-size: 11px; color: #e2e8f0; white-space: pre-wrap; word-break: break-all;">${escapeHtml(data.stdout)}</pre>`;
+            }
+            if (data.stderr && data.stderr.length > 0) {
+                html += `<pre class="m-0 font-mono mt-1" style="font-size: 11px; color: #f87171; white-space: pre-wrap; word-break: break-all;">${escapeHtml(data.stderr)}</pre>`;
+            }
+            if (data.errorMessage) {
+                html += `<div class="font-mono mt-1" style="font-size: 11px; color: #f87171;">${escapeHtml(data.errorMessage)}</div>`;
+            }
+            if (!html) {
+                html = `<div style="color: #64748b; font-size: 10px; font-style: italic;">(Process exited with code ${data.exitCode} and produced no output)</div>`;
+            }
+            outContainer.innerHTML = html;
+        }
+    } catch (err) {
+        const outContainer = document.getElementById(`out-${execId}`);
+        const badge = document.getElementById(`badge-${execId}`);
+        if (badge) {
+            badge.className = 'badge font-mono';
+            badge.style.cssText = 'background-color: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; font-size: 9px; padding: 1px 5px;';
+            badge.textContent = 'fail';
+        }
+        if (outContainer) {
+            outContainer.innerHTML = `<div style="color: #f87171; font-size: 11px;">Network request failed: ${escapeHtml(err.message)}</div>`;
+        }
+    } finally {
+        setExecRunningState(false);
+        const autoScroll = document.getElementById('execAutoScrollSwitch')?.checked;
+        if (autoScroll) {
+            const viewport = document.getElementById('execTerminalViewport');
+            if (viewport) viewport.scrollTop = viewport.scrollHeight;
+        }
+        const cmdInput = document.getElementById('execCommandInput');
+        if (cmdInput) cmdInput.focus();
+    }
+};
+
+function setExecRunningState(running) {
+    isExecRunning = running;
+    const btn = document.getElementById('btnExecRun');
+    const text = document.getElementById('execRunBtnText');
+    const icon = document.getElementById('execRunIcon');
+    const spinner = document.getElementById('execRunSpinner');
+    const input = document.getElementById('execCommandInput');
+
+    if (btn) btn.disabled = running;
+    if (input) input.disabled = running;
+    if (text) text.textContent = running ? 'Running...' : 'Run';
+    if (icon) {
+        if (running) icon.classList.add('d-none');
+        else icon.classList.remove('d-none');
+    }
+    if (spinner) {
+        if (running) spinner.classList.remove('d-none');
+        else spinner.classList.add('d-none');
+    }
+}
+
+window.clearExecTerminal = function() {
+    const entriesContainer = document.getElementById('execTerminalEntries');
+    if (entriesContainer) {
+        entriesContainer.innerHTML = `
+            <div class="font-mono" id="execTerminalPlaceholder" style="font-size: 11px; color: #64748b; font-style: italic;">
+                Terminal session ready. Select a preset above or type a command below.
+            </div>
+        `;
+    }
+    const viewport = document.getElementById('execTerminalViewport');
+    if (viewport) {
+        viewport.classList.remove('exec-terminal-active');
+        viewport.classList.add('exec-terminal-idle');
+    }
+};
+
+window.copyExecTerminalOutput = function() {
+    const entries = document.getElementById('execTerminalEntries');
+    if (!entries) return;
+
+    const text = entries.innerText || entries.textContent || '';
+    if (!text.trim()) {
+        window.showToast("Terminal buffer is empty.", true);
+        return;
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text)
+            .then(() => window.showToast("Terminal output copied to clipboard!"))
+            .catch(() => copyFallback(text));
+    } else {
+        copyFallback(text);
+    }
+};
+
+function copyFallback(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+        document.execCommand('copy');
+        window.showToast("Terminal output copied to clipboard!");
+    } catch {
+        window.showToast("Failed to copy output.", true);
+    }
+    document.body.removeChild(ta);
+}
+
+// ==========================================
+// Container Automated Protection Controller
+// ==========================================
+let currentGlobalRetentionSettings = null;
+let currentContainerOverride = null;
+let currentContainerStorage = null;
+let containerProtectionInitialized = false;
+
+function formatProtectionTimeAgo(dateStr) {
+    if (!dateStr) return 'Never';
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    if (isNaN(diffMs) || diffMs < 0) return 'just now';
+    const diffSec = Math.floor(diffMs / 1000);
+    if (diffSec < 60) return 'just now';
+    const diffMin = Math.floor(diffSec / 60);
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays}d ago`;
+}
+
+function updateContainerEffectivePolicyDisplay() {
+    const policyEl = document.getElementById('textEffectivePolicy');
+    const badgeEl = document.getElementById('badgeEffectiveStatus');
+    const iconEl = document.getElementById('iconProtectionStatus');
+    if (!policyEl || !currentGlobalRetentionSettings || !currentContainerOverride) return;
+
+    const overrideState = currentContainerOverride.override || 'UseGlobalDefault';
+    const isAutoEnabled = currentContainerOverride.isAutoSnapshotEnabled;
+    const global = currentGlobalRetentionSettings;
+
+    if (overrideState === 'AlwaysOff') {
+        if (badgeEl) {
+            badgeEl.className = 'status-pill stopped';
+            badgeEl.innerHTML = '<span class="pill-dot"></span><span class="pill-text">Disabled</span>';
+        }
+        if (iconEl) iconEl.style.color = '#94a3b8';
+        policyEl.textContent = 'Disabled · container override is set to Always off';
+        return;
+    }
+
+    if (overrideState === 'UseGlobalDefault' && !global.autoSnapshotEnabled) {
+        if (badgeEl) {
+            badgeEl.className = 'status-pill stopped';
+            badgeEl.innerHTML = '<span class="pill-dot"></span><span class="pill-text">Disabled</span>';
+        }
+        if (iconEl) iconEl.style.color = '#94a3b8';
+        policyEl.textContent = 'Disabled · global automated snapshots are turned off in Settings';
+        return;
+    }
+
+    // Protection is active
+    if (badgeEl) {
+        badgeEl.className = 'status-pill running';
+        badgeEl.innerHTML = '<span class="pill-dot"></span><span class="pill-text">Active</span>';
+    }
+    if (iconEl) iconEl.style.color = 'var(--accent-navy)';
+
+    const interval = global.intervalHours || 24;
+    const intervalPart = `Every ${interval}h`;
+
+    let retentionPart = 'keep all snapshots';
+    if (!global.neverDeleteOldSnapshots && global.maxSnapshotCount) {
+        retentionPart = `keep last ${global.maxSnapshotCount}`;
+    }
+
+    let nextRunPart = 'next run pending';
+    const lastSnapTime = currentContainerStorage?.lastSnapshotTimestamp || currentContainerStorage?.lastAutoSnapshotTimestamp;
+    if (lastSnapTime) {
+        const lastTime = new Date(lastSnapTime).getTime();
+        const nextTime = lastTime + (interval * 3600 * 1000);
+        const diffMs = nextTime - Date.now();
+        if (diffMs > 0) {
+            const hours = diffMs / (3600 * 1000);
+            if (hours >= 1) {
+                nextRunPart = `next run in ${Math.round(hours)}h`;
+            } else {
+                const mins = Math.max(1, Math.round(diffMs / (60 * 1000)));
+                nextRunPart = `next run in ${mins}m`;
+            }
+        } else {
+            nextRunPart = 'next run due';
+        }
+    } else {
+        nextRunPart = `next run in ${interval}h`;
+    }
+
+    policyEl.textContent = `${intervalPart} · ${retentionPart} · ${nextRunPart}`;
+}
+
+async function loadContainerProtectionData() {
+    const cid = window.CURRENT_CONTAINER_ID;
+    if (!cid) return;
+
+    try {
+        const [overrideRes, settingsRes, storageRes] = await Promise.all([
+            fetch(`/api/containers/${encodeURIComponent(cid)}/retention/override`),
+            fetch(`/api/settings/retention`),
+            fetch(`/api/containers/${encodeURIComponent(cid)}/snapshots/storage`)
+        ]);
+
+        if (overrideRes.ok) {
+            currentContainerOverride = await overrideRes.json();
+            const state = currentContainerOverride.override || 'UseGlobalDefault';
+            if (state === 'AlwaysOn') {
+                const r = document.getElementById('overrideAlwaysOn');
+                if (r) r.checked = true;
+            } else if (state === 'AlwaysOff') {
+                const r = document.getElementById('overrideAlwaysOff');
+                if (r) r.checked = true;
+            } else {
+                const r = document.getElementById('overrideUseGlobal');
+                if (r) r.checked = true;
+            }
+        }
+
+        if (settingsRes.ok) {
+            currentGlobalRetentionSettings = await settingsRes.json();
+        }
+
+        if (storageRes.ok) {
+            currentContainerStorage = await storageRes.json();
+            const storageEl = document.getElementById('statTotalStorage');
+            const countEl = document.getElementById('statSnapshotCount');
+            const lastSnapEl = document.getElementById('statLastAutoSnapshot');
+
+            if (storageEl) {
+                const bytes = currentContainerStorage.totalStorageBytes || 0;
+                const mb = currentContainerStorage.totalStorageMB || 0;
+                if (bytes === 0) {
+                    storageEl.textContent = '0 MB';
+                } else if (mb < 0.1) {
+                    storageEl.textContent = `${(bytes / 1024).toFixed(1)} KB`;
+                } else {
+                    storageEl.textContent = `${mb.toFixed(1)} MB`;
+                }
+            }
+
+            if (countEl) {
+                const cnt = currentContainerStorage.snapshotCount ?? 0;
+                countEl.textContent = `${cnt} ${cnt === 1 ? 'snapshot' : 'snapshots'}`;
+            }
+
+            if (lastSnapEl) {
+                const timeAgo = formatProtectionTimeAgo(currentContainerStorage.lastSnapshotTimestamp || currentContainerStorage.lastAutoSnapshotTimestamp);
+                lastSnapEl.textContent = `Last auto-snapshot: ${timeAgo}`;
+            }
+        }
+
+        updateContainerEffectivePolicyDisplay();
+    } catch (err) {
+        console.error('Failed to load container automated protection details:', err);
+    }
+}
+
+async function handleContainerOverrideChange(e) {
+    const cid = window.CURRENT_CONTAINER_ID;
+    if (!cid) return;
+
+    const newState = e.target.value; // 'UseGlobalDefault', 'AlwaysOn', 'AlwaysOff'
+    try {
+        const res = await fetch(`/api/containers/${encodeURIComponent(cid)}/retention/override`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ overrideState: newState })
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            currentContainerOverride = data;
+            const labelMap = {
+                'UseGlobalDefault': 'Use global default',
+                'AlwaysOn': 'Always on',
+                'AlwaysOff': 'Always off'
+            };
+            if (typeof window.showToast === 'function') {
+                window.showToast(`Protection override set to: ${labelMap[newState] || newState}`);
+            }
+            updateContainerEffectivePolicyDisplay();
+        } else {
+            throw new Error('Server returned ' + res.status);
+        }
+    } catch (err) {
+        console.error('Failed to set override:', err);
+        if (typeof window.showToast === 'function') {
+            window.showToast('Failed to update protection override', true);
+        }
+    }
+}
+
+async function handlePruneNowClick() {
+    const cid = window.CURRENT_CONTAINER_ID;
+    if (!cid) return;
+
+    const btn = document.getElementById('btnPruneNow');
+    const text = document.getElementById('textPruneNow');
+    const spinner = document.getElementById('spinnerPruneNow');
+    const icon = document.getElementById('iconPruneNow');
+
+    if (btn) btn.disabled = true;
+    if (spinner) spinner.classList.remove('d-none');
+    if (icon) icon.classList.add('d-none');
+    if (text) text.textContent = 'Pruning...';
+
+    try {
+        const res = await fetch(`/api/containers/${encodeURIComponent(cid)}/snapshots/prune`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            if (data.prunedCount > 0) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast(`Pruned ${data.prunedCount} snapshot(s), reclaimed ${data.reclaimedMB} MB.`);
+                }
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('Retention policy already compliant (0 snapshots pruned).');
+                }
+                await loadContainerProtectionData();
+            }
+        } else {
+            throw new Error('Server returned ' + res.status);
+        }
+    } catch (err) {
+        console.error('Prune failed:', err);
+        if (typeof window.showToast === 'function') {
+            window.showToast('Failed to prune snapshots', true);
+        }
+    } finally {
+        if (btn) btn.disabled = false;
+        if (spinner) spinner.classList.add('d-none');
+        if (icon) icon.classList.remove('d-none');
+        if (text) text.textContent = 'Prune now';
+    }
+}
+
+window.initContainerAutomatedProtection = function() {
+    const panel = document.getElementById('panelContainerAutomatedProtection');
+    if (!panel) return;
+
+    if (!containerProtectionInitialized) {
+        containerProtectionInitialized = true;
+        document.querySelectorAll('input[name="radioContainerOverride"]').forEach(radio => {
+            radio.addEventListener('change', handleContainerOverrideChange);
+        });
+
+        const btnPrune = document.getElementById('btnPruneNow');
+        if (btnPrune) {
+            btnPrune.addEventListener('click', handlePruneNowClick);
+        }
+    }
+
+    loadContainerProtectionData();
+};
+

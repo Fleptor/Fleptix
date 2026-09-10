@@ -1,5 +1,6 @@
 namespace Fleptix.Observer.Services;
 
+using System.Diagnostics;
 using System.Formats.Tar;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -589,8 +590,8 @@ public class DockerContainerService : IContainerService
     }
 
     /// <summary>
-    /// Browses container filesystem at the specified path using Docker.DotNet GetArchiveFromContainerAsync
-    /// and parses tar entries using System.Formats.Tar.
+    /// Browses container filesystem at the specified path using ExecCommandAsync running "ls -la <path>"
+    /// and parses output for name, size, type, mode, and symlinks.
     /// </summary>
     public async Task<IReadOnlyList<ContainerFileSystemItem>> GetContainerFilesAsync(
         string containerId,
@@ -603,6 +604,159 @@ public class DockerContainerService : IContainerService
 
         try
         {
+            string escapedPath = path.Replace("\"", "\\\"");
+            var execResult = await ExecCommandAsync(
+                containerId,
+                new ContainerExecRequest
+                {
+                    Command = $"ls -la \"{escapedPath}\"",
+                    Shell = "/bin/sh"
+                },
+                cancellationToken);
+
+            if (!execResult.Success && !string.IsNullOrWhiteSpace(execResult.Stderr))
+            {
+                _logger.LogWarning("ls -la failed for {ContainerId} at {Path}: {Error}", containerId, path, execResult.Stderr);
+                return Array.Empty<ContainerFileSystemItem>();
+            }
+
+            return ParseLsOutput(execResult.Stdout, path);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to browse container filesystem via Exec for {ContainerId} at {Path}", containerId, path);
+            return Array.Empty<ContainerFileSystemItem>();
+        }
+    }
+
+    /// <summary>
+    /// Parses Unix ls -la command output into structured ContainerFileSystemItem list.
+    /// </summary>
+    public static List<ContainerFileSystemItem> ParseLsOutput(string stdout, string parentPath)
+    {
+        var items = new List<ContainerFileSystemItem>();
+        if (string.IsNullOrWhiteSpace(stdout)) return items;
+
+        string normParent = (parentPath ?? "/").Trim();
+        if (!normParent.StartsWith('/')) normParent = "/" + normParent;
+        if (normParent.Length > 1 && normParent.EndsWith('/')) normParent = normParent.TrimEnd('/');
+
+        var lines = stdout.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+        foreach (var rawLine in lines)
+        {
+            var line = rawLine.Trim();
+            if (string.IsNullOrWhiteSpace(line) || line.StartsWith("total ", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var tokens = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+            if (tokens.Length < 8)
+            {
+                continue;
+            }
+
+            string mode = tokens[0];
+            if (mode.Length < 10)
+            {
+                continue;
+            }
+
+            char typeChar = mode[0];
+            bool isDir = typeChar == 'd';
+            string type = typeChar switch
+            {
+                'd' => "directory",
+                'l' => "symlink",
+                'c' => "char",
+                'b' => "block",
+                'p' => "fifo",
+                's' => "socket",
+                _ => "file"
+            };
+
+            long size = 0;
+            long.TryParse(tokens[4], out size);
+
+            string fullNameStr = string.Join(" ", tokens.Skip(8));
+            if (string.IsNullOrEmpty(fullNameStr))
+            {
+                continue;
+            }
+
+            string name = fullNameStr;
+            string? linkTarget = null;
+            if (type == "symlink" && fullNameStr.Contains(" -> "))
+            {
+                var parts = fullNameStr.Split(new[] { " -> " }, 2, StringSplitOptions.None);
+                name = parts[0].Trim();
+                linkTarget = parts[1].Trim();
+            }
+
+            if (name == "." || name == "..")
+            {
+                continue;
+            }
+
+            string fullPath = normParent == "/" ? $"/{name}" : $"{normParent}/{name}";
+
+            DateTime? modifiedTime = null;
+            try
+            {
+                string dateStr = $"{tokens[5]} {tokens[6]} {tokens[7]}";
+                if (DateTime.TryParse(dateStr, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dt))
+                {
+                    modifiedTime = dt;
+                }
+            }
+            catch
+            {
+                // Ignore date parsing failure
+            }
+
+            items.Add(new ContainerFileSystemItem
+            {
+                Name = name,
+                Path = fullPath,
+                IsDirectory = isDir,
+                Size = isDir ? 0 : size,
+                Type = type,
+                Mode = mode,
+                ModifiedTime = modifiedTime,
+                LinkTarget = linkTarget
+            });
+        }
+
+        return items
+            .OrderByDescending(x => x.IsDirectory)
+            .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    /// <summary>
+    /// Retrieves file content and metadata for viewing a specific file using GetArchiveFromContainerAsync.
+    /// </summary>
+    public async Task<ContainerFileContentResult> GetFileContentAsync(
+        string containerId,
+        string path,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(containerId) || string.IsNullOrWhiteSpace(path))
+        {
+            return new ContainerFileContentResult
+            {
+                Success = false,
+                ErrorMessage = "ContainerId and path are required."
+            };
+        }
+
+        path = path.Trim();
+        if (!path.StartsWith('/')) path = "/" + path;
+        string fileName = Path.GetFileName(path);
+
+        try
+        {
             var response = await _client.Containers.GetArchiveFromContainerAsync(
                 containerId,
                 new GetArchiveFromContainerParameters { Path = path },
@@ -611,119 +765,366 @@ public class DockerContainerService : IContainerService
 
             if (response.Stream == null)
             {
-                return Array.Empty<ContainerFileSystemItem>();
+                return new ContainerFileContentResult
+                {
+                    Success = false,
+                    ContainerId = containerId,
+                    Path = path,
+                    Name = fileName,
+                    ErrorMessage = "File stream returned null from Docker engine."
+                };
             }
 
             using var stream = response.Stream;
             using var tarReader = new TarReader(stream);
 
-            string normTarget = path.Trim('/');
-            var itemsMap = new Dictionary<string, ContainerFileSystemItem>(StringComparer.OrdinalIgnoreCase);
-
-            TarEntry? entry;
-            int entriesScanned = 0;
-            const int maxEntries = 5000;
-
-            while (entriesScanned++ < maxEntries && (entry = tarReader.GetNextEntry()) != null)
+            TarEntry? entry = tarReader.GetNextEntry();
+            if (entry == null)
             {
-                string raw = entry.Name.Replace('\\', '/').Trim();
-                while (raw.StartsWith("./")) raw = raw[2..];
-                raw = raw.TrimStart('/');
-
-                // Skip root or self folder
-                if (string.IsNullOrEmpty(raw) || raw.Equals(normTarget, StringComparison.OrdinalIgnoreCase))
+                return new ContainerFileContentResult
                 {
-                    continue;
-                }
-
-                // If queried a sub-path, Docker entry names start with the folder name prefix
-                string rel = raw;
-                if (!string.IsNullOrEmpty(normTarget))
-                {
-                    if (rel.StartsWith(normTarget + "/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        rel = rel[(normTarget.Length + 1)..];
-                    }
-                    else if (rel.Equals(normTarget, StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-                }
-
-                rel = rel.Trim('/');
-                if (string.IsNullOrEmpty(rel)) continue;
-
-                var parts = rel.Split('/', StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length == 0) continue;
-
-                string directChildName = parts[0];
-                bool isSubItem = parts.Length > 1;
-                bool isDir = isSubItem || entry.EntryType == TarEntryType.Directory || entry.Name.EndsWith('/');
-
-                string childFullPath = string.IsNullOrEmpty(normTarget)
-                    ? $"/{directChildName}"
-                    : $"/{normTarget}/{directChildName}";
-
-                string typeStr = isDir ? "directory" : entry.EntryType switch
-                {
-                    TarEntryType.SymbolicLink => "symlink",
-                    TarEntryType.HardLink => "hardlink",
-                    TarEntryType.BlockDevice => "block",
-                    TarEntryType.CharacterDevice => "char",
-                    TarEntryType.Fifo => "fifo",
-                    _ => "file"
+                    Success = false,
+                    ContainerId = containerId,
+                    Path = path,
+                    Name = fileName,
+                    ErrorMessage = "No entry found in container archive."
                 };
+            }
 
-                if (itemsMap.TryGetValue(directChildName, out var existing))
+            if (entry.EntryType == TarEntryType.Directory)
+            {
+                return new ContainerFileContentResult
                 {
-                    if (isDir && !existing.IsDirectory)
-                    {
-                        existing.IsDirectory = true;
-                        existing.Type = "directory";
-                        existing.Size = 0;
-                    }
+                    Success = false,
+                    ContainerId = containerId,
+                    Path = path,
+                    Name = fileName,
+                    ErrorMessage = "Target path is a directory, not a file."
+                };
+            }
 
-                    if (!isSubItem)
-                    {
-                        existing.ModifiedTime = entry.ModificationTime;
-                        if (!isDir) existing.Size = entry.Length;
-                        if (!string.IsNullOrEmpty(entry.LinkName)) existing.LinkTarget = entry.LinkName;
-                        if (entry.Mode != 0) existing.Mode = ConvertModeToString(entry.Mode, isDir);
-                    }
-                }
-                else
+            if ((entry.EntryType == TarEntryType.SymbolicLink || entry.EntryType == TarEntryType.HardLink) && !string.IsNullOrEmpty(entry.LinkName))
+            {
+                string linkTarget = entry.LinkName;
+                string resolved = linkTarget.StartsWith('/')
+                    ? linkTarget
+                    : Path.GetFullPath(Path.Combine(Path.GetDirectoryName(path)?.Replace('\\', '/') ?? "/", linkTarget)).Replace('\\', '/');
+                return await GetFileContentAsync(containerId, resolved, cancellationToken);
+            }
+
+            const int maxPreviewSize = 2 * 1024 * 1024;
+            using var ms = new MemoryStream();
+            if (entry.DataStream != null)
+            {
+                byte[] buffer = new byte[8192];
+                int totalRead = 0;
+                int read;
+                while (totalRead < maxPreviewSize && (read = await entry.DataStream.ReadAsync(buffer, 0, Math.Min(buffer.Length, maxPreviewSize - totalRead), cancellationToken)) > 0)
                 {
-                    var newItem = new ContainerFileSystemItem
-                    {
-                        Name = directChildName,
-                        Path = childFullPath,
-                        IsDirectory = isDir,
-                        Size = isDir ? 0 : entry.Length,
-                        Type = typeStr,
-                        ModifiedTime = entry.ModificationTime,
-                        LinkTarget = !string.IsNullOrEmpty(entry.LinkName) ? entry.LinkName : null,
-                        Mode = entry.Mode != 0 ? ConvertModeToString(entry.Mode, isDir) : null
-                    };
-
-                    itemsMap[directChildName] = newItem;
+                    ms.Write(buffer, 0, read);
+                    totalRead += read;
                 }
             }
 
-            return itemsMap.Values
-                .OrderByDescending(x => x.IsDirectory)
-                .ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            byte[] fileBytes = ms.ToArray();
+            bool isText = IsTextContent(fileBytes);
+            string? textContent = null;
+
+            if (isText)
+            {
+                textContent = System.Text.Encoding.UTF8.GetString(fileBytes);
+            }
+
+            return new ContainerFileContentResult
+            {
+                Success = true,
+                ContainerId = containerId,
+                Path = path,
+                Name = fileName,
+                Size = entry.Length,
+                IsText = isText,
+                ContentText = textContent
+            };
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to browse container filesystem for {ContainerId} at {Path}", containerId, path);
-            return Array.Empty<ContainerFileSystemItem>();
+            _logger.LogError(ex, "Failed to read file archive for {ContainerId} at {Path}", containerId, path);
+            return new ContainerFileContentResult
+            {
+                Success = false,
+                ContainerId = containerId,
+                Path = path,
+                Name = fileName,
+                ErrorMessage = ex.Message
+            };
         }
     }
+
+    /// <summary>
+    /// Extracts a specific file stream from the container tar archive for direct client download.
+    /// </summary>
+    public async Task<(Stream? Stream, string FileName, long Size)> GetFileArchiveStreamAsync(
+        string containerId,
+        string path,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(containerId) || string.IsNullOrWhiteSpace(path))
+        {
+            return (null, string.Empty, 0);
+        }
+
+        path = path.Trim();
+        if (!path.StartsWith('/')) path = "/" + path;
+        string fileName = Path.GetFileName(path);
+
+        try
+        {
+            var response = await _client.Containers.GetArchiveFromContainerAsync(
+                containerId,
+                new GetArchiveFromContainerParameters { Path = path },
+                statOnly: false,
+                cancellationToken);
+
+            if (response.Stream == null)
+            {
+                return (null, fileName, 0);
+            }
+
+            using var stream = response.Stream;
+            using var tarReader = new TarReader(stream);
+
+            TarEntry? entry = tarReader.GetNextEntry();
+            if (entry == null || entry.EntryType == TarEntryType.Directory)
+            {
+                return (null, fileName, 0);
+            }
+
+            if ((entry.EntryType == TarEntryType.SymbolicLink || entry.EntryType == TarEntryType.HardLink) && !string.IsNullOrEmpty(entry.LinkName))
+            {
+                string linkTarget = entry.LinkName;
+                string resolved = linkTarget.StartsWith('/')
+                    ? linkTarget
+                    : Path.GetFullPath(Path.Combine(Path.GetDirectoryName(path)?.Replace('\\', '/') ?? "/", linkTarget)).Replace('\\', '/');
+                return await GetFileArchiveStreamAsync(containerId, resolved, cancellationToken);
+            }
+
+            if (entry.DataStream == null)
+            {
+                return (null, fileName, 0);
+            }
+
+            var ms = new MemoryStream();
+            await entry.DataStream.CopyToAsync(ms, cancellationToken);
+            ms.Position = 0;
+
+            return (ms, fileName, entry.Length);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to download file archive for {ContainerId} at {Path}", containerId, path);
+            return (null, fileName, 0);
+        }
+    }
+
+    private static bool IsTextContent(byte[] bytes)
+    {
+        if (bytes == null || bytes.Length == 0) return true;
+        int checkLength = Math.Min(bytes.Length, 1024);
+        int controlChars = 0;
+
+        for (int i = 0; i < checkLength; i++)
+        {
+            byte b = bytes[i];
+            if (b == 0) return false;
+            if (b < 7 || (b > 13 && b < 32))
+            {
+                controlChars++;
+            }
+        }
+
+        return (controlChars / (double)checkLength) < 0.1;
+    }
+
 
     private static string ConvertModeToString(System.IO.UnixFileMode mode, bool isDir)
     {
         int modeInt = (int)mode & 0xFFF;
         return (isDir ? "d" : "-") + Convert.ToString(modeInt, 8).PadLeft(3, '0');
+    }
+
+    /// <summary>
+    /// Executes a shell command inside a container using Docker.DotNet Exec APIs.
+    /// </summary>
+    public async Task<ContainerExecResult> ExecCommandAsync(
+        string containerId,
+        ContainerExecRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var sw = Stopwatch.StartNew();
+        if (string.IsNullOrWhiteSpace(containerId))
+        {
+            return new ContainerExecResult
+            {
+                Success = false,
+                ExitCode = -1,
+                ErrorMessage = "Container ID is required."
+            };
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Command))
+        {
+            return new ContainerExecResult
+            {
+                Success = false,
+                ExitCode = -1,
+                ErrorMessage = "Command string cannot be empty."
+            };
+        }
+
+        try
+        {
+            // Inspect container first to verify it is running
+            var inspect = await _client.Containers.InspectContainerAsync(containerId, cancellationToken);
+            if (inspect == null)
+            {
+                return new ContainerExecResult
+                {
+                    Success = false,
+                    ExitCode = -1,
+                    ErrorMessage = $"Container '{containerId}' not found."
+                };
+            }
+
+            if (inspect.State?.Running != true)
+            {
+                return new ContainerExecResult
+                {
+                    Success = false,
+                    ExitCode = -1,
+                    ErrorMessage = $"Container is in state '{inspect.State?.Status ?? "not running"}'. Commands can only be executed in running containers."
+                };
+            }
+
+            string shell = string.IsNullOrWhiteSpace(request.Shell) ? "/bin/sh" : request.Shell.Trim();
+            IList<string> cmd;
+            if (shell.Equals("raw", StringComparison.OrdinalIgnoreCase) || shell.Equals("direct", StringComparison.OrdinalIgnoreCase))
+            {
+                cmd = ParseCommandLine(request.Command);
+            }
+            else
+            {
+                cmd = new[] { shell, "-c", request.Command };
+            }
+
+            var execParams = new ContainerExecCreateParameters
+            {
+                AttachStdout = true,
+                AttachStderr = true,
+                AttachStdin = false,
+                Tty = false,
+                Cmd = cmd,
+                WorkingDir = string.IsNullOrWhiteSpace(request.WorkingDir) ? null : request.WorkingDir.Trim(),
+                User = string.IsNullOrWhiteSpace(request.User) ? null : request.User.Trim(),
+                Privileged = request.Privileged
+            };
+
+            var execResponse = await _client.Exec.ExecCreateContainerAsync(containerId, execParams, cancellationToken);
+            if (execResponse == null || string.IsNullOrEmpty(execResponse.ID))
+            {
+                return new ContainerExecResult
+                {
+                    Success = false,
+                    ExitCode = -1,
+                    ErrorMessage = "Failed to create exec instance in Docker engine."
+                };
+            }
+
+            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            timeoutCts.CancelAfter(TimeSpan.FromSeconds(60));
+
+            using var stream = await _client.Exec.StartAndAttachContainerExecAsync(execResponse.ID, tty: false, timeoutCts.Token);
+            var (stdout, stderr) = await stream.ReadOutputToEndAsync(timeoutCts.Token);
+            sw.Stop();
+
+            var inspectExec = await _client.Exec.InspectContainerExecAsync(execResponse.ID, cancellationToken);
+            int exitCode = inspectExec != null ? (int)inspectExec.ExitCode : 0;
+
+            return new ContainerExecResult
+            {
+                Success = exitCode == 0,
+                ExitCode = exitCode,
+                Stdout = stdout ?? string.Empty,
+                Stderr = stderr ?? string.Empty,
+                DurationMs = sw.ElapsedMilliseconds
+            };
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            sw.Stop();
+            return new ContainerExecResult
+            {
+                Success = false,
+                ExitCode = 124,
+                Stderr = "Execution timed out after 60 seconds.",
+                ErrorMessage = "Command execution timed out.",
+                DurationMs = sw.ElapsedMilliseconds
+            };
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            _logger.LogError(ex, "Failed to execute command '{Command}' in container {ContainerId}", request.Command, containerId);
+            return new ContainerExecResult
+            {
+                Success = false,
+                ExitCode = -1,
+                Stderr = ex.Message,
+                ErrorMessage = $"Docker daemon execution failed: {ex.Message}",
+                DurationMs = sw.ElapsedMilliseconds
+            };
+        }
+    }
+
+    private static List<string> ParseCommandLine(string cmd)
+    {
+        var args = new List<string>();
+        if (string.IsNullOrWhiteSpace(cmd)) return args;
+
+        var current = new System.Text.StringBuilder();
+        bool inQuotes = false;
+        char quoteChar = '\0';
+
+        for (int i = 0; i < cmd.Length; i++)
+        {
+            char ch = cmd[i];
+            if (ch == '\\' && i + 1 < cmd.Length && inQuotes && quoteChar == '"')
+            {
+                current.Append(cmd[++i]);
+            }
+            else if ((ch == '"' || ch == '\'') && (!inQuotes || quoteChar == ch))
+            {
+                inQuotes = !inQuotes;
+                quoteChar = inQuotes ? ch : '\0';
+            }
+            else if (char.IsWhiteSpace(ch) && !inQuotes)
+            {
+                if (current.Length > 0)
+                {
+                    args.Add(current.ToString());
+                    current.Clear();
+                }
+            }
+            else
+            {
+                current.Append(ch);
+            }
+        }
+
+        if (current.Length > 0)
+        {
+            args.Add(current.ToString());
+        }
+
+        return args;
     }
 }

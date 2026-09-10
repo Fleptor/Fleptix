@@ -2,7 +2,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Fleptix.Core\Fleptix.Core.csproj" />
-    <ProjectReference Include="..\Fleptix.TimeMachine\Fleptix.TimeMachine.csproj" />
   </ItemGroup>
 
   <ItemGroup>

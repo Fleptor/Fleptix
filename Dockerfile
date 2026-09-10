@@ -9,7 +9,6 @@ WORKDIR /src
 # Step 1.1: Copy project files separately first to leverage Docker layer caching.
 # If code changes but dependencies do not, Docker reuses cached NuGet restore layers.
 COPY ["src/Fleptix.Core/Fleptix.Core.csproj", "src/Fleptix.Core/"]
-COPY ["src/Fleptix.TimeMachine/Fleptix.TimeMachine.csproj", "src/Fleptix.TimeMachine/"]
 COPY ["src/Fleptix.Observer/Fleptix.Observer.csproj", "src/Fleptix.Observer/"]
 
 # Step 1.2: Restore package dependencies across referenced projects.
