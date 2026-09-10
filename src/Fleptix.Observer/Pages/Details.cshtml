@@ -75,6 +75,33 @@
                     <div><span class="text-secondary">Policy:</span> <span class="text-dark">@d.RestartPolicy</span></div>
                     <span>&bull;</span>
                     <div><span class="text-secondary">Status:</span> <span class="text-dark" id="detailsStatusText">@c.Status</span></div>
+                    @if (c.PortMappings.Any(p => p.IsLinkable))
+                    {
+                        <span>&bull;</span>
+                        <div class="d-inline-flex align-items-center gap-1">
+                            <span class="text-secondary">Ports:</span>
+                            @foreach (var p in c.PortMappings.Where(p => p.IsLinkable))
+                            {
+                                @if (c.State == "running")
+                                {
+                                    <a href="@p.FallbackUrl" 
+                                       class="port-forward-link font-mono" 
+                                       target="_blank" 
+                                       rel="noopener noreferrer" 
+                                       data-port="@p.HostPort" 
+                                       data-scheme="@p.Scheme" 
+                                       title="Open @p.Scheme://<host>:@p.HostPort in new tab" 
+                                       onclick="this.href=this.dataset.scheme+'://'+(window.location.hostname||'localhost')+':'+this.dataset.port;">
+                                        <span>@p.DisplayText</span><i class="bi bi-box-arrow-up-right port-link-icon"></i>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="font-mono text-muted" title="Container is @c.State">@p.DisplayText</span>
+                                }
+                            }
+                        </div>
+                    }
                 </div>
             </div>
 
@@ -499,24 +526,51 @@
                 <thead>
                     <tr>
                         <th>Container Port</th>
+                        <th>Protocol</th>
                         <th>Host Binding</th>
+                        <th class="text-end">Forwarding Link</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @if (c.Ports.Any())
+                    @if (c.PortMappings.Any())
                     {
-                        @foreach (var port in c.Ports)
+                        @foreach (var port in c.PortMappings)
                         {
                             <tr>
-                                <td class="font-mono fw-bold text-dark">@port</td>
-                                <td class="font-mono text-muted">0.0.0.0:@port</td>
+                                <td class="font-mono fw-bold text-dark">@port.ContainerPort</td>
+                                <td class="font-mono text-muted text-uppercase" style="font-size: 11px;">@port.Protocol</td>
+                                <td class="font-mono text-muted">@port.HostBindingDisplay</td>
+                                <td class="text-end">
+                                    @if (port.IsLinkable && c.State == "running")
+                                    {
+                                        <a href="@port.FallbackUrl" 
+                                           class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 font-mono port-forward-link" 
+                                           style="font-size: 11px; padding: 2px 8px;"
+                                           target="_blank" 
+                                           rel="noopener noreferrer" 
+                                           data-port="@port.HostPort" 
+                                           data-scheme="@port.Scheme"
+                                           onclick="this.href=this.dataset.scheme+'://'+(window.location.hostname||'localhost')+':'+this.dataset.port;">
+                                            <span>Open :@port.HostPort</span>
+                                            <i class="bi bi-box-arrow-up-right" style="font-size: 10px;"></i>
+                                        </a>
+                                    }
+                                    else if (port.IsMapped)
+                                    {
+                                        <span class="badge bg-secondary font-mono text-muted" style="font-size: 10px;">Offline</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-dim font-mono" style="font-size: 11px;">Unpublished</span>
+                                    }
+                                </td>
                             </tr>
                         }
                     }
                     else
                     {
                         <tr>
-                            <td colspan="2" class="text-muted font-mono">No published ports configured.</td>
+                            <td colspan="4" class="text-muted font-mono">No published or exposed ports configured.</td>
                         </tr>
                     }
                 </tbody>

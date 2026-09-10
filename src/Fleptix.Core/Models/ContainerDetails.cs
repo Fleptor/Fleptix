@@ -14,6 +14,7 @@ public record ContainerDetails
     public IReadOnlyDictionary<string, string> EnvironmentVariables { get; init; } 
         = new Dictionary<string, string>();
     public IReadOnlyList<string> Mounts { get; init; } = [];
+    public IReadOnlyList<PortMapping> PortMappings => Summary?.PortMappings ?? [];
     public IReadOnlyList<string> PortBindings { get; init; } = [];
     public IReadOnlyDictionary<string, string> Labels { get; init; } 
         = new Dictionary<string, string>();

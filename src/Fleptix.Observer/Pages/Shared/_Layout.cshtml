@@ -319,10 +319,23 @@
             });
         }
 
+        // Dynamic Resolution for Port Forwarding Links
+        window.initPortForwardLinks = function() {
+            const host = window.location.hostname || 'localhost';
+            document.querySelectorAll('a.port-forward-link[data-port]').forEach(link => {
+                const port = link.getAttribute('data-port');
+                const scheme = link.getAttribute('data-scheme') || 'http';
+                if (port) {
+                    link.href = `${scheme}://${host}:${port}`;
+                }
+            });
+        };
+
         document.addEventListener('DOMContentLoaded', function() {
             window.syncThemeUI();
             window.syncFontSizeUI();
             window.syncCliUI();
+            window.initPortForwardLinks();
         });
 
         checkEngineStatus();

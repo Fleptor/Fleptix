@@ -195,7 +195,8 @@
                             data-name="@c.Name.ToLower()" 
                             data-image="@c.Image.ToLower()" 
                             data-state="@c.State"
-                            data-stack="@group.Key">
+                            data-stack="@group.Key"
+                            data-ports="@string.Join(" ", c.Ports).ToLower()">
                             <td class="text-center">
                                 <input type="checkbox" class="row-checkbox form-check-input m-0" data-id="@c.Id" style="cursor: pointer;" />
                             </td>
@@ -231,9 +232,43 @@
                                 </div>
                             </td>
                             <td>
-                                <span class="font-mono text-muted" style="font-size: 11px;">
-                                    @(c.Ports.Any() ? string.Join(", ", c.Ports) : "-")
-                                </span>
+                                @if (c.PortMappings.Any())
+                                {
+                                    <div class="d-flex flex-wrap gap-1 align-items-center">
+                                        @foreach (var p in c.PortMappings)
+                                        {
+                                            @if (p.IsLinkable && c.State == "running")
+                                            {
+                                                <a href="@p.FallbackUrl" 
+                                                   class="port-forward-link font-mono" 
+                                                   target="_blank" 
+                                                   rel="noopener noreferrer" 
+                                                   data-port="@p.HostPort" 
+                                                   data-scheme="@p.Scheme" 
+                                                   title="Open @p.Scheme://<host>:@p.HostPort in new tab" 
+                                                   onclick="this.href=this.dataset.scheme+'://'+(window.location.hostname||'localhost')+':'+this.dataset.port;">
+                                                    <span>@p.DisplayText</span><i class="bi bi-box-arrow-up-right port-link-icon"></i>
+                                                </a>
+                                            }
+                                            else if (p.IsMapped)
+                                            {
+                                                <span class="font-mono text-muted" style="font-size: 11px;" title="Container is @c.State">
+                                                    @p.DisplayText
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="font-mono text-dim" style="font-size: 11px;" title="Exposed in container">
+                                                    @p.DisplayText
+                                                </span>
+                                            }
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="font-mono text-dim" style="font-size: 11px;">-</span>
+                                }
                             </td>
                             <td class="text-end">
                                 <div class="row-actions" id="row-actions-@c.Id">
@@ -375,7 +410,8 @@
                     const name = row.getAttribute('data-name') || '';
                     const img = row.getAttribute('data-image') || '';
                     const stack = row.getAttribute('data-stack') || '';
-                    if (!term || name.includes(term) || img.includes(term) || stack.includes(term)) {
+                    const ports = row.getAttribute('data-ports') || '';
+                    if (!term || name.includes(term) || img.includes(term) || stack.includes(term) || ports.includes(term)) {
                         row.style.display = '';
                     } else {
                         row.style.display = 'none';

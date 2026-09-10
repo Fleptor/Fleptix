@@ -520,6 +520,42 @@ body.fleptix-app {
     border-bottom: none;
 }
 
+/* CLICKABLE PORT FORWARDING LINKS */
+.port-forward-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    color: #1e40af;
+    font-size: 11px;
+    line-height: 1.2;
+    padding: 1px 5px;
+    border-radius: 3px;
+    text-decoration: none;
+    background-color: rgba(30, 39, 97, 0.08);
+    border: 1px solid rgba(30, 39, 97, 0.14);
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.port-forward-link:hover {
+    color: #151c47;
+    background-color: rgba(30, 39, 97, 0.16);
+    border-color: rgba(30, 39, 97, 0.28);
+    text-decoration: none;
+}
+
+.port-forward-link .port-link-icon {
+    font-size: 8.5px;
+    opacity: 0.65;
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.port-forward-link:hover .port-link-icon {
+    opacity: 1;
+    transform: translate(1px, -1px);
+}
+
 /* MINI METERS (for compact dashboard workload list) */
 .mini-meter-track {
     width: 100%;
@@ -1200,6 +1236,30 @@ html[data-theme="dark"] .mini-meter-track {
 html[data-theme="dark"] .stack-header-row {
     background-color: #141b2d !important;
     border-color: #1e293b !important;
+}
+
+html[data-theme="dark"] .port-forward-link {
+    color: #93c5fd !important;
+    background-color: rgba(147, 197, 253, 0.1) !important;
+    border-color: rgba(147, 197, 253, 0.2) !important;
+}
+
+html[data-theme="dark"] .port-forward-link:hover {
+    color: #bfdbfe !important;
+    background-color: rgba(147, 197, 253, 0.2) !important;
+    border-color: rgba(147, 197, 253, 0.35) !important;
+}
+
+html[data-theme="dark"] .btn-outline-primary.port-forward-link {
+    color: #93c5fd !important;
+    border-color: #3b82f6 !important;
+    background-color: rgba(59, 130, 246, 0.12) !important;
+}
+
+html[data-theme="dark"] .btn-outline-primary.port-forward-link:hover {
+    color: #ffffff !important;
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
 }
 
 /* Exec Tab & Container Shell */

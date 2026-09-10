@@ -263,9 +263,35 @@
                                             <span id="dash-pill-@c.Id">
                                                 <partial name="_StatusPill" model="c.State" />
                                             </span>
-                                            @if (c.Ports.Any())
+                                            @if (c.PortMappings.Any())
                                             {
-                                                <span class="font-mono text-muted" style="font-size: 11px;">ports: @string.Join(", ", c.Ports.Take(2))</span>
+                                                <span class="font-mono text-muted d-inline-flex align-items-center gap-1 flex-wrap" style="font-size: 11px;">
+                                                    <span class="dash-meta-label">ports:</span>
+                                                    @foreach (var p in c.PortMappings.Take(2))
+                                                    {
+                                                        @if (p.IsLinkable && c.State == "running")
+                                                        {
+                                                            <a href="@p.FallbackUrl" 
+                                                               class="port-forward-link font-mono" 
+                                                               target="_blank" 
+                                                               rel="noopener noreferrer" 
+                                                               data-port="@p.HostPort" 
+                                                               data-scheme="@p.Scheme" 
+                                                               title="Open @p.Scheme://<host>:@p.HostPort in new tab" 
+                                                               onclick="this.href=this.dataset.scheme+'://'+(window.location.hostname||'localhost')+':'+this.dataset.port;">
+                                                                <span>@p.DisplayText</span><i class="bi bi-box-arrow-up-right port-link-icon"></i>
+                                                            </a>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="font-mono text-muted">@p.DisplayText</span>
+                                                        }
+                                                    }
+                                                    @if (c.PortMappings.Count > 2)
+                                                    {
+                                                        <span class="text-dim" style="font-size: 10px;">+@(c.PortMappings.Count - 2)</span>
+                                                    }
+                                                </span>
                                             }
                                         </div>
                                         <div class="font-mono text-muted dash-workload-meta mt-1 d-flex align-items-center gap-2 flex-wrap" style="font-size: 11px;">

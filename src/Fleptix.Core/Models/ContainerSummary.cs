@@ -12,5 +12,6 @@ public record ContainerSummary
     public string State { get; init; } = string.Empty; // "running", "paused", "exited", "created"
     public string Status { get; init; } = string.Empty; // "Up 2 hours", "Exited (0) 5 mins ago"
     public DateTime Created { get; init; }
+    public IReadOnlyList<PortMapping> PortMappings { get; init; } = [];
     public IReadOnlyList<string> Ports { get; init; } = [];
 }

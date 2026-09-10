@@ -84,15 +84,38 @@ public class DockerContainerService : IContainerService
             _isConnectedToDocker = true;
             _lastConnectionError = null;
 
-            return containers.Select(c => new ContainerSummary
+            return containers.Select(c =>
             {
-                Id = c.ID,
-                Name = c.Names.FirstOrDefault()?.TrimStart('/') ?? c.ID[..12],
-                Image = c.Image,
-                State = c.State?.ToLowerInvariant() ?? "unknown",
-                Status = c.Status,
-                Created = c.Created,
-                Ports = c.Ports?.Select(p => $"{p.PublicPort}:{p.PrivatePort}/{p.Type}").ToList() ?? []
+                var portMappings = (c.Ports ?? Enumerable.Empty<Port>())
+                    .Where(p => p.PrivatePort > 0)
+                    .GroupBy(p => (p.PublicPort, p.PrivatePort, (p.Type ?? "tcp").ToLowerInvariant()))
+                    .Select(g =>
+                    {
+                        var first = g.First();
+                        return new PortMapping
+                        {
+                            HostPort = first.PublicPort,
+                            ContainerPort = first.PrivatePort,
+                            Protocol = (first.Type ?? "tcp").ToLowerInvariant(),
+                            HostIp = first.IP ?? string.Empty
+                        };
+                    })
+                    .OrderBy(p => p.HostPort > 0 ? 0 : 1)
+                    .ThenBy(p => p.HostPort)
+                    .ThenBy(p => p.ContainerPort)
+                    .ToList();
+
+                return new ContainerSummary
+                {
+                    Id = c.ID,
+                    Name = c.Names.FirstOrDefault()?.TrimStart('/') ?? c.ID[..12],
+                    Image = c.Image,
+                    State = c.State?.ToLowerInvariant() ?? "unknown",
+                    Status = c.Status,
+                    Created = c.Created,
+                    PortMappings = portMappings,
+                    Ports = portMappings.Select(p => p.FullText).ToList()
+                };
             }).ToList();
         }
         catch (Exception ex)
@@ -111,6 +134,71 @@ public class DockerContainerService : IContainerService
             var inspect = await _client.Containers.InspectContainerAsync(containerId, cancellationToken);
             if (inspect == null) return null;
 
+            var detailPortMappings = new List<PortMapping>();
+            var portsSource = (inspect.NetworkSettings?.Ports != null && inspect.NetworkSettings.Ports.Count > 0)
+                ? inspect.NetworkSettings.Ports
+                : inspect.HostConfig?.PortBindings;
+
+            if (portsSource != null)
+            {
+                foreach (var kvp in portsSource)
+                {
+                    var keyParts = kvp.Key.Split('/');
+                    var containerPort = ushort.TryParse(keyParts[0], out var cp) ? cp : (ushort)0;
+                    var protocol = keyParts.Length > 1 ? keyParts[1].ToLowerInvariant() : "tcp";
+
+                    if (kvp.Value != null && kvp.Value.Count > 0)
+                    {
+                        foreach (var binding in kvp.Value)
+                        {
+                            var hostPort = ushort.TryParse(binding.HostPort, out var hp) ? hp : (ushort)0;
+                            detailPortMappings.Add(new PortMapping
+                            {
+                                HostPort = hostPort,
+                                ContainerPort = containerPort,
+                                Protocol = protocol,
+                                HostIp = binding.HostIP ?? string.Empty
+                            });
+                        }
+                    }
+                    else
+                    {
+                        detailPortMappings.Add(new PortMapping
+                        {
+                            HostPort = 0,
+                            ContainerPort = containerPort,
+                            Protocol = protocol,
+                            HostIp = string.Empty
+                        });
+                    }
+                }
+            }
+
+            detailPortMappings = detailPortMappings
+                .GroupBy(p => (p.HostPort, p.ContainerPort, p.Protocol))
+                .Select(g =>
+                {
+                    var first = g.First();
+                    var ips = g.Select(x => x.HostIp).Where(ip => !string.IsNullOrWhiteSpace(ip)).Distinct().ToList();
+                    var combinedIp = ips.Count switch
+                    {
+                        0 => string.Empty,
+                        1 => ips[0],
+                        _ => string.Join(", ", ips)
+                    };
+                    return new PortMapping
+                    {
+                        HostPort = first.HostPort,
+                        ContainerPort = first.ContainerPort,
+                        Protocol = first.Protocol,
+                        HostIp = combinedIp
+                    };
+                })
+                .OrderBy(p => p.HostPort > 0 ? 0 : 1)
+                .ThenBy(p => p.HostPort)
+                .ThenBy(p => p.ContainerPort)
+                .ToList();
+
             var summary = new ContainerSummary
             {
                 Id = inspect.ID,
@@ -119,7 +207,8 @@ public class DockerContainerService : IContainerService
                 State = inspect.State?.Status?.ToLowerInvariant() ?? "unknown",
                 Status = inspect.State?.Status ?? "unknown",
                 Created = inspect.Created,
-                Ports = inspect.NetworkSettings?.Ports?.Select(p => $"{p.Key} -> {string.Join(",", p.Value?.Select(v => $"{v.HostIP}:{v.HostPort}") ?? Array.Empty<string>())}").ToList() ?? []
+                PortMappings = detailPortMappings,
+                Ports = detailPortMappings.Select(p => p.FullText).ToList()
             };
 
             var env = inspect.Config?.Env?
@@ -145,6 +234,7 @@ public class DockerContainerService : IContainerService
                 NetworkMode = inspect.HostConfig?.NetworkMode ?? "bridge",
                 EnvironmentVariables = env,
                 Mounts = mounts,
+                PortBindings = detailPortMappings.Select(p => p.FullText).ToList(),
                 Labels = inspect.Config?.Labels != null ? new Dictionary<string, string>(inspect.Config.Labels) : new Dictionary<string, string>(),
                 RestartPolicy = inspect.HostConfig?.RestartPolicy != null ? inspect.HostConfig.RestartPolicy.Name.ToString() : "no",
                 StartedAt = DateTime.TryParse(inspect.State?.StartedAt, out var s) ? s : null,
