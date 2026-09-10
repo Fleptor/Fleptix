@@ -59,7 +59,7 @@
                     <span class="brand-mark"><i class="bi bi-layers-fill"></i></span>
                     <span class="brand-text">Fleptix</span>
                 </a>
-                <span class="brand-subtitle">Observer</span>
+                <span class="brand-badge">Observer</span>
             </div>
 
             <nav class="sidebar-nav">
@@ -75,38 +75,35 @@
                     <i class="bi bi-rocket-takeoff"></i>
                     <span>Deploy</span>
                 </a>
+            </nav>
+
+            <div class="sidebar-footer">
                 <a href="/Settings" class="nav-item @(ViewContext.RouteData.Values["page"]?.ToString() == "/Settings" ? "active" : "")">
                     <i class="bi bi-gear"></i>
                     <span>Settings</span>
                 </a>
-            </nav>
-
-
-            <div class="sidebar-footer">
-                <div class="engine-indicator" id="engineStatusBadge" title="Docker Daemon Status">
-                    <span class="pulse-dot online" id="enginePulseDot"></span>
-                    <span class="engine-text font-mono" id="engineStatusText">Docker Engine</span>
-                    <button class="btn-engine-retry" id="btnRetryEngine" title="Retry Daemon Connection" style="display: none;" onclick="retryDaemonConnection()">
-                        <i class="bi bi-arrow-repeat"></i>
-                    </button>
-                </div>
             </div>
         </aside>
 
         <!-- Main Content Area -->
         <div class="app-main">
-            <!-- Minimal Top Bar: Search Input Only -->
-            <header class="app-topbar">
-                <div class="topbar-search">
-                    <i class="bi bi-search search-icon"></i>
-                    <input type="search" id="globalSearchInput" class="topbar-search-input" placeholder="Search containers, images, ports... (Press '/' to focus)" />
-                </div>
-                <div class="topbar-actions">
-                    <span class="signalr-pill" id="signalrStatusPill">
-                        <i class="bi bi-broadcast"></i> Live
-                    </span>
-                </div>
-            </header>
+            @{
+                var pageRoute = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
+                var isDashboard = pageRoute == "/Index" || pageRoute == "/" || string.IsNullOrEmpty(pageRoute);
+                var isContainers = pageRoute == "/Containers";
+            }
+            @if (!isDashboard)
+            {
+                <!-- Minimal Top Bar: Centered on Containers, hidden on Dashboard -->
+                <header class="app-topbar @(isContainers ? "topbar-centered" : "")">
+                    <div class="topbar-search">
+                        <i class="bi bi-search search-icon"></i>
+                        <input type="search" id="globalSearchInput" class="topbar-search-input" placeholder="Search containers, images, ports... (Press '/' to focus)" />
+                    </div>
+                    <div class="topbar-actions">
+                    </div>
+                </header>
+            }
 
             <!-- Main Page Content -->
             <main class="app-content">
@@ -154,21 +151,12 @@
 
         // Engine Daemon Connectivity & Reconnect Handling
         function updateDaemonStatusUI(isConnected, endpoint, error) {
-            const dot = document.getElementById('enginePulseDot');
-            const text = document.getElementById('engineStatusText');
-            const retryBtn = document.getElementById('btnRetryEngine');
             const banner = document.getElementById('daemonDisconnectedBanner');
             const bannerDetails = document.getElementById('daemonBannerDetails');
 
             if (isConnected) {
-                if (dot) { dot.className = 'pulse-dot online'; }
-                if (text) { text.textContent = 'Docker Engine'; }
-                if (retryBtn) { retryBtn.style.display = 'none'; }
                 if (banner) { banner.style.display = 'none'; }
             } else {
-                if (dot) { dot.className = 'pulse-dot offline'; }
-                if (text) { text.textContent = 'Daemon Offline'; }
-                if (retryBtn) { retryBtn.style.display = 'inline-block'; }
                 if (banner) {
                     banner.style.display = 'flex';
                     if (bannerDetails && error) {
