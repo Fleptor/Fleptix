@@ -749,6 +749,38 @@ body.fleptix-app {
     margin-left: 7px;
 }
 
+/* Files Browser Container & Sidebar */
+.files-browser-card {
+    background-color: var(--bg-surface, #ffffff);
+    border-color: var(--border-color, #e2e8f0);
+}
+
+.files-tree-sidebar {
+    background-color: #f8fafc;
+    border-color: var(--border-color, #e2e8f0) !important;
+}
+
+.files-tree-header {
+    background-color: #f1f5f9;
+    border-color: var(--border-color, #e2e8f0) !important;
+    color: var(--text-muted, #64748b) !important;
+}
+
+.files-content-pane {
+    background-color: var(--bg-surface, #ffffff);
+}
+
+.files-toolbar {
+    background-color: #f8fafc;
+    border-color: var(--border-color, #e2e8f0) !important;
+}
+
+.files-path-badge {
+    background-color: #ffffff;
+    color: var(--text-main, #0f172a);
+    border-color: var(--border-color, #cbd5e1) !important;
+}
+
 .files-breadcrumb-btn {
     padding: 1px 6px;
     border-radius: 3px;
@@ -815,13 +847,13 @@ body.fleptix-app {
     font-size: 11.5px;
     line-height: 1.45;
     overflow-y: auto;
-    padding: 10px 14px;
+    padding: 14px 16px;
     transition: min-height 0.2s ease, max-height 0.2s ease, height 0.2s ease;
 }
 
 #execTerminalViewport.exec-terminal-idle {
-    min-height: 85px;
-    max-height: 115px;
+    min-height: 105px;
+    max-height: 140px;
     height: auto;
 }
 
@@ -842,6 +874,7 @@ body.fleptix-app {
 .exec-input-bar {
     background-color: #f8fafc;
     border-top: 1px solid var(--border-color);
+    padding: 10px 14px;
 }
 
 .exec-input-group {
@@ -869,7 +902,7 @@ body.fleptix-app {
     font-family: var(--font-mono);
     font-size: 11px;
     font-weight: 700;
-    padding: 5px 10px;
+    padding: 6px 12px;
     border-right: 1px solid #cbd5e1;
     white-space: nowrap;
     user-select: none;
@@ -887,7 +920,7 @@ body.fleptix-app {
     border: none;
     outline: none;
     background-color: #ffffff;
-    padding: 5px 10px;
+    padding: 6px 12px;
     font-family: var(--font-mono);
     font-size: 11.5px;
     color: #0f172a;
@@ -907,9 +940,9 @@ body.fleptix-app {
     font-family: var(--font-mono);
     font-size: 11px;
     font-weight: 600;
-    padding: 5px 14px;
+    padding: 6px 16px;
     border-radius: 4px;
-    height: 31px;
+    height: 33px;
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -1312,7 +1345,39 @@ html[data-theme="dark"] .exec-run-btn {
     color: #ffffff !important;
 }
 
-/* Filesystem Explorer */
+/* Filesystem Explorer & Directory Tree */
+html[data-theme="dark"] .files-browser-card,
+html[data-theme="dark"] .exec-card-wrapper {
+    background-color: #0f1422 !important;
+    border-color: #1e293b !important;
+}
+
+html[data-theme="dark"] .files-tree-sidebar {
+    background-color: #0d121f !important;
+    border-color: #1e293b !important;
+}
+
+html[data-theme="dark"] .files-tree-header {
+    background-color: #121827 !important;
+    border-color: #1e293b !important;
+    color: #94a3b8 !important;
+}
+
+html[data-theme="dark"] .files-content-pane {
+    background-color: #0f1422 !important;
+}
+
+html[data-theme="dark"] .files-toolbar {
+    background-color: #141b2d !important;
+    border-color: #1e293b !important;
+}
+
+html[data-theme="dark"] .files-path-badge {
+    background-color: #161d30 !important;
+    color: #f1f5f9 !important;
+    border-color: #26334d !important;
+}
+
 html[data-theme="dark"] .file-viewer-pane,
 html[data-theme="dark"] .file-table-container,
 html[data-theme="dark"] .file-tree-container {
@@ -1325,8 +1390,32 @@ html[data-theme="dark"] .file-explorer-toolbar {
     border-color: #1e293b !important;
 }
 
+html[data-theme="dark"] .file-tree-row {
+    color: #cbd5e1 !important;
+}
+
 html[data-theme="dark"] .file-tree-row:hover {
     background-color: #182035 !important;
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .file-tree-row.active {
+    background-color: #1e2a44 !important;
+    color: #93c5fd !important;
+    font-weight: 600;
+}
+
+html[data-theme="dark"] .file-tree-toggle {
+    color: #64748b !important;
+}
+
+html[data-theme="dark"] .file-tree-toggle:hover {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .file-tree-children {
+    border-left: 1px dotted #27354f !important;
 }
 
 /* Tab Navigation */

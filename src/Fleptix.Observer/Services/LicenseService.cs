@@ -149,7 +149,7 @@ public class LicenseService : ILicenseService
             return new LicenseActivationResult
             {
                 Success = false,
-                Message = "Invalid license key format. Expected a Lemon Squeezy UUID (e.g. FADD8E30-C83D-4380-9609-3A5E896F8264)."
+                Message = "Invalid license key format. Expected a Lemon Squeezy UUID (e.g. XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX)."
             };
         }
 

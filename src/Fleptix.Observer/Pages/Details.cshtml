@@ -160,30 +160,34 @@
 
     @if (TempData["SnapshotSuccess"] != null)
     {
-        <div class="alert alert-success d-flex align-items-center gap-2 p-2 mb-3 font-mono shadow-xs" style="font-size: 12px;">
-            <i class="bi bi-check-circle-fill text-success fs-6"></i>
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 p-2.5 mb-3 font-mono shadow-xs" role="alert" style="font-size: 12px;">
+            <i class="bi bi-check-circle-fill text-success fs-6 flex-shrink-0"></i>
             <span>@TempData["SnapshotSuccess"]</span>
+            <button type="button" class="btn-close ms-auto p-2" data-bs-dismiss="alert" aria-label="Close" style="font-size: 10px;"></button>
         </div>
     }
     @if (TempData["SnapshotError"] != null)
     {
-        <div class="alert alert-danger d-flex align-items-center gap-2 p-2 mb-3 font-mono shadow-xs" style="font-size: 12px;">
-            <i class="bi bi-exclamation-triangle-fill text-danger fs-6"></i>
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 p-2.5 mb-3 font-mono shadow-xs" role="alert" style="font-size: 12px;">
+            <i class="bi bi-exclamation-triangle-fill text-danger fs-6 flex-shrink-0"></i>
             <span>@TempData["SnapshotError"]</span>
+            <button type="button" class="btn-close ms-auto p-2" data-bs-dismiss="alert" aria-label="Close" style="font-size: 10px;"></button>
         </div>
     }
     @if (TempData["RestoreSuccess"] != null)
     {
-        <div class="alert alert-success d-flex align-items-center gap-2 p-2 mb-3 font-mono shadow-xs" style="font-size: 12px;">
-            <i class="bi bi-check-circle-fill text-success fs-6"></i>
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 p-2.5 mb-3 font-mono shadow-xs" role="alert" style="font-size: 12px;">
+            <i class="bi bi-check-circle-fill text-success fs-6 flex-shrink-0"></i>
             <span>@TempData["RestoreSuccess"]</span>
+            <button type="button" class="btn-close ms-auto p-2" data-bs-dismiss="alert" aria-label="Close" style="font-size: 10px;"></button>
         </div>
     }
     @if (TempData["RestoreError"] != null)
     {
-        <div class="alert alert-danger d-flex align-items-center gap-2 p-2 mb-3 font-mono shadow-xs" style="font-size: 12px;">
-            <i class="bi bi-exclamation-triangle-fill text-danger fs-6"></i>
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 p-2.5 mb-3 font-mono shadow-xs" role="alert" style="font-size: 12px;">
+            <i class="bi bi-exclamation-triangle-fill text-danger fs-6 flex-shrink-0"></i>
             <span>@TempData["RestoreError"]</span>
+            <button type="button" class="btn-close ms-auto p-2" data-bs-dismiss="alert" aria-label="Close" style="font-size: 10px;"></button>
         </div>
     }
 
@@ -332,34 +336,34 @@
             </div>
 
             <!-- Security & Execution Profile -->
-            <div class="bg-white border rounded p-3 shadow-xs d-flex flex-column gap-2">
+            <div class="bg-white border rounded p-3 shadow-xs d-flex flex-column gap-2.5">
                 <div class="d-flex align-items-center gap-1.5 font-mono fw-semibold text-dark" style="font-size: 12px;">
                     <i class="bi bi-shield-check text-success"></i>
                     <span>Security &amp; Execution Profile</span>
                 </div>
-                <div class="row g-2 font-mono text-muted" style="font-size: 10px;">
+                <div class="row g-2.5 font-mono text-muted" style="font-size: 10px;">
                     <div class="col-6 col-md-3">
-                        <div class="p-2 rounded bg-light border">
-                            <span class="text-muted d-block">Privileged:</span>
-                            <span class="fw-bold text-dark">false</span>
+                        <div class="p-2.5 px-3 rounded bg-light border h-100 d-flex flex-column justify-content-between">
+                            <span class="text-muted d-block mb-1">Privileged:</span>
+                            <span class="fw-bold text-dark font-mono" style="font-size: 11px;">false</span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="p-2 rounded bg-light border">
-                            <span class="text-muted d-block">User (UID:GID):</span>
-                            <span class="fw-bold text-dark">1000:1000</span>
+                        <div class="p-2.5 px-3 rounded bg-light border h-100 d-flex flex-column justify-content-between">
+                            <span class="text-muted d-block mb-1">User (UID:GID):</span>
+                            <span class="fw-bold text-dark font-mono" style="font-size: 11px;">1000:1000</span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="p-2 rounded bg-light border">
-                            <span class="text-muted d-block">Readonly Root:</span>
-                            <span class="fw-bold text-dark">false</span>
+                        <div class="p-2.5 px-3 rounded bg-light border h-100 d-flex flex-column justify-content-between">
+                            <span class="text-muted d-block mb-1">Readonly Root:</span>
+                            <span class="fw-bold text-dark font-mono" style="font-size: 11px;">false</span>
                         </div>
                     </div>
                     <div class="col-6 col-md-3">
-                        <div class="p-2 rounded bg-light border">
-                            <span class="text-muted d-block">AppArmor:</span>
-                            <span class="fw-bold text-dark">docker-default</span>
+                        <div class="p-2.5 px-3 rounded bg-light border h-100 d-flex flex-column justify-content-between">
+                            <span class="text-muted d-block mb-1">AppArmor:</span>
+                            <span class="fw-bold text-dark font-mono" style="font-size: 11px;">docker-default</span>
                         </div>
                     </div>
                 </div>
@@ -392,9 +396,9 @@
 
     <!-- TAB: EXEC / INTERACTIVE SHELL -->
     <div id="tabExec" class="tab-pane-content d-none">
-        <div class="bg-white border rounded overflow-hidden">
+        <div class="bg-white border rounded overflow-hidden exec-card-wrapper">
             <!-- Compact Configuration Bar: Shell, Workdir, User (Visually secondary single row) -->
-            <div class="d-flex align-items-center justify-content-between px-2.5 py-1 border-bottom font-mono exec-config-bar overflow-x-auto" style="font-size: 10px; min-height: 28px;">
+            <div class="d-flex align-items-center justify-content-between px-3 py-1.5 border-bottom font-mono exec-config-bar overflow-x-auto" style="font-size: 10px; min-height: 30px;">
                 <!-- Left: Execution Configuration Options -->
                 <div class="d-flex align-items-center gap-2.5 text-muted flex-shrink-0">
                     <div class="d-flex align-items-center gap-1">
@@ -435,7 +439,7 @@
             </div>
 
             <!-- Presets Toolbar: Cohesive, unified toolbar -->
-            <div class="d-flex flex-wrap align-items-center gap-1 px-2.5 py-1 border-bottom font-mono" style="font-size: 10px; background-color: #f1f5f9;">
+            <div class="d-flex flex-wrap align-items-center gap-1 px-3 py-1.5 border-bottom font-mono" style="font-size: 10px; background-color: #f1f5f9;">
                 <span class="text-muted me-1 fw-semibold" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em;">Presets:</span>
                 <button type="button" class="btn btn-xs exec-preset-btn font-mono" onclick="insertExecPreset('uname -a')">uname -a</button>
                 <button type="button" class="btn btn-xs exec-preset-btn font-mono" onclick="insertExecPreset('whoami')">whoami</button>
@@ -478,7 +482,7 @@
             </div>
 
             <!-- Command Input Bar: Navy/neutral accent & Highlighted Input Field -->
-            <div class="p-2 border-top exec-input-bar">
+            <div class="px-3 py-2.5 border-top exec-input-bar">
                 <form id="execCommandForm" onsubmit="handleExecSubmit(event)" class="d-flex align-items-center gap-2 m-0">
                     <div class="exec-input-group d-flex align-items-center flex-grow-1" onclick="document.getElementById('execCommandInput')?.focus()">
                         <span class="exec-prompt-prefix font-mono" id="execPromptPrefix">
@@ -612,12 +616,12 @@
 
     <!-- TAB 6: FILES (Container Filesystem Browser) -->
     <div id="tabFiles" class="tab-pane-content d-none">
-        <div class="bg-white border rounded overflow-hidden">
+        <div class="files-browser-card border rounded overflow-hidden">
             <!-- Main Dual-Pane Browser: Left Tree (210px) + Right Data Table (Reclaimed Space) -->
             <div class="d-flex flex-column flex-md-row g-0">
                 <!-- Left: Navigable Directory Tree (fixed 210px) -->
-                <div class="border-end bg-light-subtle flex-shrink-0" style="width: 210px; max-height: 520px; overflow-y: auto;">
-                    <div class="p-2 border-bottom text-muted fw-semibold font-mono d-flex align-items-center justify-content-between" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; height: 42px;">
+                <div class="border-end files-tree-sidebar flex-shrink-0" style="width: 210px; max-height: 520px; overflow-y: auto;">
+                    <div class="p-2 border-bottom files-tree-header text-muted fw-semibold font-mono d-flex align-items-center justify-content-between" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; height: 42px;">
                         <span>Directory Tree</span>
                         <i class="bi bi-diagram-2 text-secondary" style="font-size: 11px;"></i>
                     </div>
@@ -629,12 +633,12 @@
                 </div>
 
                 <!-- Right: Selected Directory File Table -->
-                <div class="flex-grow-1 bg-white" style="min-width: 0; max-height: 520px; overflow-y: auto;">
+                <div class="flex-grow-1 files-content-pane" style="min-width: 0; max-height: 520px; overflow-y: auto;">
                     <!-- Content Pane Header: Single Source of Truth for Current Location -->
-                    <div class="p-2 border-bottom d-flex flex-wrap align-items-center justify-content-between bg-light gap-2" style="font-size: 11px; min-height: 42px;">
+                    <div class="p-2 border-bottom d-flex flex-wrap align-items-center justify-content-between files-toolbar gap-2" style="font-size: 11px; min-height: 42px;">
                         <div class="font-mono text-secondary d-flex align-items-center gap-2 overflow-hidden">
                             <span class="text-muted flex-shrink-0">Current Path:</span>
-                            <span id="filesCurrentPathDisplay" class="fw-bold text-dark font-mono bg-white px-2 py-0 border rounded text-truncate" style="max-width: 340px;">/</span>
+                            <span id="filesCurrentPathDisplay" class="fw-bold font-mono files-path-badge px-2 py-0 border rounded text-truncate" style="max-width: 340px;">/</span>
                             <span class="font-mono text-muted flex-shrink-0" id="filesItemCountDisplay" style="font-size: 10px;">
                                 0 items
                             </span>
@@ -1000,6 +1004,21 @@
                 if (form) form.submit();
             }
         }
+
+        // Auto-dismiss alert banners after 5 seconds
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                document.querySelectorAll('.alert-dismissible').forEach(el => {
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Alert) {
+                        const alertInstance = bootstrap.Alert.getOrCreateInstance(el);
+                        alertInstance.close();
+                    } else {
+                        el.classList.remove('show');
+                        setTimeout(() => el.remove(), 150);
+                    }
+                });
+            }, 5000);
+        });
     </script>
     <script src="~/js/details.js" asp-append-version="true"></script>
 }
