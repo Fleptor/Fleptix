@@ -12,12 +12,14 @@ permissions:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    env:
+      HAS_TOKEN: ${{ secrets.TIMEMACHINE_DEPLOY_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Checkout commercial Time Machine module
-        if: "${{ secrets.TIMEMACHINE_DEPLOY_TOKEN != '' }}"
+        if: env.HAS_TOKEN != ''
         uses: actions/checkout@v4
         with:
           repository: fleptor/Fleptix-TimeMachine
@@ -25,7 +27,7 @@ jobs:
           path: tm-repo
 
       - name: Mount Time Machine into build context
-        if: "${{ secrets.TIMEMACHINE_DEPLOY_TOKEN != '' }}"
+        if: env.HAS_TOKEN != ''
         run: |
           cp -r tm-repo/src/Fleptix.TimeMachine src/
           rm -rf tm-repo
