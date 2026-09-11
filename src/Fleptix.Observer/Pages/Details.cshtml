@@ -762,10 +762,12 @@
                         Captures atomic volume state tar-archives, image sha256 digests, and JSON runtime configuration manifests while freezing in-flight I/O.
                     </div>
                 </div>
-                <form method="post" asp-page-handler="Snapshot" asp-route-id="@c.Id" class="d-inline">
+                <form method="post" asp-page-handler="Snapshot" asp-route-id="@c.Id" class="d-inline" id="tabSnapshotForm">
                     @Html.AntiForgeryToken()
-                    <button type="submit" class="btn btn-sm text-white font-mono d-inline-flex align-items-center gap-1" style="background-color: var(--accent-navy); font-size: 11px; padding: 5px 14px;">
-                        <i class="bi bi-camera"></i> Capture New Snapshot
+                    <button type="button" id="btnTabSnapshot" class="btn btn-sm text-white font-mono d-inline-flex align-items-center gap-1" style="background-color: var(--accent-navy); font-size: 11px; padding: 5px 14px;" onclick="handleSnapshotClick(event, '@c.Id', this)">
+                        <i class="bi bi-camera" id="iconTabSnapshot"></i>
+                        <span id="textTabSnapshot">Capture New Snapshot</span>
+                        <span id="spinnerTabSnapshot" class="spinner-border spinner-border-sm d-none" style="width: 10px; height: 10px;" role="status"></span>
                     </button>
                 </form>
             </div>
@@ -902,15 +904,25 @@
         window.CURRENT_CONTAINER_SHORT_ID = '@c.ShortId';
         window.CURRENT_CONTAINER_STATE = '@c.State';
 
-        async function handleSnapshotClick(e, containerId) {
-            e.preventDefault();
+        async function handleSnapshotClick(e, containerId, triggerBtn) {
+            if (e) e.preventDefault();
             const btn = document.getElementById('btnSnapshot');
             const btnText = document.getElementById('snapshotBtnText');
             const spinner = document.getElementById('snapshotSpinner');
 
+            const tabBtn = document.getElementById('btnTabSnapshot');
+            const tabText = document.getElementById('textTabSnapshot');
+            const tabSpinner = document.getElementById('spinnerTabSnapshot');
+            const tabIcon = document.getElementById('iconTabSnapshot');
+
             if (btn) btn.disabled = true;
             if (btnText) btnText.textContent = 'Freezing...';
             if (spinner) spinner.classList.remove('d-none');
+
+            if (tabBtn) tabBtn.disabled = true;
+            if (tabText) tabText.textContent = 'Capturing snapshot...';
+            if (tabSpinner) tabSpinner.classList.remove('d-none');
+            if (tabIcon) tabIcon.classList.add('d-none');
 
             try {
                 const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
@@ -925,16 +937,25 @@
                 const result = await response.json();
                 if (response.ok && result.success) {
                     window.showToast(result.message || 'Snapshot created successfully!');
-                    setTimeout(() => window.location.reload(), 1200);
+                    setTimeout(() => {
+                        window.location.hash = '#tabSnapshots';
+                        window.location.reload();
+                    }, 1200);
                 } else {
                     window.showToast(result.message || 'Snapshot failed.', true);
                 }
             } catch (err) {
-                document.getElementById('snapshotForm')?.submit();
+                const form = triggerBtn ? (triggerBtn.closest('form') || document.getElementById('snapshotForm')) : document.getElementById('snapshotForm');
+                form?.submit();
             } finally {
                 if (btn) btn.disabled = false;
                 if (btnText) btnText.textContent = 'Snapshot';
                 if (spinner) spinner.classList.add('d-none');
+
+                if (tabBtn) tabBtn.disabled = false;
+                if (tabText) tabText.textContent = 'Capture New Snapshot';
+                if (tabSpinner) tabSpinner.classList.add('d-none');
+                if (tabIcon) tabIcon.classList.remove('d-none');
             }
         }
 
@@ -963,7 +984,10 @@
                 const result = await response.json();
                 if (response.ok && result.success) {
                     window.showToast(result.message || 'Snapshot restored successfully!');
-                    setTimeout(() => window.location.reload(), 1200);
+                    setTimeout(() => {
+                        window.location.hash = '#tabSnapshots';
+                        window.location.reload();
+                    }, 1200);
                 } else {
                     window.showToast(result.message || 'Restore failed.', true);
                     if (btnEl) {

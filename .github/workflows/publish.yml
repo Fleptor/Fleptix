@@ -16,6 +16,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Checkout commercial Time Machine module
+        if: "${{ secrets.TIMEMACHINE_DEPLOY_TOKEN != '' }}"
+        uses: actions/checkout@v4
+        with:
+          repository: fleptor/Fleptix-TimeMachine
+          token: ${{ secrets.TIMEMACHINE_DEPLOY_TOKEN }}
+          path: tm-repo
+
+      - name: Mount Time Machine into build context
+        if: "${{ secrets.TIMEMACHINE_DEPLOY_TOKEN != '' }}"
+        run: |
+          cp -r tm-repo/src/Fleptix.TimeMachine src/
+          rm -rf tm-repo
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 

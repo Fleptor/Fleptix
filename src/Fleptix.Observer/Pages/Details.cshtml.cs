@@ -105,7 +105,7 @@ public class DetailsModel : PageModel
             return new JsonResult(SnapshotResult);
         }
 
-        return Page();
+        return RedirectToPage("/Details", null, new { id }, "tabSnapshots");
     }
 
     public async Task<IActionResult> OnPostRestoreAsync(string id, string snapshotId, CancellationToken cancellationToken = default)
@@ -160,7 +160,7 @@ public class DetailsModel : PageModel
             return new JsonResult(RestoreResult);
         }
 
-        return Page();
+        return RedirectToPage("/Details", null, new { id }, "tabSnapshots");
     }
 }
 

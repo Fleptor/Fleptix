@@ -20,7 +20,21 @@ public static class PluginLoader
         this IServiceCollection services, 
         IConfiguration configuration)
     {
-        // 1. Check if Fleptix.TimeMachine is already referenced/loaded in the current AppDomain
+        // 1. Try loading by assembly name (works when project is referenced or co-located in application runtime)
+        try
+        {
+            var asm = Assembly.Load(new AssemblyName("Fleptix.TimeMachine"));
+            if (asm != null && TryRegisterFromAssembly(asm, services, configuration, "Assembly reference"))
+            {
+                return services;
+            }
+        }
+        catch
+        {
+            // Not directly referenced or not in runtime load context; fallback to AppDomain & file probing
+        }
+
+        // Check if Fleptix.TimeMachine is already referenced/loaded in the current AppDomain
         var loadedAssembly = AppDomain.CurrentDomain.GetAssemblies()
             .FirstOrDefault(a => string.Equals(a.GetName().Name, "Fleptix.TimeMachine", StringComparison.OrdinalIgnoreCase));
 
@@ -32,7 +46,7 @@ public static class PluginLoader
             }
         }
 
-        // 2. Probe known deployment and development locations
+        // 2. Probe known deployment, volume mount, and development locations
         var baseDir = AppContext.BaseDirectory;
         var currentDir = Directory.GetCurrentDirectory();
 
@@ -40,8 +54,14 @@ public static class PluginLoader
         {
             Path.Combine(baseDir, "Fleptix.TimeMachine.dll"),
             Path.Combine(baseDir, "plugins", "Fleptix.TimeMachine.dll"),
+            Path.Combine(baseDir, "snapshots", "Fleptix.TimeMachine.dll"),
+            Path.Combine(baseDir, "snapshots", "plugins", "Fleptix.TimeMachine.dll"),
             "/app/Fleptix.TimeMachine.dll",
             "/app/plugins/Fleptix.TimeMachine.dll",
+            "/app/snapshots/Fleptix.TimeMachine.dll",
+            "/app/snapshots/plugins/Fleptix.TimeMachine.dll",
+            Path.Combine(currentDir, "snapshots", "Fleptix.TimeMachine.dll"),
+            Path.Combine(currentDir, "snapshots", "plugins", "Fleptix.TimeMachine.dll"),
             // Relative development output probing
             Path.Combine(baseDir, "..", "..", "..", "..", "Fleptix.TimeMachine", "bin", "Debug", "net10.0", "Fleptix.TimeMachine.dll"),
             Path.Combine(baseDir, "..", "..", "..", "..", "Fleptix.TimeMachine", "bin", "Release", "net10.0", "Fleptix.TimeMachine.dll"),

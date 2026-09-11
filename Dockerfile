@@ -6,23 +6,19 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Step 1.1: Copy project files separately first to leverage Docker layer caching.
-# If code changes but dependencies do not, Docker reuses cached NuGet restore layers.
-COPY ["src/Fleptix.Core/Fleptix.Core.csproj", "src/Fleptix.Core/"]
-COPY ["src/Fleptix.Observer/Fleptix.Observer.csproj", "src/Fleptix.Observer/"]
+# Step 1.1: Copy source tree
+COPY src/ src/
 
 # Step 1.2: Restore package dependencies across referenced projects.
 RUN dotnet restore "src/Fleptix.Observer/Fleptix.Observer.csproj"
 
-# Step 1.3: Copy the remaining source files.
-COPY src/ src/
-
-# Step 1.4: Publish the application in Release mode into /app/publish.
+# Step 1.3: Publish the application in Release mode into /app/publish.
 # When Fleptix.TimeMachine is present (e.g. in official container builds), it is automatically compiled and published.
 WORKDIR "/src/src/Fleptix.Observer"
 RUN dotnet publish "Fleptix.Observer.csproj" \
     -c Release \
-    -o /app/publish
+    -o /app/publish \
+    --no-restore
 
 
 # ==============================================================================
