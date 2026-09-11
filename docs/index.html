@@ -205,14 +205,8 @@
           </div>
 
           <div class="code-block">
-            <pre><code id="installCodeBlock"><span class="code-comment"># Stop & replace any existing container, then run Fleptix Observer</span>
-<span class="code-keyword">docker</span> rm <span class="code-arg">-f</span> <span class="code-val">fleptix-observer</span> 2&gt;/dev/null; <span class="code-keyword">docker</span> run <span class="code-arg">-d</span> \
-  <span class="code-arg">--name</span> <span class="code-val">fleptix-observer</span> \
-  <span class="code-arg">-p</span> <span class="code-val">7373:80</span> \
-  <span class="code-arg">-v</span> <span class="code-val">/var/run/docker.sock:/var/run/docker.sock</span> \
-  <span class="code-arg">-v</span> <span class="code-val">fleptix-data:/app/snapshots</span> \
-  <span class="code-arg">--restart</span> <span class="code-val">unless-stopped</span> \
-  <span class="code-val">ghcr.io/fleptor/fleptix:latest</span></code></pre>
+            <pre><code id="installCodeBlock"><span class="code-comment"># One-line automated installer with environment check &amp; container replacement</span>
+<span class="code-keyword">curl</span> <span class="code-arg">-fsSL</span> <span class="code-val">https://raw.githubusercontent.com/fleptor/Fleptix/main/install.sh</span> | <span class="code-keyword">bash</span></code></pre>
           </div>
 
           <div class="install-meta">
@@ -631,7 +625,7 @@
   </div>
 
   <!-- Interactive Script with cache busting -->
-  <script src="script.js?v=2.2"></script>
+  <script src="script.js?v=2.3"></script>
 </body>
 
 </html>

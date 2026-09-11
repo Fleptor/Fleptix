@@ -58,7 +58,8 @@ volumes:
     }
   };
 
-  let activeTab = 'dockerrun';
+  const activeBtn = document.querySelector('.install-tab-btn.active');
+  let activeTab = activeBtn ? activeBtn.getAttribute('data-tab') : 'script';
 
   // Tab Switching
   const tabButtons = document.querySelectorAll('.install-tab-btn');
