@@ -160,34 +160,50 @@
 
     @if (TempData["SnapshotSuccess"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 p-2.5 mb-3 font-mono shadow-xs" role="alert" style="font-size: 12px;">
-            <i class="bi bi-check-circle-fill text-success fs-6 flex-shrink-0"></i>
-            <span>@TempData["SnapshotSuccess"]</span>
-            <button type="button" class="btn-close ms-auto p-2" data-bs-dismiss="alert" aria-label="Close" style="font-size: 10px;"></button>
+        <div class="alert alert-success fade show fleptix-status-alert mb-3" role="alert">
+            <div class="alert-content">
+                <i class="bi bi-check-circle-fill alert-icon text-success"></i>
+                <span class="alert-message">@TempData["SnapshotSuccess"]</span>
+            </div>
+            <button type="button" class="alert-close-btn" data-bs-dismiss="alert" aria-label="Close" title="Dismiss" onclick="this.closest('.alert')?.remove()">
+                <i class="bi bi-x-lg"></i>
+            </button>
         </div>
     }
     @if (TempData["SnapshotError"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 p-2.5 mb-3 font-mono shadow-xs" role="alert" style="font-size: 12px;">
-            <i class="bi bi-exclamation-triangle-fill text-danger fs-6 flex-shrink-0"></i>
-            <span>@TempData["SnapshotError"]</span>
-            <button type="button" class="btn-close ms-auto p-2" data-bs-dismiss="alert" aria-label="Close" style="font-size: 10px;"></button>
+        <div class="alert alert-danger fade show fleptix-status-alert mb-3" role="alert">
+            <div class="alert-content">
+                <i class="bi bi-exclamation-triangle-fill alert-icon text-danger"></i>
+                <span class="alert-message">@TempData["SnapshotError"]</span>
+            </div>
+            <button type="button" class="alert-close-btn" data-bs-dismiss="alert" aria-label="Close" title="Dismiss" onclick="this.closest('.alert')?.remove()">
+                <i class="bi bi-x-lg"></i>
+            </button>
         </div>
     }
     @if (TempData["RestoreSuccess"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 p-2.5 mb-3 font-mono shadow-xs" role="alert" style="font-size: 12px;">
-            <i class="bi bi-check-circle-fill text-success fs-6 flex-shrink-0"></i>
-            <span>@TempData["RestoreSuccess"]</span>
-            <button type="button" class="btn-close ms-auto p-2" data-bs-dismiss="alert" aria-label="Close" style="font-size: 10px;"></button>
+        <div class="alert alert-success fade show fleptix-status-alert mb-3" role="alert">
+            <div class="alert-content">
+                <i class="bi bi-check-circle-fill alert-icon text-success"></i>
+                <span class="alert-message">@TempData["RestoreSuccess"]</span>
+            </div>
+            <button type="button" class="alert-close-btn" data-bs-dismiss="alert" aria-label="Close" title="Dismiss" onclick="this.closest('.alert')?.remove()">
+                <i class="bi bi-x-lg"></i>
+            </button>
         </div>
     }
     @if (TempData["RestoreError"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center gap-2 p-2.5 mb-3 font-mono shadow-xs" role="alert" style="font-size: 12px;">
-            <i class="bi bi-exclamation-triangle-fill text-danger fs-6 flex-shrink-0"></i>
-            <span>@TempData["RestoreError"]</span>
-            <button type="button" class="btn-close ms-auto p-2" data-bs-dismiss="alert" aria-label="Close" style="font-size: 10px;"></button>
+        <div class="alert alert-danger fade show fleptix-status-alert mb-3" role="alert">
+            <div class="alert-content">
+                <i class="bi bi-exclamation-triangle-fill alert-icon text-danger"></i>
+                <span class="alert-message">@TempData["RestoreError"]</span>
+            </div>
+            <button type="button" class="alert-close-btn" data-bs-dismiss="alert" aria-label="Close" title="Dismiss" onclick="this.closest('.alert')?.remove()">
+                <i class="bi bi-x-lg"></i>
+            </button>
         </div>
     }
 
@@ -241,129 +257,175 @@
     <div id="tabOverview" class="tab-pane-content">
         <div class="d-flex flex-column gap-3">
             <!-- 4-Tile Telemetry Grid -->
-            <div class="row g-2">
+            <div class="row g-2.5 g-xl-3 mb-3">
                 <!-- Tile 1: CPU -->
-                <div class="col-12 col-sm-6 col-md-3">
-                    <div class="bg-white border rounded p-3 h-100 d-flex flex-column justify-content-between">
-                        <div class="d-flex align-items-center justify-content-between text-muted font-mono" style="font-size: 10px;">
-                            <span class="text-uppercase fw-semibold">CPU Usage</span>
-                            <i class="bi bi-speedometer2"></i>
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="telemetry-tile bg-white border rounded">
+                        <div class="telemetry-tile-header">
+                            <span class="telemetry-tile-title">CPU Usage</span>
+                            <i class="bi bi-speedometer2 telemetry-tile-icon"></i>
                         </div>
-                        <div class="d-flex align-items-baseline gap-1 my-1">
-                            <span class="font-mono fw-bold fs-4" style="color: var(--accent-navy);" id="detailsCpuVal">@cpu.ToString("F1")%</span>
-                            <span class="font-mono text-muted" style="font-size: 10px;">/ 4 Cores</span>
-                        </div>
-                        <div>
-                            <div class="w-100 mb-1" style="height: 20px;">
-                                <svg class="w-100 h-100" viewBox="0 0 100 24" preserveAspectRatio="none">
-                                    <path d="M0,20 L10,18 L20,19 L30,12 L40,14 L50,8 L60,11 L70,6 L80,14 L90,12 L100,5" fill="none" stroke="#1E2761" stroke-width="1.8" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
-                                </svg>
+                        <div class="telemetry-tile-body">
+                            <div class="d-flex align-items-baseline gap-1.5 my-2">
+                                <span class="font-mono fw-bold fs-3 text-dark" id="detailsCpuVal">@cpu.ToString("F1")%</span>
+                                <span class="font-mono text-muted" style="font-size: 11px;">/ 4 Cores</span>
                             </div>
-                            <div class="d-flex justify-content-between font-mono text-muted" style="font-size: 9px;">
-                                <span>Throttled: 0.0s</span>
-                                <span>Load: 0.72</span>
+                            <div>
+                                <div class="w-100 mb-2" style="height: 24px;">
+                                    <svg class="w-100 h-100" viewBox="0 0 100 24" preserveAspectRatio="none">
+                                        <path d="M0,20 L10,18 L20,19 L30,12 L40,14 L50,8 L60,11 L70,6 L80,14 L90,12 L100,5" fill="none" stroke="#1E2761" stroke-width="1.8" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+                                    </svg>
+                                </div>
+                                <div class="d-flex justify-content-between font-mono text-muted" style="font-size: 10px;">
+                                    <span>Throttled: 0.0s</span>
+                                    <span>Load: 0.72</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Tile 2: Memory -->
-                <div class="col-12 col-sm-6 col-md-3">
-                    <div class="bg-white border rounded p-3 h-100 d-flex flex-column justify-content-between">
-                        <div class="d-flex align-items-center justify-content-between text-muted font-mono" style="font-size: 10px;">
-                            <span class="text-uppercase fw-semibold">Memory</span>
-                            <i class="bi bi-memory"></i>
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="telemetry-tile bg-white border rounded">
+                        <div class="telemetry-tile-header">
+                            <span class="telemetry-tile-title">Memory</span>
+                            <i class="bi bi-memory telemetry-tile-icon"></i>
                         </div>
-                        <div class="d-flex align-items-baseline gap-1 my-1">
-                            <span class="font-mono fw-bold fs-4 text-dark" id="detailsMemVal">@memMb.ToString("F0") MB</span>
-                            <span class="font-mono text-muted" style="font-size: 10px;">/ @memLimitMb.ToString("F0") MB</span>
-                        </div>
-                        <div>
-                            <div class="mini-meter-track mb-1" style="height: 4px;">
-                                <div class="mini-meter-fill mem" id="detailsMemBar" style="width: @(Math.Min(100, Math.Max(5, memPct)))%;"></div>
+                        <div class="telemetry-tile-body">
+                            <div class="d-flex align-items-baseline gap-1.5 my-2">
+                                <span class="font-mono fw-bold fs-3 text-dark" id="detailsMemVal">@memMb.ToString("F0") MB</span>
+                                <span class="font-mono text-muted" style="font-size: 11px;">/ @memLimitMb.ToString("F0") MB</span>
                             </div>
-                            <div class="d-flex justify-content-between font-mono text-muted" style="font-size: 9px;">
-                                <span>Swap: 512 MB</span>
-                                <span>@memPct.ToString("F1")% Limit</span>
+                            <div>
+                                <div class="mini-meter-track mb-2" style="height: 6px;">
+                                    <div class="mini-meter-fill mem" id="detailsMemBar" style="width: @(Math.Min(100, Math.Max(5, memPct)))%;"></div>
+                                </div>
+                                <div class="d-flex justify-content-between font-mono text-muted" style="font-size: 10px;">
+                                    <span>Swap: 512 MB</span>
+                                    <span>@memPct.ToString("F1")% Limit</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Tile 3: Network I/O -->
-                <div class="col-12 col-sm-6 col-md-3">
-                    <div class="bg-white border rounded p-3 h-100 d-flex flex-column justify-content-between">
-                        <div class="d-flex align-items-center justify-content-between text-muted font-mono" style="font-size: 10px;">
-                            <span class="text-uppercase fw-semibold">Network I/O</span>
-                            <i class="bi bi-arrow-down-up"></i>
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="telemetry-tile bg-white border rounded">
+                        <div class="telemetry-tile-header">
+                            <span class="telemetry-tile-title">Network I/O</span>
+                            <i class="bi bi-arrow-down-up telemetry-tile-icon"></i>
                         </div>
-                        <div class="font-mono my-1" style="font-size: 11px;">
-                            <div class="d-flex justify-content-between">
-                                <span class="text-muted">RX:</span> <span class="fw-bold text-dark" id="detailsNetRx">@rxMb.ToString("F1") MB</span>
+                        <div class="telemetry-tile-body">
+                            <div class="font-mono my-2" style="font-size: 12px;">
+                                <div class="d-flex justify-content-between mb-1.5">
+                                    <span class="text-muted">RX:</span> <span class="fw-bold text-dark" id="detailsNetRx">@rxMb.ToString("F1") MB</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">TX:</span> <span class="fw-bold text-secondary" id="detailsNetTx">@txMb.ToString("F1") MB</span>
+                                </div>
                             </div>
-                            <div class="d-flex justify-content-between">
-                                <span class="text-muted">TX:</span> <span class="fw-bold text-secondary" id="detailsNetTx">@txMb.ToString("F1") MB</span>
+                            <div class="border-top pt-2 font-mono text-muted d-flex justify-content-between" style="font-size: 10px;">
+                                <span>Total: @((rxMb + txMb).ToString("F1")) MB</span>
+                                <span>Live Socket</span>
                             </div>
-                        </div>
-                        <div class="border-top pt-1 font-mono text-muted d-flex justify-content-between" style="font-size: 9px;">
-                            <span>Total: @((rxMb + txMb).ToString("F1")) MB</span>
-                            <span>Live Socket</span>
                         </div>
                     </div>
                 </div>
 
                 <!-- Tile 4: Block / Disk I/O -->
-                <div class="col-12 col-sm-6 col-md-3">
-                    <div class="bg-white border rounded p-3 h-100 d-flex flex-column justify-content-between">
-                        <div class="d-flex align-items-center justify-content-between text-muted font-mono" style="font-size: 10px;">
-                            <span class="text-uppercase fw-semibold">Block / Disk I/O</span>
-                            <i class="bi bi-hdd"></i>
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="telemetry-tile bg-white border rounded">
+                        <div class="telemetry-tile-header">
+                            <span class="telemetry-tile-title">Block / Disk I/O</span>
+                            <i class="bi bi-hdd telemetry-tile-icon"></i>
                         </div>
-                        <div class="font-mono my-1" style="font-size: 11px;">
-                            <div class="d-flex justify-content-between">
-                                <span class="text-muted">Read:</span> <span class="fw-bold text-dark" id="detailsDiskRead">@blockReadMb.ToString("F1") MB</span>
+                        <div class="telemetry-tile-body">
+                            <div class="font-mono my-2" style="font-size: 12px;">
+                                <div class="d-flex justify-content-between mb-1.5">
+                                    <span class="text-muted">Read:</span> <span class="fw-bold text-dark" id="detailsDiskRead">@blockReadMb.ToString("F1") MB</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span class="text-muted">Write:</span> <span class="fw-bold text-secondary" id="detailsDiskWrite">@blockWriteMb.ToString("F1") MB</span>
+                                </div>
                             </div>
-                            <div class="d-flex justify-content-between">
-                                <span class="text-muted">Write:</span> <span class="fw-bold text-secondary" id="detailsDiskWrite">@blockWriteMb.ToString("F1") MB</span>
+                            <div class="border-top pt-2 font-mono text-muted d-flex justify-content-between" style="font-size: 10px;">
+                                <span>Total: @((blockReadMb + blockWriteMb).ToString("F1")) MB</span>
+                                <span>Host Storage</span>
                             </div>
-                        </div>
-                        <div class="border-top pt-1 font-mono text-muted d-flex justify-content-between" style="font-size: 9px;">
-                            <span>Total: @((blockReadMb + blockWriteMb).ToString("F1")) MB</span>
-                            <span>Host Storage</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Security & Execution Profile -->
-            <div class="bg-white border rounded p-3 shadow-xs d-flex flex-column gap-2.5">
-                <div class="d-flex align-items-center gap-1.5 font-mono fw-semibold text-dark" style="font-size: 12px;">
-                    <i class="bi bi-shield-check text-success"></i>
-                    <span>Security &amp; Execution Profile</span>
+            <div class="security-profile-card bg-white border rounded shadow-xs mb-3">
+                <div class="security-profile-header">
+                    <div class="d-flex align-items-center gap-2.5">
+                        <div class="security-icon-box">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="security-profile-title">Security &amp; Execution Profile</span>
+                                <span class="badge font-mono security-status-badge">
+                                    <i class="bi bi-shield-lock me-1"></i> Isolated
+                                </span>
+                            </div>
+                            <span class="security-profile-subtitle">Container isolation, user mapping, and Linux capabilities</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="row g-2.5 font-mono text-muted" style="font-size: 10px;">
-                    <div class="col-6 col-md-3">
-                        <div class="p-2.5 px-3 rounded bg-light border h-100 d-flex flex-column justify-content-between">
-                            <span class="text-muted d-block mb-1">Privileged:</span>
-                            <span class="fw-bold text-dark font-mono" style="font-size: 11px;">false</span>
+                <div class="security-profile-body">
+                    <div class="row g-2.5 g-xl-3 font-mono text-muted">
+                        <div class="col-12 col-sm-6 col-lg-3">
+                            <div class="security-tile bg-light border rounded">
+                                <div class="security-tile-header">
+                                    <span class="security-tile-label">Privileged</span>
+                                    <i class="bi bi-shield-slash security-tile-icon"></i>
+                                </div>
+                                <div class="security-tile-content">
+                                    <span class="security-tile-value text-dark">false</span>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle font-mono security-tile-badge">SAFE</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <div class="p-2.5 px-3 rounded bg-light border h-100 d-flex flex-column justify-content-between">
-                            <span class="text-muted d-block mb-1">User (UID:GID):</span>
-                            <span class="fw-bold text-dark font-mono" style="font-size: 11px;">1000:1000</span>
+                        <div class="col-12 col-sm-6 col-lg-3">
+                            <div class="security-tile bg-light border rounded">
+                                <div class="security-tile-header">
+                                    <span class="security-tile-label">User (UID:GID)</span>
+                                    <i class="bi bi-person-badge security-tile-icon"></i>
+                                </div>
+                                <div class="security-tile-content">
+                                    <span class="security-tile-value text-dark">1000:1000</span>
+                                    <span class="security-tile-badge-text">non-root</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <div class="p-2.5 px-3 rounded bg-light border h-100 d-flex flex-column justify-content-between">
-                            <span class="text-muted d-block mb-1">Readonly Root:</span>
-                            <span class="fw-bold text-dark font-mono" style="font-size: 11px;">false</span>
+                        <div class="col-12 col-sm-6 col-lg-3">
+                            <div class="security-tile bg-light border rounded">
+                                <div class="security-tile-header">
+                                    <span class="security-tile-label">Readonly Root</span>
+                                    <i class="bi bi-hdd security-tile-icon"></i>
+                                </div>
+                                <div class="security-tile-content">
+                                    <span class="security-tile-value text-dark">false</span>
+                                    <span class="security-tile-badge-text">read-write</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="col-6 col-md-3">
-                        <div class="p-2.5 px-3 rounded bg-light border h-100 d-flex flex-column justify-content-between">
-                            <span class="text-muted d-block mb-1">AppArmor:</span>
-                            <span class="fw-bold text-dark font-mono" style="font-size: 11px;">docker-default</span>
+                        <div class="col-12 col-sm-6 col-lg-3">
+                            <div class="security-tile bg-light border rounded">
+                                <div class="security-tile-header">
+                                    <span class="security-tile-label">AppArmor</span>
+                                    <i class="bi bi-shield security-tile-icon"></i>
+                                </div>
+                                <div class="security-tile-content">
+                                    <span class="security-tile-value text-dark">docker-default</span>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-mono security-tile-badge">ACTIVE</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

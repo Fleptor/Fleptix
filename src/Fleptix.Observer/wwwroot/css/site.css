@@ -16,6 +16,7 @@
     --accent-navy: #1E2761;
     --accent-ice: #CADCFC;
     --accent-navy-hover: #151c47;
+    --sidebar-bg: #1E2761;
     
     /* Status Colors (small pills only) */
     --status-running-bg: #dcfce7;
@@ -73,6 +74,9 @@ html[data-theme="dark"] {
     --accent-navy: #60a5fa;
     --accent-navy-hover: #93c5fd;
     --accent-ice: #93c5fd;
+    --sidebar-bg: #0c101a;
+    --bs-white-rgb: 15, 20, 34;
+    --bs-light-rgb: 21, 28, 46;
     
     --status-running-bg: rgba(34, 197, 94, 0.15);
     --status-running-text: #4ade80;
@@ -116,7 +120,7 @@ body.fleptix-app {
 /* PERSISTENT LEFT SIDEBAR */
 .app-sidebar {
     width: var(--sidebar-width);
-    background-color: var(--accent-navy);
+    background-color: var(--sidebar-bg, #1E2761);
     color: #ffffff;
     display: flex;
     flex-direction: column;
@@ -358,6 +362,9 @@ body.fleptix-app {
 .app-content {
     padding: 16px;
     flex: 1;
+    max-width: 1760px;
+    margin: 0 auto;
+    width: 100%;
 }
 
 /* DENSE TELEMETRY METRIC STRIP */
@@ -1120,12 +1127,400 @@ body.fleptix-app {
 }
 
 /* =======================================================
+   FLEPTIX STATUS BAR ALERTS & CLOSE CONTROLS
+   ======================================================= */
+.fleptix-status-alert {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 16px !important;
+    padding: 10px 16px !important;
+    margin-bottom: 16px !important;
+    border-radius: 6px !important;
+    font-family: var(--font-mono) !important;
+    font-size: 12px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    position: relative !important;
+}
+
+.fleptix-status-alert .alert-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+}
+
+.fleptix-status-alert .alert-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.fleptix-status-alert .alert-message {
+    word-break: break-word;
+}
+
+.fleptix-status-alert .alert-close-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 4px !important;
+    width: 24px !important;
+    height: 24px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    line-height: 1 !important;
+    font-size: 14px !important;
+    flex-shrink: 0 !important;
+    transition: background-color 0.15s ease, color 0.15s ease, opacity 0.15s ease !important;
+}
+
+.fleptix-status-alert.alert-success {
+    background-color: #f0fdf4 !important;
+    border: 1px solid #bbf7d0 !important;
+    color: #166534 !important;
+}
+
+.fleptix-status-alert.alert-success .alert-close-btn {
+    color: #166534 !important;
+}
+
+.fleptix-status-alert.alert-success .alert-close-btn:hover {
+    background-color: rgba(22, 101, 52, 0.12) !important;
+    color: #14532d !important;
+}
+
+.fleptix-status-alert.alert-danger {
+    background-color: #fef2f2 !important;
+    border: 1px solid #fecaca !important;
+    color: #991b1b !important;
+}
+
+.fleptix-status-alert.alert-danger .alert-close-btn {
+    color: #991b1b !important;
+}
+
+.fleptix-status-alert.alert-danger .alert-close-btn:hover {
+    background-color: rgba(153, 27, 27, 0.12) !important;
+    color: #7f1d1d !important;
+}
+
+/* =======================================================
+   DETAILS TELEMETRY & SECURITY PROFILE CARDS
+   ======================================================= */
+.telemetry-tile {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 16px 18px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 148px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.telemetry-tile:hover {
+    border-color: var(--border-dark);
+}
+
+.telemetry-tile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.telemetry-tile-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+.telemetry-tile-icon {
+    font-size: 13px;
+    color: var(--text-dim);
+}
+
+.telemetry-tile-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    flex: 1;
+}
+
+/* Security & Execution Profile Card */
+.security-profile-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+}
+
+.security-profile-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: var(--bg-surface);
+}
+
+.security-icon-box {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    background-color: rgba(30, 39, 97, 0.06);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.security-icon-box i {
+    font-size: 16px;
+    color: #16a34a;
+}
+
+.security-profile-title {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text-main);
+    letter-spacing: 0.01em;
+}
+
+.security-profile-subtitle {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    display: block;
+}
+
+.security-status-badge {
+    padding: 3px 8px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    background-color: var(--bg-surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.security-profile-body {
+    padding: 16px 18px;
+    background-color: var(--bg-surface);
+}
+
+.security-tile {
+    background-color: var(--bg-surface-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px 14px;
+    height: 100%;
+    min-height: 82px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: border-color 0.15s ease;
+}
+
+.security-tile:hover {
+    border-color: var(--border-dark);
+}
+
+.security-tile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 6px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.security-tile-label {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+.security-tile-icon {
+    font-size: 13px;
+    color: var(--text-dim);
+}
+
+.security-tile-content {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.security-tile-value {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.security-tile-badge {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+}
+
+.security-tile-badge-text {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* =======================================================
+   RESPONSIVE SCALING ADAPTATION FOR LARGE MONITORS
+   ======================================================= */
+@media (min-width: 1440px) {
+    :root {
+        --app-font-size: 13.5px;
+        --sidebar-width: 230px;
+    }
+    html[data-font-size="compact"] { --app-font-size: 12.5px; }
+    html[data-font-size="default"] { --app-font-size: 13.5px; }
+    html[data-font-size="large"] { --app-font-size: 15px; }
+
+    .app-content {
+        padding: 20px 24px;
+    }
+    
+    .telemetry-tile {
+        padding: 18px 20px;
+        min-height: 156px;
+    }
+    .security-profile-header {
+        padding: 16px 20px;
+    }
+    .security-profile-body {
+        padding: 20px;
+    }
+    .security-tile {
+        padding: 14px 16px;
+        min-height: 88px;
+    }
+}
+
+@media (min-width: 1920px) {
+    :root {
+        --app-font-size: 14px;
+        --sidebar-width: 242px;
+        --topbar-height: 52px;
+    }
+    html {
+        font-size: 16.5px;
+    }
+    html[data-font-size="compact"] { --app-font-size: 13px; }
+    html[data-font-size="default"] { --app-font-size: 14px; }
+    html[data-font-size="large"] { --app-font-size: 15.5px; }
+
+    .app-content {
+        padding: 24px 32px;
+    }
+
+    .telemetry-tile {
+        padding: 20px 22px;
+        min-height: 164px;
+    }
+    .telemetry-tile-title {
+        font-size: 11.5px;
+    }
+    .security-profile-header {
+        padding: 18px 24px;
+    }
+    .security-profile-body {
+        padding: 22px 24px;
+    }
+    .security-tile {
+        padding: 16px 18px;
+        min-height: 94px;
+    }
+    .security-profile-title {
+        font-size: 13.5px;
+    }
+    .security-tile-label {
+        font-size: 11px;
+    }
+    .security-tile-value {
+        font-size: 14px;
+    }
+}
+
+@media (min-width: 2560px) {
+    :root {
+        --app-font-size: 15px;
+        --sidebar-width: 256px;
+        --topbar-height: 56px;
+    }
+    html {
+        font-size: 17.5px;
+    }
+    html[data-font-size="compact"] { --app-font-size: 14px; }
+    html[data-font-size="default"] { --app-font-size: 15px; }
+    html[data-font-size="large"] { --app-font-size: 16.5px; }
+
+    .app-content {
+        padding: 28px 40px;
+        max-width: 1920px;
+    }
+
+    .telemetry-tile {
+        padding: 22px 24px;
+        min-height: 174px;
+    }
+    .telemetry-tile-title {
+        font-size: 12px;
+    }
+    .security-profile-header {
+        padding: 20px 28px;
+    }
+    .security-profile-body {
+        padding: 26px 28px;
+    }
+    .security-tile {
+        padding: 18px 20px;
+        min-height: 100px;
+    }
+    .security-profile-title {
+        font-size: 14.5px;
+    }
+    .security-tile-label {
+        font-size: 11.5px;
+    }
+    .security-tile-value {
+        font-size: 15px;
+    }
+}
+
+/* =======================================================
    REFINED OPERATIONAL DARK THEME COMPONENT OVERRIDES
    ======================================================= */
 /* Sidebar & Brand Navigation */
 html[data-theme="dark"] .app-sidebar {
-    background-color: #0c101a;
-    border-right: 1px solid #1c2438;
+    background-color: #0c101a !important;
+    border-right: 1px solid #1c2438 !important;
 }
 
 html[data-theme="dark"] .sidebar-brand {
@@ -1953,4 +2348,102 @@ html[data-theme="dark"] [style*="background-color: #fef2f2"],
 html[data-theme="dark"] [style*="background-color:#fef2f2"] {
     background-color: #201216 !important;
     border-color: rgba(239, 68, 68, 0.45) !important;
+}
+
+/* ==========================================================================
+   DARK MODE FLEPTIX STATUS BAR ALERTS & CLOSE CONTROLS
+   ========================================================================== */
+html[data-theme="dark"] .fleptix-status-alert.alert-success {
+    background-color: #0d281e !important;
+    border-color: rgba(52, 211, 153, 0.35) !important;
+    color: #6ee7b7 !important;
+}
+html[data-theme="dark"] .fleptix-status-alert.alert-success .alert-close-btn {
+    color: #a7f3d0 !important;
+    opacity: 0.85;
+}
+html[data-theme="dark"] .fleptix-status-alert.alert-success .alert-close-btn:hover {
+    background-color: rgba(52, 211, 153, 0.2) !important;
+    color: #ffffff !important;
+    opacity: 1;
+}
+
+html[data-theme="dark"] .fleptix-status-alert.alert-danger {
+    background-color: #2a1215 !important;
+    border-color: rgba(248, 113, 113, 0.35) !important;
+    color: #fca5a5 !important;
+}
+html[data-theme="dark"] .fleptix-status-alert.alert-danger .alert-close-btn {
+    color: #fca5a5 !important;
+    opacity: 0.85;
+}
+html[data-theme="dark"] .fleptix-status-alert.alert-danger .alert-close-btn:hover {
+    background-color: rgba(248, 113, 113, 0.2) !important;
+    color: #ffffff !important;
+    opacity: 1;
+}
+
+/* ==========================================================================
+   DARK MODE DETAILS TELEMETRY & SECURITY PROFILE CARDS
+   ========================================================================== */
+html[data-theme="dark"] .telemetry-tile {
+    background-color: var(--bg-surface) !important;
+    border-color: var(--border-color) !important;
+}
+html[data-theme="dark"] .telemetry-tile:hover {
+    border-color: var(--border-dark) !important;
+}
+html[data-theme="dark"] .telemetry-tile-header {
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+html[data-theme="dark"] .telemetry-tile-title {
+    color: #8b98ad !important;
+}
+
+html[data-theme="dark"] .security-profile-card {
+    background-color: var(--bg-surface) !important;
+    border-color: var(--border-color) !important;
+}
+html[data-theme="dark"] .security-profile-header {
+    background-color: var(--bg-surface) !important;
+    border-color: var(--border-color) !important;
+}
+html[data-theme="dark"] .security-icon-box {
+    background-color: rgba(96, 165, 250, 0.1) !important;
+}
+html[data-theme="dark"] .security-icon-box i {
+    color: #4ade80 !important;
+}
+html[data-theme="dark"] .security-profile-title {
+    color: #f1f5f9 !important;
+}
+html[data-theme="dark"] .security-profile-subtitle {
+    color: #8b98ad !important;
+}
+html[data-theme="dark"] .security-status-badge {
+    background-color: var(--bg-surface-elevated) !important;
+    border-color: var(--border-color) !important;
+    color: #cbd5e1 !important;
+}
+html[data-theme="dark"] .security-profile-body {
+    background-color: var(--bg-surface) !important;
+}
+html[data-theme="dark"] .security-tile {
+    background-color: var(--bg-surface-elevated) !important;
+    border-color: var(--border-color) !important;
+}
+html[data-theme="dark"] .security-tile:hover {
+    border-color: var(--border-dark) !important;
+}
+html[data-theme="dark"] .security-tile-header {
+    border-color: rgba(255, 255, 255, 0.06) !important;
+}
+html[data-theme="dark"] .security-tile-label {
+    color: #8b98ad !important;
+}
+html[data-theme="dark"] .security-tile-value {
+    color: #f1f5f9 !important;
+}
+html[data-theme="dark"] .security-tile-badge-text {
+    color: #8b98ad !important;
 }
