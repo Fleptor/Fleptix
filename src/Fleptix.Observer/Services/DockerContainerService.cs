@@ -238,7 +238,11 @@ public class DockerContainerService : IContainerService
                 Labels = inspect.Config?.Labels != null ? new Dictionary<string, string>(inspect.Config.Labels) : new Dictionary<string, string>(),
                 RestartPolicy = inspect.HostConfig?.RestartPolicy != null ? inspect.HostConfig.RestartPolicy.Name.ToString() : "no",
                 StartedAt = DateTime.TryParse(inspect.State?.StartedAt, out var s) ? s : null,
-                FinishedAt = DateTime.TryParse(inspect.State?.FinishedAt, out var f) ? f : null
+                FinishedAt = DateTime.TryParse(inspect.State?.FinishedAt, out var f) ? f : null,
+                User = inspect.Config?.User ?? string.Empty,
+                Privileged = inspect.HostConfig?.Privileged ?? false,
+                ReadonlyRootfs = inspect.HostConfig?.ReadonlyRootfs ?? false,
+                AppArmorProfile = inspect.AppArmorProfile ?? string.Empty
             };
         }
         catch (Exception ex)

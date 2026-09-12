@@ -821,53 +821,156 @@ body.fleptix-app {
     background-color: #f8fafc;
 }
 
-/* EXEC TAB REDESIGN */
-.exec-config-bar {
-    background-color: #f8fafc;
-    border-bottom: 1px solid var(--border-color);
+/* EXEC TAB REDESIGN — SPACIOUS OPERATIONAL CONSOLE */
+.exec-card-wrapper {
+    background-color: var(--cli-bg, #0a0e17);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-.exec-preset-btn {
-    background-color: #ffffff;
-    color: #475569;
-    border: 1px solid #cbd5e1;
+.exec-header-bar {
+    background-color: var(--bg-surface-elevated);
+    border-bottom: 1px solid var(--border-color);
+    padding: 8px 14px;
+    min-height: 42px;
+    gap: 8px;
+    font-size: 11px;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.exec-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: #22c55e;
+    box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+    display: inline-block;
+}
+
+.exec-session-target {
+    color: var(--text-main);
+    font-weight: 600;
+    font-size: 11.5px;
+}
+
+.exec-image-badge {
+    background-color: var(--bg-surface);
+    color: var(--text-muted);
+    border: 1px solid var(--border-color);
     font-size: 10px;
-    padding: 1.5px 6px;
-    border-radius: 3px;
-    line-height: 1.3;
+    font-weight: normal;
+    padding: 2px 6px;
+}
+
+.exec-param-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.exec-param-label {
+    color: var(--text-muted);
+    font-size: 11px;
+    user-select: none;
+}
+
+.exec-param-select,
+.exec-param-input {
+    background-color: var(--bg-surface);
+    color: var(--text-main);
+    border: 1px solid var(--border-dark);
+    border-radius: 4px;
+    height: 26px;
+    padding: 1px 6px;
+    font-size: 11px;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.exec-param-select {
+    padding-right: 20px;
+    width: 90px;
+}
+
+.exec-param-select:focus,
+.exec-param-input:focus {
+    border-color: var(--accent-navy);
+    box-shadow: 0 0 0 2px rgba(30, 39, 97, 0.15);
+    color: var(--text-main);
+}
+
+.exec-tool-btn {
+    background-color: var(--bg-surface);
+    color: var(--text-main);
+    border: 1px solid var(--border-dark);
+    border-radius: 4px;
+    font-size: 11px;
+    height: 26px;
+    padding: 1px 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
 
-.exec-preset-btn:hover {
-    background-color: #e2e8f0;
-    color: #0f172a;
-    border-color: #94a3b8;
+.exec-tool-btn:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--border-color);
+    color: var(--text-main);
 }
 
+.exec-state-alert {
+    background-color: rgba(245, 158, 11, 0.08);
+    border-bottom: 1px solid rgba(245, 158, 11, 0.25);
+    color: var(--text-main);
+    padding: 8px 14px;
+    font-size: 11.5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.exec-start-btn {
+    background-color: #16a34a;
+    border: 1px solid #15803d;
+    color: #ffffff;
+    height: 26px;
+    padding: 2px 10px;
+    font-size: 11px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.exec-start-btn:hover {
+    background-color: #15803d;
+    color: #ffffff;
+}
+
+/* Spacious Terminal Viewport */
 #execTerminalViewport,
-#clusterEventFeed,
-.cli-terminal-window {
+.exec-terminal-viewport {
+    height: 500px;
+    min-height: 440px;
+    max-height: 70vh;
     border-radius: 0;
     background-color: var(--cli-bg, #0a0e17) !important;
     color: var(--cli-fg, #e2e8f0) !important;
     font-family: var(--cli-font, var(--font-mono)) !important;
-    font-size: 11.5px;
-    line-height: 1.45;
+    font-size: 12px;
+    line-height: 1.5;
     overflow-y: auto;
-    padding: 14px 16px;
-    transition: min-height 0.2s ease, max-height 0.2s ease, height 0.2s ease;
+    padding: 16px 20px;
 }
 
-#execTerminalViewport.exec-terminal-idle {
-    min-height: 105px;
-    max-height: 140px;
-    height: auto;
-}
-
+#execTerminalViewport.exec-terminal-idle,
 #execTerminalViewport.exec-terminal-active {
-    min-height: 320px;
-    max-height: 480px;
-    height: 420px;
+    height: 500px;
+    min-height: 440px;
+    max-height: 70vh;
 }
 
 #execTerminalViewport pre,
@@ -877,79 +980,97 @@ body.fleptix-app {
     font-family: var(--cli-font, var(--font-mono)) !important;
 }
 
-/* Command Input Bar & Highlighted Input Group */
+/* Ergonomic Command Input Bar */
 .exec-input-bar {
-    background-color: #f8fafc;
+    background-color: var(--bg-surface-elevated);
     border-top: 1px solid var(--border-color);
     padding: 10px 14px;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .exec-input-group {
-    background-color: #ffffff;
-    border: 1px solid #cbd5e1;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-dark);
     border-radius: 4px;
     overflow: hidden;
+    height: 36px;
     cursor: text;
     transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .exec-input-group:hover {
-    border-color: #94a3b8;
+    border-color: var(--border-color);
 }
 
 .exec-input-group:focus-within {
     border-color: var(--accent-navy);
-    box-shadow: 0 0 0 3px rgba(30, 39, 97, 0.15), 0 1px 2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 0 0 2px rgba(30, 39, 97, 0.15);
 }
 
 .exec-prompt-prefix {
-    background-color: #f1f5f9;
+    background-color: var(--bg-hover);
     color: var(--accent-navy);
     font-family: var(--font-mono);
-    font-size: 11px;
-    font-weight: 700;
-    padding: 6px 12px;
-    border-right: 1px solid #cbd5e1;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 0 12px;
+    height: 100%;
+    display: inline-flex;
+    align-items: center;
+    border-right: 1px solid var(--border-dark);
     white-space: nowrap;
     user-select: none;
     transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
 
+.exec-prompt-prefix.exec-root-elevation {
+    color: #b45309;
+    background-color: #fef3c7;
+    border-right-color: #fde68a;
+}
+
 .exec-input-group:focus-within .exec-prompt-prefix {
-    background-color: #e8eef9;
+    background-color: var(--accent-ice);
     border-right-color: var(--accent-navy);
     color: var(--accent-navy);
+}
+
+.exec-input-group:focus-within .exec-prompt-prefix.exec-root-elevation {
+    background-color: #fef3c7;
+    border-right-color: #f59e0b;
+    color: #b45309;
 }
 
 .exec-command-input {
     flex-grow: 1;
     border: none;
     outline: none;
-    background-color: #ffffff;
-    padding: 6px 12px;
+    background-color: transparent;
+    padding: 0 12px;
     font-family: var(--font-mono);
-    font-size: 11.5px;
-    color: #0f172a;
+    font-size: 12px;
+    color: var(--text-main);
     width: 100%;
-    line-height: 1.4;
+    line-height: 34px;
+    height: 100%;
 }
 
 .exec-command-input::placeholder {
-    color: #94a3b8;
+    color: var(--text-dim);
     font-style: normal;
 }
 
+/* Run Button */
 .exec-run-btn {
     background-color: var(--accent-navy);
     border: 1px solid var(--accent-navy);
     color: #ffffff;
-    font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 600;
-    padding: 6px 16px;
+    padding: 0 16px;
     border-radius: 4px;
-    height: 33px;
+    height: 36px;
     display: inline-flex;
     align-items: center;
     gap: 4px;
@@ -958,8 +1079,8 @@ body.fleptix-app {
 }
 
 .exec-run-btn:hover {
-    background-color: #151b43;
-    border-color: #151b43;
+    background-color: var(--accent-navy-hover);
+    border-color: var(--accent-navy-hover);
     color: #ffffff;
 }
 
@@ -1690,43 +1811,87 @@ html[data-theme="dark"] .btn-outline-primary.port-forward-link:hover {
     border-color: #2563eb !important;
 }
 
-/* Exec Tab & Container Shell */
-html[data-theme="dark"] .exec-config-bar {
-    background-color: #121827 !important;
+/* Exec Tab & Container Shell (Dark Mode) */
+html[data-theme="dark"] .exec-card-wrapper {
+    background-color: #0a0e17 !important;
     border-color: #1e293b !important;
 }
 
-html[data-theme="dark"] .exec-preset-btn {
-    background-color: #161d30 !important;
+html[data-theme="dark"] .exec-header-bar {
+    background-color: #0f1422 !important;
     border-color: #1e293b !important;
+}
+
+html[data-theme="dark"] .exec-image-badge {
+    background-color: #161f32 !important;
+    border-color: #27354f !important;
     color: #94a3b8 !important;
 }
 
-html[data-theme="dark"] .exec-preset-btn:hover {
-    background-color: #23304d !important;
-    color: #60a5fa !important;
+html[data-theme="dark"] .exec-param-select,
+html[data-theme="dark"] .exec-param-input,
+html[data-theme="dark"] .exec-tool-btn,
+html[data-theme="dark"] .exec-presets-btn {
+    background-color: #161f32 !important;
+    border-color: #27354f !important;
+    color: #e2e8f0 !important;
+}
+
+html[data-theme="dark"] .exec-param-select:focus,
+html[data-theme="dark"] .exec-param-input:focus {
     border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+}
+
+html[data-theme="dark"] .exec-tool-btn:hover {
+    background-color: #1c2740 !important;
+    border-color: #3b82f6 !important;
+    color: #93c5fd !important;
+}
+
+html[data-theme="dark"] .exec-state-alert {
+    background-color: rgba(245, 158, 11, 0.12) !important;
+    border-color: rgba(245, 158, 11, 0.25) !important;
+    color: #fbbf24 !important;
 }
 
 html[data-theme="dark"] .exec-input-bar {
-    background-color: #121827 !important;
+    background-color: #0f1422 !important;
     border-top: 1px solid #1e293b !important;
 }
 
 html[data-theme="dark"] .exec-input-group {
     background-color: #090d16 !important;
-    border: 1px solid #1e293b !important;
+    border: 1px solid #27354f !important;
 }
 
 html[data-theme="dark"] .exec-input-group:focus-within {
     border-color: #3b82f6 !important;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
 }
 
 html[data-theme="dark"] .exec-prompt-prefix {
     background-color: #141b2d !important;
-    border-right: 1px solid #1e293b !important;
+    border-right: 1px solid #27354f !important;
     color: #60a5fa !important;
+}
+
+html[data-theme="dark"] .exec-prompt-prefix.exec-root-elevation {
+    color: #fbbf24 !important;
+    background-color: rgba(245, 158, 11, 0.2) !important;
+    border-right-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+html[data-theme="dark"] .exec-input-group:focus-within .exec-prompt-prefix {
+    background-color: #1e2a47 !important;
+    border-right-color: #3b82f6 !important;
+    color: #93c5fd !important;
+}
+
+html[data-theme="dark"] .exec-input-group:focus-within .exec-prompt-prefix.exec-root-elevation {
+    background-color: rgba(245, 158, 11, 0.25) !important;
+    border-right-color: #f59e0b !important;
+    color: #fbbf24 !important;
 }
 
 html[data-theme="dark"] .exec-command-input {
@@ -1740,9 +1905,13 @@ html[data-theme="dark"] .exec-run-btn {
     color: #ffffff !important;
 }
 
+html[data-theme="dark"] .exec-run-btn:hover {
+    background-color: #1d4ed8 !important;
+    border-color: #1d4ed8 !important;
+}
+
 /* Filesystem Explorer & Directory Tree */
-html[data-theme="dark"] .files-browser-card,
-html[data-theme="dark"] .exec-card-wrapper {
+html[data-theme="dark"] .files-browser-card {
     background-color: #0f1422 !important;
     border-color: #1e293b !important;
 }

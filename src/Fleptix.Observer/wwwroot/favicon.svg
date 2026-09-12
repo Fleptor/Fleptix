@@ -1,14 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
   <defs>
-    <linearGradient id="fleptixBg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1E2761"/>
-      <stop offset="100%" stop-color="#11173d"/>
+    <linearGradient id="fleptixObserverBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#1e293b"/>
     </linearGradient>
   </defs>
-  <rect width="32" height="32" rx="7" fill="url(#fleptixBg)"/>
-  <rect x="0.75" y="0.75" width="30.5" height="30.5" rx="6.25" fill="none" stroke="#CADCFC" stroke-width="1.5" stroke-opacity="0.35"/>
-  <g transform="translate(6, 6) scale(1.25)" fill="#CADCFC">
-    <path d="M7.765 1.559a.5.5 0 0 1 .47 0l7.5 4a.5.5 0 0 1 0 .882l-7.5 4a.5.5 0 0 1-.47 0l-7.5-4a.5.5 0 0 1 0-.882z"/>
-    <path d="m2.125 8.567-1.86.992a.5.5 0 0 0 0 .882l7.5 4a.5.5 0 0 0 .47 0l7.5-4a.5.5 0 0 0 0-.882l-1.86-.992-5.17 2.756a1.5 1.5 0 0 1-1.41 0z"/>
+  <rect width="32" height="32" rx="7" fill="url(#fleptixObserverBg)"/>
+  <rect x="0.75" y="0.75" width="30.5" height="30.5" rx="6.25" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-opacity="0.6"/>
+  <g transform="translate(6, 6) scale(1.25)" fill="#f1f5f9">
+    <path d="M 7.765 1.559 A 0.5 0.5 0 0 1 8.235 1.559 L 15.735 5.559 A 0.5 0.5 0 0 1 15.735 6.441 L 8.235 10.441 A 0.5 0.5 0 0 1 7.765 10.441 L 0.265 6.441 A 0.5 0.5 0 0 1 0.265 5.559 Z"/>
+    <path d="M 2.125 8.567 L 0.265 9.559 A 0.5 0.5 0 0 0 0.265 10.441 L 7.765 14.441 A 0.5 0.5 0 0 0 8.235 14.441 L 15.735 10.441 A 0.5 0.5 0 0 0 15.735 9.559 L 13.875 8.567 L 8.705 11.323 A 1.5 1.5 0 0 1 7.295 11.323 Z"/>
   </g>
 </svg>

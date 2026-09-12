@@ -378,6 +378,10 @@
                     </div>
                 </div>
                 <div class="security-profile-body">
+                    @{
+                        var containerUserDisplay = string.IsNullOrWhiteSpace(d.User) ? "root (0:0)" : d.User;
+                        var isRootUser = string.IsNullOrWhiteSpace(d.User) || d.User == "0" || d.User == "root" || d.User.StartsWith("0:");
+                    }
                     <div class="row g-2.5 g-xl-3 font-mono text-muted">
                         <div class="col-12 col-sm-6 col-lg-3">
                             <div class="security-tile bg-light border rounded">
@@ -386,8 +390,15 @@
                                     <i class="bi bi-shield-slash security-tile-icon"></i>
                                 </div>
                                 <div class="security-tile-content">
-                                    <span class="security-tile-value text-dark">false</span>
-                                    <span class="badge bg-success-subtle text-success border border-success-subtle font-mono security-tile-badge">SAFE</span>
+                                    <span class="security-tile-value text-dark">@(d.Privileged ? "true" : "false")</span>
+                                    @if (d.Privileged)
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle font-mono security-tile-badge">PRIVILEGED</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle font-mono security-tile-badge">SAFE</span>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -398,8 +409,15 @@
                                     <i class="bi bi-person-badge security-tile-icon"></i>
                                 </div>
                                 <div class="security-tile-content">
-                                    <span class="security-tile-value text-dark">1000:1000</span>
-                                    <span class="security-tile-badge-text">non-root</span>
+                                    <span class="security-tile-value text-dark text-truncate" style="max-width: 105px;" title="@containerUserDisplay">@containerUserDisplay</span>
+                                    @if (isRootUser)
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle font-mono security-tile-badge">root</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle font-mono security-tile-badge">non-root</span>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -410,8 +428,8 @@
                                     <i class="bi bi-hdd security-tile-icon"></i>
                                 </div>
                                 <div class="security-tile-content">
-                                    <span class="security-tile-value text-dark">false</span>
-                                    <span class="security-tile-badge-text">read-write</span>
+                                    <span class="security-tile-value text-dark">@(d.ReadonlyRootfs ? "true" : "false")</span>
+                                    <span class="security-tile-badge-text">@(d.ReadonlyRootfs ? "read-only" : "read-write")</span>
                                 </div>
                             </div>
                         </div>
@@ -422,7 +440,9 @@
                                     <i class="bi bi-shield security-tile-icon"></i>
                                 </div>
                                 <div class="security-tile-content">
-                                    <span class="security-tile-value text-dark">docker-default</span>
+                                    <span class="security-tile-value text-dark text-truncate" style="max-width: 110px;" title="@(string.IsNullOrEmpty(d.AppArmorProfile) ? "unconfined" : d.AppArmorProfile)">
+                                        @(string.IsNullOrEmpty(d.AppArmorProfile) ? "unconfined" : d.AppArmorProfile)
+                                    </span>
                                     <span class="badge bg-primary-subtle text-primary border border-primary-subtle font-mono security-tile-badge">ACTIVE</span>
                                 </div>
                             </div>
@@ -458,14 +478,23 @@
 
     <!-- TAB: EXEC / INTERACTIVE SHELL -->
     <div id="tabExec" class="tab-pane-content d-none">
-        <div class="bg-white border rounded overflow-hidden exec-card-wrapper">
-            <!-- Compact Configuration Bar: Shell, Workdir, User (Visually secondary single row) -->
-            <div class="d-flex align-items-center justify-content-between px-3 py-1.5 border-bottom font-mono exec-config-bar overflow-x-auto" style="font-size: 10px; min-height: 30px;">
-                <!-- Left: Execution Configuration Options -->
-                <div class="d-flex align-items-center gap-2.5 text-muted flex-shrink-0">
-                    <div class="d-flex align-items-center gap-1">
-                        <span style="font-size: 10px; color: #64748b;">shell:</span>
-                        <select id="execShellSelect" class="form-select form-select-sm font-mono py-0 ps-1.5 pe-4 bg-white border text-secondary" style="font-size: 10px; height: 22px; width: 90px; border-color: #cbd5e1 !important;">
+        <div class="exec-card-wrapper border rounded">
+            <!-- Unified Terminal Header Bar: Session Info, Runtime Config & Action Controls -->
+            <div class="exec-header-bar d-flex align-items-center justify-content-between">
+                <!-- Left: Live Connection & Target Information -->
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                    <span class="exec-status-dot" title="Session Active"></span>
+                    <span class="exec-session-target font-mono">
+                        @c.Name <span class="text-muted" style="font-size: 11px;">(@c.ShortId)</span>
+                    </span>
+                    <span class="badge font-mono exec-image-badge d-none d-md-inline-block text-truncate" style="max-width: 160px;" title="@c.Image">@c.Image</span>
+                </div>
+
+                <!-- Center: Compact Runtime Parameters (Shell, Workdir, User) -->
+                <div class="d-flex align-items-center gap-2 font-mono flex-wrap">
+                    <div class="exec-param-item">
+                        <span class="exec-param-label">shell:</span>
+                        <select id="execShellSelect" class="form-select form-select-sm exec-param-select font-mono">
                             <option value="/bin/sh" selected>/bin/sh</option>
                             <option value="/bin/bash">/bin/bash</option>
                             <option value="/bin/ash">/bin/ash</option>
@@ -473,86 +502,60 @@
                         </select>
                     </div>
 
-                    <div class="d-flex align-items-center gap-1">
-                        <span style="font-size: 10px; color: #64748b;">workdir:</span>
-                        <input type="text" id="execWorkDirInput" class="form-control form-control-sm font-mono py-0 px-1.5 bg-white border text-secondary" placeholder="/" value="/" style="font-size: 10px; height: 22px; width: 80px; border-color: #cbd5e1 !important;">
+                    <div class="exec-param-item">
+                        <span class="exec-param-label">dir:</span>
+                        <input type="text" id="execWorkDirInput" class="form-control form-control-sm exec-param-input font-mono" placeholder="/" value="/" style="width: 75px;">
                     </div>
 
-                    <div class="d-flex align-items-center gap-1">
-                        <span style="font-size: 10px; color: #64748b;">user:</span>
-                        <input type="text" id="execUserInput" class="form-control form-control-sm font-mono py-0 px-1.5 bg-white border text-secondary" placeholder="root" value="root" style="font-size: 10px; height: 22px; width: 65px; border-color: #cbd5e1 !important;">
+                    <div class="exec-param-item">
+                        <span class="exec-param-label">user:</span>
+                        <input type="text" id="execUserInput" class="form-control form-control-sm exec-param-input font-mono" placeholder="@(string.IsNullOrWhiteSpace(d.User) ? "default" : d.User)" value="" style="width: 75px;" title="Leave empty for container default user (@(string.IsNullOrWhiteSpace(d.User) ? "root" : d.User))">
                     </div>
                 </div>
 
                 <!-- Right: Utilities (Auto-scroll, Copy, Clear) -->
-                <div class="d-flex align-items-center gap-2 flex-shrink-0 ms-2">
-                    <div class="form-check form-switch mb-0 d-flex align-items-center gap-1" style="font-size: 10px;">
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                    <div class="form-check form-switch mb-0 d-flex align-items-center gap-1 exec-autoscroll-wrapper">
                         <input class="form-check-input" type="checkbox" role="switch" id="execAutoScrollSwitch" checked style="cursor: pointer; width: 22px; height: 12px; margin-top: 0;">
-                        <label class="form-check-label text-muted" for="execAutoScrollSwitch" style="font-size: 10px;">auto-scroll</label>
+                        <label class="form-check-label text-muted" for="execAutoScrollSwitch" style="font-size: 11px;">auto-scroll</label>
                     </div>
-                    <span class="text-muted" style="opacity: 0.35;">|</span>
-                    <button type="button" class="btn btn-xs bg-white border py-0 px-1.5 font-mono text-secondary d-inline-flex align-items-center gap-1" style="font-size: 10px; height: 22px; border-color: #cbd5e1 !important;" onclick="copyExecTerminalOutput()" title="Copy entire terminal output">
-                        <i class="bi bi-clipboard" style="font-size: 9px;"></i> Copy
+                    <span class="text-muted opacity-25">|</span>
+                    <button type="button" class="btn btn-sm exec-tool-btn font-mono" onclick="copyExecTerminalOutput()" title="Copy entire terminal output">
+                        <i class="bi bi-clipboard" style="font-size: 10px;"></i> Copy
                     </button>
-                    <button type="button" class="btn btn-xs bg-white border py-0 px-1.5 font-mono text-secondary d-inline-flex align-items-center gap-1" style="font-size: 10px; height: 22px; border-color: #cbd5e1 !important;" onclick="clearExecTerminal()" title="Clear terminal screen">
-                        <i class="bi bi-trash3" style="font-size: 9px;"></i> Clear
+                    <button type="button" class="btn btn-sm exec-tool-btn font-mono" onclick="clearExecTerminal()" title="Clear terminal screen (Ctrl+L)">
+                        <i class="bi bi-trash3" style="font-size: 10px;"></i> Clear
                     </button>
                 </div>
             </div>
 
-            <!-- Presets Toolbar: Cohesive, unified toolbar -->
-            <div class="d-flex flex-wrap align-items-center gap-1 px-3 py-1.5 border-bottom font-mono" style="font-size: 10px; background-color: #f1f5f9;">
-                <span class="text-muted me-1 fw-semibold" style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em;">Presets:</span>
-                <button type="button" class="btn btn-xs exec-preset-btn font-mono" onclick="insertExecPreset('uname -a')">uname -a</button>
-                <button type="button" class="btn btn-xs exec-preset-btn font-mono" onclick="insertExecPreset('whoami')">whoami</button>
-                <button type="button" class="btn btn-xs exec-preset-btn font-mono" onclick="insertExecPreset('ps aux')">ps aux</button>
-                <button type="button" class="btn btn-xs exec-preset-btn font-mono" onclick="insertExecPreset('df -h')">df -h</button>
-                <button type="button" class="btn btn-xs exec-preset-btn font-mono" onclick="insertExecPreset('free -m')">free -m</button>
-                <button type="button" class="btn btn-xs exec-preset-btn font-mono" onclick="insertExecPreset('env')">env</button>
-                <button type="button" class="btn btn-xs exec-preset-btn font-mono" onclick="insertExecPreset('ls -la')">ls -la</button>
-                <button type="button" class="btn btn-xs exec-preset-btn font-mono" onclick="insertExecPreset('cat /etc/os-release')">os-release</button>
-            </div>
-
-            <!-- State Warning if Container is Not Running (Neutral, non-amber) -->
-            <div id="execStateAlert" class="@(c.State == "running" ? "d-none" : "") p-2 border-bottom d-flex align-items-center justify-content-between font-mono" style="font-size: 11px; background-color: #f8fafc; color: #475569;">
+            <!-- State Warning if Container is Not Running -->
+            <div id="execStateAlert" class="@(c.State == "running" ? "d-none" : "") exec-state-alert font-mono">
                 <div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-info-circle text-secondary"></i>
-                    <span>Container is currently <strong id="execContainerStateText" class="text-dark">@c.State</strong>. Execution requires the container to be running.</span>
+                    <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                    <span>Container is currently <strong id="execContainerStateText">@c.State</strong>. Execution requires the container to be running.</span>
                 </div>
-                <button type="button" class="btn btn-sm font-mono text-white py-0 px-2" style="font-size: 11px; height: 24px; background-color: var(--accent-navy);" onclick="executeDetailsAction('@c.Id', 'start', this)">
+                <button type="button" class="btn btn-sm exec-start-btn font-mono" onclick="executeDetailsAction('@c.Id', 'start', this)">
                     <i class="bi bi-play-fill"></i> Start Container
                 </button>
             </div>
 
-            <!-- Interactive Terminal Console Viewport (Compact idle state) -->
-            <div id="execTerminalViewport" class="exec-terminal-idle">
-                <div class="text-muted font-mono mb-2 pb-1.5 border-bottom border-secondary border-opacity-20 d-flex align-items-center justify-content-between" style="font-size: 10px; color: #64748b !important;">
-                    <div>
-                        <span>target: <strong style="color: #cbd5e1;">@c.Name</strong> (@c.ShortId)</span>
-                        <span class="mx-1.5 opacity-50">&bull;</span>
-                        <span>image: <strong style="color: #cbd5e1;">@c.Image</strong></span>
-                    </div>
-                    <div class="d-none d-md-block opacity-75">
-                        <kbd class="bg-dark text-muted px-1 border border-secondary border-opacity-25" style="font-size: 9px;">Enter</kbd> run &bull; <kbd class="bg-dark text-muted px-1 border border-secondary border-opacity-25" style="font-size: 9px;">&uarr;</kbd> <kbd class="bg-dark text-muted px-1 border border-secondary border-opacity-25" style="font-size: 9px;">&darr;</kbd> history
-                    </div>
-                </div>
-                <div id="execTerminalEntries">
-                    <div class="font-mono" id="execTerminalPlaceholder" style="font-size: 11px; color: #64748b; font-style: italic;">
-                        Terminal session ready. Select a preset above or type a command below.
-                    </div>
-                </div>
+            <!-- Spacious Interactive Terminal Console Viewport -->
+            <div id="execTerminalViewport" class="exec-terminal-viewport">
+                <div id="execTerminalEntries"></div>
             </div>
 
-            <!-- Command Input Bar: Navy/neutral accent & Highlighted Input Field -->
-            <div class="px-3 py-2.5 border-top exec-input-bar">
-                <form id="execCommandForm" onsubmit="handleExecSubmit(event)" class="d-flex align-items-center gap-2 m-0">
+            <!-- Ergonomic Command Input Bar -->
+            <div class="exec-input-bar">
+                <form id="execCommandForm" onsubmit="handleExecSubmit(event)" class="d-flex align-items-center gap-2 m-0 w-100">
                     <div class="exec-input-group d-flex align-items-center flex-grow-1" onclick="document.getElementById('execCommandInput')?.focus()">
                         <span class="exec-prompt-prefix font-mono" id="execPromptPrefix">
-                            root@@@(c.ShortId):/#
+                            @(string.IsNullOrWhiteSpace(d.User) ? "root" : d.User)@@@(c.ShortId):/#
                         </span>
                         <input type="text" id="execCommandInput" class="exec-command-input font-mono" placeholder="Enter shell command (e.g. ls -la, ps aux, env, whoami)..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
                     </div>
-                    <button type="submit" id="btnExecRun" class="btn exec-run-btn font-mono d-inline-flex align-items-center gap-1 px-3">
+
+                    <button type="submit" id="btnExecRun" class="btn exec-run-btn font-mono d-inline-flex align-items-center gap-1.5 px-3">
                         <i class="bi bi-play-fill" id="execRunIcon"></i>
                         <span id="execRunBtnText">Run</span>
                         <span id="execRunSpinner" class="spinner-border spinner-border-sm d-none" style="width: 10px; height: 10px;" role="status"></span>
@@ -968,6 +971,8 @@
     <script>
         window.CURRENT_CONTAINER_ID = '@c.Id';
         window.CURRENT_CONTAINER_SHORT_ID = '@c.ShortId';
+        window.CURRENT_CONTAINER_NAME = '@c.Name';
+        window.CURRENT_CONTAINER_USER = '@(string.IsNullOrWhiteSpace(d.User) ? "root" : d.User)';
         window.CURRENT_CONTAINER_STATE = '@c.State';
 
         async function handleSnapshotClick(e, containerId, triggerBtn) {

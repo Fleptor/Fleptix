@@ -21,4 +21,8 @@ public record ContainerDetails
     public string RestartPolicy { get; init; } = "no";
     public DateTime? StartedAt { get; init; }
     public DateTime? FinishedAt { get; init; }
+    public string User { get; init; } = string.Empty;
+    public bool Privileged { get; init; }
+    public bool ReadonlyRootfs { get; init; }
+    public string AppArmorProfile { get; init; } = string.Empty;
 }

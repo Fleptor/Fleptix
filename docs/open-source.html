@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Open Source &amp; Licensing — Fleptix</title>
+  <meta name="description"
+    content="Fleptix open-source philosophy, MIT licensing terms, zero-telemetry guarantee, and commercial Time Machine separation." />
+
+  <!-- Favicon & Fonts -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="alternate icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <!-- Ambient Atmospheric Lighting -->
+  <div class="bg-glow-orb orb-1"></div>
+  <div class="bg-glow-orb orb-2"></div>
+  <div class="bg-glow-orb orb-3"></div>
+
+  <!-- Persistent Navigation Header -->
+  <header class="navbar">
+    <div class="container">
+      <a href="index.html" class="brand-group" id="navBrand">
+        <div class="brand-icon">
+          <i class="bi bi-layers-fill"></i>
+        </div>
+        <span class="brand-title">Fleptix</span>
+      </a>
+
+      <nav>
+        <ul class="nav-menu">
+          <li><a href="index.html#install" class="nav-link">Quick Install</a></li>
+          <li><a href="index.html#comparison" class="nav-link">Observer vs. Time Machine</a></li>
+          <li><a href="index.html#pricing" class="nav-link">Pricing</a></li>
+          <li><a href="open-source.html" class="nav-link active" style="color: var(--color-ice);">Open Source</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Page Header -->
+  <section class="page-header">
+    <div class="container">
+      <span class="section-tag"><i class="bi bi-patch-check-fill me-1"></i> Open Core &bull; Transparency</span>
+      <h1 class="page-title">Open Source &amp; Licensing</h1>
+      <p class="page-subtitle">
+        We believe developer infrastructure tools should be honest, inspectable, and respectful of your data.
+        Here is our clear commitment to open source, privacy, and perpetual licensing.
+      </p>
+    </div>
+  </section>
+
+  <!-- Main Content Sections -->
+  <main class="os-section">
+    <div class="container">
+
+      <!-- Core Pillars Grid -->
+      <div class="os-grid">
+        <div class="os-card">
+          <div class="os-card-icon">
+            <i class="bi bi-code-square"></i>
+          </div>
+          <h3 class="os-card-title">100% Free &amp; Open Core</h3>
+          <p class="os-card-text">
+            Fleptix Observer is licensed under the permissive <strong>MIT License</strong>. The entire core code—from live
+            telemetry streaming to container shell execution—is open on GitHub for anyone to audit, run, or build upon.
+          </p>
+        </div>
+
+        <div class="os-card">
+          <div class="os-card-icon">
+            <i class="bi bi-eye-slash-fill"></i>
+          </div>
+          <h3 class="os-card-title">Zero Telemetry Guarantee</h3>
+          <p class="os-card-text">
+            Fleptix does not phone home. There are no tracking scripts, no telemetry pings, and no analytics beacons.
+            Your container names, logs, images, and environment variables stay strictly on your host.
+          </p>
+        </div>
+
+        <div class="os-card">
+          <div class="os-card-icon">
+            <i class="bi bi-hdd-network-fill"></i>
+          </div>
+          <h3 class="os-card-title">Air-Gapped Ready</h3>
+          <p class="os-card-text">
+            Because Fleptix communicates exclusively with your local Docker socket via <code>/var/run/docker.sock</code>,
+            it runs seamlessly in isolated, air-gapped, or firewalled private clouds without internet connectivity.
+          </p>
+        </div>
+
+        <div class="os-card">
+          <div class="os-card-icon">
+            <i class="bi bi-buildings"></i>
+          </div>
+          <h3 class="os-card-title">Commercial Use Allowed</h3>
+          <p class="os-card-text">
+            You are fully permitted to run Fleptix Observer inside your business, agency, or production infrastructure
+            free of charge under MIT terms. No artificial node caps on the open core.
+          </p>
+        </div>
+      </div>
+
+      <!-- Section: The Boundary between Observer & Time Machine -->
+      <div class="os-prose-block" id="boundary">
+        <h2><i class="bi bi-layers text-info"></i> The Boundary: Observer vs. Time Machine</h2>
+        <p>
+          Sustainable open source requires a clear and honest business model. Instead of hiding behind misleading
+          licenses, artificial limits, or bait-and-switch telemetry, Fleptix draws a clean boundary between two editions:
+        </p>
+        <p>
+          <strong>Fleptix Observer (Open Source &bull; MIT):</strong> Everything you need to monitor, manage, and inspect
+          your container fleet in real time. This includes live resource graphs (CPU, RAM, Network, Disk), interactive
+          exec terminal, streaming container logs, Docker Compose grouping, and start/stop/restart controls.
+          <strong>We never cripple the core observer.</strong>
+        </p>
+        <p>
+          <strong>Fleptix Time Machine (Commercial Pro):</strong> An advanced state capture engine designed for teams
+          needing automated container filesystem delta snapshots, point-in-time state rollback, and isolated sandbox
+          replays. Time Machine is distributed under a commercial perpetual license (one-time payment, no recurring monthly
+          tax) to fund full-time development of the open-source core.
+        </p>
+      </div>
+
+      <!-- Section: MIT License Text -->
+      <div class="os-prose-block" id="license">
+        <h2><i class="bi bi-file-earmark-text text-success"></i> Fleptix Observer MIT License</h2>
+        <p>
+          The full source code for Fleptix Observer is published under the terms of the Massachusetts Institute of
+          Technology (MIT) License:
+        </p>
+        <pre class="license-box"><code>MIT License
+
+Copyright (c) 2026 Fleptix Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.</code></pre>
+      </div>
+
+      <!-- Section: Privacy & Telemetry Guarantee -->
+      <div class="os-prose-block" id="privacy">
+        <h2><i class="bi bi-shield-lock-fill text-warning"></i> Privacy &amp; Data Sovereignty</h2>
+        <p>
+          Many modern DevOps and observability tools quietly ship analytics SDKs, user fingerprinting, or forced cloud accounts.
+          Fleptix was built with the opposite philosophy:
+        </p>
+        <p>
+          1. <strong>No Cloud Accounts Required:</strong> You never need to sign up, create an account, or log in to use Fleptix Observer.
+        </p>
+        <p>
+          2. <strong>No Outbound Telemetry:</strong> The Observer binary makes no outbound network connections to Fleptix servers.
+          Your server configuration, IP addresses, container images, volume paths, and environment secrets never leave your host.
+        </p>
+        <p>
+          3. <strong>Direct Socket Communication:</strong> Communication happens strictly through the local Docker Unix socket
+          (<code>/var/run/docker.sock</code>).
+        </p>
+      </div>
+
+      <!-- Section: Third-Party Open Source Software -->
+      <div class="os-prose-block" id="credits">
+        <h2><i class="bi bi-heart-fill text-danger"></i> Third-Party Open Source Software &amp; Credits</h2>
+        <p>
+          Fleptix is built on top of incredible open-source projects created by the global developer community.
+          We express our sincere gratitude to their maintainers and contributors:
+        </p>
+
+        <div class="credits-table-wrap">
+          <table class="credits-table">
+            <thead>
+              <tr>
+                <th>Project / Dependency</th>
+                <th>Purpose in Fleptix</th>
+                <th>License</th>
+                <th>Maintainer / Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="dep-name">Docker.DotNet</td>
+                <td>Docker Engine API communication</td>
+                <td class="dep-license">MIT</td>
+                <td>dotnet/Docker.DotNet</td>
+              </tr>
+              <tr>
+                <td class="dep-name">ASP.NET Core</td>
+                <td>High-performance web host &amp; API routing</td>
+                <td class="dep-license">MIT</td>
+                <td>Microsoft / .NET Foundation</td>
+              </tr>
+              <tr>
+                <td class="dep-name">Microsoft.AspNetCore.SignalR</td>
+                <td>Real-time WebSocket telemetry push</td>
+                <td class="dep-license">MIT</td>
+                <td>Microsoft / .NET Foundation</td>
+              </tr>
+              <tr>
+                <td class="dep-name">Chart.js</td>
+                <td>Hardware-accelerated live telemetry charts</td>
+                <td class="dep-license">MIT</td>
+                <td>chartjs.org</td>
+              </tr>
+              <tr>
+                <td class="dep-name">Bootstrap &amp; Bootstrap Icons</td>
+                <td>Responsive layout utilities &amp; icons</td>
+                <td class="dep-license">MIT</td>
+                <td>Twitter / Bootstrap Team</td>
+              </tr>
+              <tr>
+                <td class="dep-name">JetBrains Mono</td>
+                <td>Developer monospace font for terminals &amp; IDs</td>
+                <td class="dep-license">OFL 1.1</td>
+                <td>JetBrains</td>
+              </tr>
+              <tr>
+                <td class="dep-name">Inter</td>
+                <td>UI typography &amp; interface font</td>
+                <td class="dep-license">OFL 1.1</td>
+                <td>Rasmus Andersson</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section: Contributing & Feedback -->
+      <div class="os-prose-block" id="contributing">
+        <h2><i class="bi bi-git text-info"></i> Contributing &amp; Community</h2>
+        <p>
+          We welcome contributions from the community! Whether you are fixing a typo in documentation, improving
+          container telemetry parsing, adding support for specialized Docker configurations, or submitting UI enhancements:
+        </p>
+        <p>
+          - <strong>Repository:</strong> <a href="https://github.com/Fleptor/Fleptix" target="_blank" rel="noopener" style="color: var(--color-ice);">github.com/Fleptor/Fleptix</a><br>
+          - <strong>Bug Reports:</strong> File reproducible issues on the GitHub Issue Tracker.<br>
+          - <strong>Feature Discussions:</strong> Share your homelab or production setup ideas in GitHub Discussions.
+        </p>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Catchy Multi-Column Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-brand-col">
+          <a href="index.html" class="footer-brand">
+            <div class="brand-icon">
+              <i class="bi bi-layers-fill"></i>
+            </div>
+            <span>Fleptix</span>
+          </a>
+          <p class="footer-tagline">
+            Your containers don't need a heavyweight monitoring stack. They just need clean, real-time observability.
+          </p>
+          <div class="footer-status-pill">
+            <span class="pulse-dot"></span>
+            <span>Open-source core &bull; Zero phone-home</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Product</div>
+          <ul class="footer-col-links">
+            <li><a href="index.html#install" class="footer-link"><i class="bi bi-terminal"></i> Quick Install</a></li>
+            <li><a href="index.html#comparison" class="footer-link"><i class="bi bi-grid"></i> Observer vs. Time Machine</a></li>
+            <li><a href="index.html#pricing" class="footer-link"><i class="bi bi-tag"></i> Pricing &amp; Licenses</a></li>
+            <li><a href="https://github.com/Fleptor/Fleptix/releases" target="_blank" rel="noopener" class="footer-link"><i class="bi bi-journal-text"></i> Releases</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Resources</div>
+          <ul class="footer-col-links">
+            <li><a href="open-source.html" class="footer-link"><i class="bi bi-code-slash"></i> Open Source &amp; Licensing</a></li>
+            <li><a href="https://github.com/Fleptor/Fleptix" target="_blank" rel="noopener" class="footer-link"><i class="bi bi-github"></i> GitHub Repository</a></li>
+            <li><a href="https://github.com/Fleptor/Fleptix/issues" target="_blank" rel="noopener" class="footer-link"><i class="bi bi-bug"></i> Issue Tracker</a></li>
+            <li><a href="https://github.com/Fleptor/Fleptix/discussions" target="_blank" rel="noopener" class="footer-link"><i class="bi bi-chat-dots"></i> Discussions</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Legal &amp; Trust</div>
+          <ul class="footer-col-links">
+            <li><a href="#license" class="footer-link"><i class="bi bi-file-earmark-text"></i> MIT License</a></li>
+            <li><a href="#privacy" class="footer-link"><i class="bi bi-shield-check"></i> Zero Telemetry Guarantee</a></li>
+            <li><a href="#credits" class="footer-link"><i class="bi bi-heart"></i> Third-Party Credits</a></li>
+            <li><a href="https://fleptix.lemonsqueezy.com" target="_blank" rel="noopener" class="footer-link"><i class="bi bi-bag"></i> Storefront (Lemon Squeezy)</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>
+          &copy; 2026 Fleptix. Built with precision for the Docker &amp; homelab community.
+        </div>
+        <div class="footer-bottom-links">
+          <a href="open-source.html">Open Source</a>
+          <span>&bull;</span>
+          <a href="https://github.com/Fleptor/Fleptix" target="_blank" rel="noopener">GitHub</a>
+          <span>&bull;</span>
+          <a href="#">Back to top &uarr;</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Script for localhost favicon and interactivity -->
+  <script src="script.js?v=2.3"></script>
+</body>
+
+</html>

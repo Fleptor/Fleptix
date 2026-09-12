@@ -711,12 +711,19 @@ function updateExecPromptPrefix() {
     const prefixEl = document.getElementById('execPromptPrefix');
     if (!prefixEl) return;
 
-    const user = (document.getElementById('execUserInput')?.value || 'root').trim() || 'root';
+    const userInput = (document.getElementById('execUserInput')?.value || '').trim();
+    const effectiveUser = userInput || window.CURRENT_CONTAINER_USER || 'root';
     const shortId = window.CURRENT_CONTAINER_SHORT_ID || (window.CURRENT_CONTAINER_ID ? window.CURRENT_CONTAINER_ID.substring(0, 12) : 'container');
     let dir = (document.getElementById('execWorkDirInput')?.value || '/').trim() || '/';
     if (!dir.startsWith('/')) dir = '/' + dir;
 
-    prefixEl.textContent = `${user}@${shortId}:${dir}#`;
+    prefixEl.textContent = `${effectiveUser}@${shortId}:${dir}#`;
+
+    if (effectiveUser === 'root' || effectiveUser === '0') {
+        prefixEl.classList.add('exec-root-elevation');
+    } else {
+        prefixEl.classList.remove('exec-root-elevation');
+    }
 }
 
 window.updateExecContainerState = function(state) {
@@ -815,7 +822,8 @@ window.executeContainerCommand = async function(cmd) {
 
     const shell = document.getElementById('execShellSelect')?.value || '/bin/sh';
     const workingDir = document.getElementById('execWorkDirInput')?.value?.trim() || '/';
-    const user = document.getElementById('execUserInput')?.value?.trim() || 'root';
+    const user = document.getElementById('execUserInput')?.value?.trim() || '';
+    const displayUser = user || window.CURRENT_CONTAINER_USER || 'root';
     const shortId = window.CURRENT_CONTAINER_SHORT_ID || cid.substring(0, 12);
     const autoScroll = document.getElementById('execAutoScrollSwitch')?.checked;
 
@@ -836,7 +844,7 @@ window.executeContainerCommand = async function(cmd) {
     entryDiv.innerHTML = `
         <div class="d-flex align-items-center justify-content-between font-mono mb-1" style="font-size: 11px;">
             <div class="d-flex align-items-center gap-1.5 overflow-x-auto text-truncate">
-                <span style="color: #94a3b8;">${escapeHtml(user)}@${escapeHtml(shortId)}:${escapeHtml(workingDir)}#</span>
+                <span style="color: #94a3b8;">${escapeHtml(displayUser)}@${escapeHtml(shortId)}:${escapeHtml(workingDir)}#</span>
                 <span style="color: #f8fafc; font-weight: 600;">${escapeHtml(cmd)}</span>
             </div>
             <div class="d-flex align-items-center gap-1.5 ms-2 flex-shrink-0" style="font-size: 10px;">
@@ -970,16 +978,7 @@ function setExecRunningState(running) {
 window.clearExecTerminal = function() {
     const entriesContainer = document.getElementById('execTerminalEntries');
     if (entriesContainer) {
-        entriesContainer.innerHTML = `
-            <div class="font-mono" id="execTerminalPlaceholder" style="font-size: 11px; color: #64748b; font-style: italic;">
-                Terminal session ready. Select a preset above or type a command below.
-            </div>
-        `;
-    }
-    const viewport = document.getElementById('execTerminalViewport');
-    if (viewport) {
-        viewport.classList.remove('exec-terminal-active');
-        viewport.classList.add('exec-terminal-idle');
+        entriesContainer.innerHTML = '';
     }
 };
 
