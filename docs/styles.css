@@ -528,7 +528,7 @@ body {
 
 /* Install Box */
 .install-wrapper {
-  max-width: 760px;
+  max-width: 1080px;
   margin: 0 auto;
 }
 
@@ -629,6 +629,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 20px;
   padding: 12px 20px;
   background: #0d1321;
   border-top: 1px solid var(--border-subtle);
@@ -639,6 +641,8 @@ body {
 
 .meta-items {
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 16px;
 }
 
@@ -646,6 +650,7 @@ body {
   display: flex;
   align-items: center;
   gap: 5px;
+  white-space: nowrap;
 }
 
 /* Comparison Table Section */
@@ -1042,132 +1047,42 @@ body {
 }
 
 /* Footer */
-/* ==========================================================================
-   Catchy Multi-Column Footer
-   ========================================================================== */
 .footer {
   border-top: 1px solid var(--border-subtle);
-  padding: 64px 0 32px 0;
+  padding: 32px 0;
   background: #080c14;
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--text-dim);
-  position: relative;
-  z-index: 1;
 }
 
-.footer-top {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 48px;
-  margin-bottom: 48px;
-}
-
-.footer-brand-col {
+.footer .container {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  align-items: center;
+  justify-content: center;
 }
 
 .footer-brand {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   color: var(--text-main);
-  font-weight: 700;
-  font-size: 18px;
-  text-decoration: none;
+  font-weight: 500;
+  font-size: 13.5px;
 }
 
 .footer-brand .brand-icon {
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   background: var(--color-navy);
-  border: 1px solid var(--color-ice);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   color: var(--color-ice);
-  font-size: 16px;
-}
-
-.footer-tagline {
-  color: var(--text-muted);
-  font-size: 14px;
-  line-height: 1.6;
-  max-width: 360px;
-}
-
-.footer-status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 12px;
-  background: rgba(30, 39, 97, 0.4);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-full);
-  font-family: var(--font-mono);
-  font-size: 11.5px;
-  color: var(--text-ice);
-  width: fit-content;
-}
-
-.footer-col-title {
-  color: var(--text-main);
-  font-size: 12.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  margin-bottom: 16px;
-}
-
-.footer-col-links {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 11px;
-}
-
-.footer-link {
-  color: var(--text-muted);
-  text-decoration: none;
-  font-size: 13.5px;
-  transition: var(--transition);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.footer-link:hover {
-  color: var(--color-ice);
-  transform: translateX(2px);
-}
-
-.footer-bottom {
-  border-top: 1px solid rgba(202, 220, 252, 0.08);
-  padding-top: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  font-size: 12.5px;
-  color: var(--text-dim);
-}
-
-.footer-bottom-links {
-  display: flex;
-  gap: 20px;
-}
-
-.footer-bottom-links a {
-  color: var(--text-dim);
-  text-decoration: none;
-  transition: var(--transition);
-}
-
-.footer-bottom-links a:hover {
-  color: var(--text-ice);
+  font-size: 13px;
+  box-shadow: 0 0 10px rgba(30, 39, 97, 0.4);
 }
 
 /* ==========================================================================
@@ -1375,11 +1290,6 @@ body {
     margin: 0 auto;
   }
 
-  .footer-top {
-    grid-template-columns: 1fr 1fr;
-    gap: 36px;
-  }
-
   .os-grid {
     grid-template-columns: 1fr;
   }
@@ -1400,17 +1310,5 @@ body {
 
   .cta-card {
     padding: 32px 20px;
-  }
-}
-
-@media (max-width: 640px) {
-  .footer-top {
-    grid-template-columns: 1fr;
-    gap: 32px;
-  }
-
-  .footer-bottom {
-    flex-direction: column;
-    align-items: flex-start;
   }
 }
